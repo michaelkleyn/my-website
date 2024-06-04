@@ -1,9 +1,34 @@
 body {
-  font-family: Cormorant Garamond, serif;
-  margin: 0 auto;
+  font-family: "Cormorant Garamond", serif;
+  margin: 0;
   padding: 0;
   background-color: #f4f4f4;
+}
+
+/* Responsive container */
+.container {
   width: 70%;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+@media (max-width: 1200px) {
+  .container {
+    width: 70%;
+  }
+}
+
+@media (max-width: 992px) {
+  .container {
+    width: 80%;
+  }
+}
+
+@media (max-width: 576px) {
+  .container {
+    width: 90%;
+    padding: 0 5px;
+  }
 }
 
 header {
@@ -12,9 +37,22 @@ header {
 
 nav a {
   color: #000;
-  margin: 0 1rem;
+  margin: 0 1rem; /* Default margin */
   text-decoration: none;
   font-size: 13pt;
+}
+
+/* Adjust padding for smaller widths */
+@media (max-width: 768px) {
+  nav a {
+    margin: 0 0.5rem; /* Smaller margin for medium screens */
+  }
+}
+
+@media (max-width: 576px) {
+  nav a {
+    margin: 0 0.25rem; /* Even smaller margin for small screens */
+  }
 }
 
 nav a:hover {
@@ -24,25 +62,65 @@ nav a:hover {
 }
 
 main {
-  padding: 2rem;
+  padding: 2rem 0; /* Adjust padding as needed */
   font-size: 14pt;
 }
 
 main p {
   line-height: 1.5;
+  animation: fadeIn 1s ease-out forwards;
 }
 
 footer {
   color: #000;
   text-align: center;
   padding: 1rem;
-  width: 100%;
-  bottom: 0;
+  width: 70%;
+  margin: 0 auto; /* Center the footer */
+  position: relative; /* Ensure it's not fixed for better layout */
+  animation: fadeIn 2s ease-out forwards;
+}
+
+@media (max-width: 1200px) {
+  footer {
+    width: 90%;
+  }
+}
+
+@media (max-width: 992px) {
+  footer {
+    width: 100%;
+  }
+}
+
+@media (max-width: 768px) {
+  footer {
+    width: 100%;
+    padding: 0 10px;
+  }
+}
+
+@media (max-width: 576px) {
+  footer {
+    width: 100%;
+    padding: 0 5px;
+  }
 }
 
 .responsive-img {
-  max-width: 100%; /* Image will scale to fit the width of the container */
-  height: auto; /* Maintain aspect ratio */
+  max-width: 100%;
+  height: auto;
+}
+
+@keyframes fadeIn {
+  0% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 .cormorant-garamond-light {
