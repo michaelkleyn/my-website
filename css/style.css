@@ -42,7 +42,6 @@ nav a {
   font-size: 13pt;
 }
 
-/* Adjust padding for smaller widths */
 @media (max-width: 768px) {
   nav a {
     margin: 0 0.5rem; /* Smaller margin for medium screens */
@@ -68,7 +67,6 @@ main {
 
 main p {
   line-height: 1.5;
-  animation: fadeIn 1s ease-out forwards;
 }
 
 footer {
@@ -78,7 +76,6 @@ footer {
   width: 70%;
   margin: 0 auto; /* Center the footer */
   position: relative; /* Ensure it's not fixed for better layout */
-  animation: fadeIn 2s ease-out forwards;
 }
 
 @media (max-width: 1200px) {
@@ -121,6 +118,18 @@ footer {
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+.fade-in-1 {
+  animation: fadeIn 1s ease-out forwards;
+}
+
+.fade-in-2 {
+  animation: fadeIn 1.25s ease-out forwards;
+}
+
+.fade-in-3 {
+  animation: fadeIn 1.5s ease-out forwards;
 }
 
 .cormorant-garamond-light {
