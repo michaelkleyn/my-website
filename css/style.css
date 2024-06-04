@@ -1,32 +1,106 @@
 body {
-  font-family: Arial, sans-serif;
-  margin: 0;
+  font-family: Cormorant Garamond, serif;
+  margin: 0 auto;
   padding: 0;
   background-color: #f4f4f4;
+  width: 70%;
 }
 
 header {
-  background: #333;
-  color: #fff;
   padding: 1rem;
 }
 
 nav a {
-  color: #fff;
+  color: #000;
   margin: 0 1rem;
   text-decoration: none;
+  font-size: 13pt;
+}
+
+nav a:hover {
+  text-decoration: underline;
+  text-decoration-color: #d11e06;
+  text-decoration-thickness: 2px;
 }
 
 main {
   padding: 2rem;
+  font-size: 14pt;
+}
+
+main p {
+  line-height: 1.5;
 }
 
 footer {
-  background: #333;
-  color: #fff;
+  color: #000;
   text-align: center;
   padding: 1rem;
-  position: fixed;
   width: 100%;
   bottom: 0;
+}
+
+.responsive-img {
+  max-width: 100%; /* Image will scale to fit the width of the container */
+  height: auto; /* Maintain aspect ratio */
+}
+
+.cormorant-garamond-light {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 300;
+  font-style: normal;
+}
+
+.cormorant-garamond-light-italic {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 300;
+  font-style: italic;
+}
+
+.cormorant-garamond-regular {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.cormorant-garamond-regular-italic {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.cormorant-garamond-medium {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 500;
+  font-style: normal;
+}
+
+.cormorant-garamond-medium-italic {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 500;
+  font-style: italic;
+}
+
+.cormorant-garamond-semibold {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 600;
+  font-style: normal;
+}
+
+.cormorant-garamond-semibold-italic {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 600;
+  font-style: italic;
+}
+
+.cormorant-garamond-bold {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.cormorant-garamond-bold-italic {
+  font-family: "Cormorant Garamond", serif;
+  font-weight: 700;
+  font-style: italic;
 }
