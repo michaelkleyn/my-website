@@ -7,18 +7,36 @@ body {
 
 /* Responsive container */
 .container {
-  width: 70%;
+  width: 30%;
   margin: 0 auto;
   padding: 0 15px;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1600px) {
+  .container {
+    width: 40%;
+  }
+}
+
+@media (max-width: 1400px) {
+  .container {
+    width: 50%;
+  }
+}
+
+@media (max-width: 1280px) {
+  .container {
+    width: 60%;
+  }
+}
+
+@media (max-width: 992px) {
   .container {
     width: 70%;
   }
 }
 
-@media (max-width: 992px) {
+@media (max-width: 768px) {
   .container {
     width: 80%;
   }
@@ -31,38 +49,37 @@ body {
   }
 }
 
+@media (max-width: 300px) {
+  .container {
+    width: 95%;
+    padding: 0 2px;
+  }
+}
+
 header {
-  padding: 1rem;
+  padding-top: 3rem;
+  font-size: 1.5rem; /* Default header size */
+}
+
+nav {
+  width: 100%;
+  box-sizing: border-box; /* Ensure no overflow caused by padding or margin */
 }
 
 nav a {
   color: #000;
   margin: 0 1rem; /* Default margin */
   text-decoration: none;
-  font-size: 13pt;
+  font-size: 1rem; /* Default nav link size */
 }
 
-@media (max-width: 768px) {
-  nav a {
-    margin: 0 0.5rem; /* Smaller margin for medium screens */
-  }
-}
-
-@media (max-width: 576px) {
-  nav a {
-    margin: 0 0.25rem; /* Even smaller margin for small screens */
-  }
-}
-
-nav a:hover {
-  text-decoration: underline;
-  text-decoration-color: #d11e06;
-  text-decoration-thickness: 2px;
+.a-margin {
+  margin: 0 0rem;
 }
 
 main {
-  padding: 2rem 0; /* Adjust padding as needed */
-  font-size: 14pt;
+  padding: 1rem 0; /* Adjust padding as needed */
+  font-size: 1rem; /* Default main content size */
 }
 
 main p {
@@ -76,17 +93,95 @@ footer {
   width: 70%;
   margin: 0 auto; /* Center the footer */
   position: relative; /* Ensure it's not fixed for better layout */
+  font-size: 1rem; /* Default footer size */
 }
 
-@media (max-width: 1200px) {
+/* Responsive typography */
+@media (max-width: 300px) {
+  header {
+    font-size: 1rem;
+  }
+  nav a {
+    font-size: 0.9rem;
+  }
+  main {
+    font-size: 1rem;
+  }
   footer {
-    width: 90%;
+    font-size: 0.9rem;
   }
 }
 
-@media (max-width: 992px) {
+@media (min-width: 300px) and (max-width: 576px) {
+  header {
+    font-size: 1rem;
+  }
+  nav a {
+    font-size: 0.9rem;
+  }
+  main {
+    font-size: 1.2rem;
+  }
   footer {
-    width: 100%;
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 576px) {
+  header {
+    font-size: 1.75rem;
+  }
+  nav a {
+    font-size: 1.3rem;
+  }
+  main {
+    font-size: 1.4rem;
+  }
+  footer {
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 768px) {
+  nav a {
+    margin: 0 0.5rem; /* Smaller margin for medium screens */
+    font-size: 1.3rem;
+  }
+  main {
+    font-size: 1.4rem;
+  }
+  footer {
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 992px) {
+  header {
+    font-size: 2rem;
+  }
+  nav a {
+    font-size: 1.3rem;
+  }
+  main {
+    font-size: 1.4rem;
+  }
+  footer {
+    font-size: 1rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  header {
+    font-size: 2.25rem;
+  }
+  nav a {
+    font-size: 1.4rem;
+  }
+  main {
+    font-size: 1.5rem;
+  }
+  footer {
+    font-size: 1rem;
   }
 }
 
@@ -102,6 +197,12 @@ footer {
     width: 100%;
     padding: 0 5px;
   }
+}
+
+nav a:hover {
+  text-decoration: underline;
+  text-decoration-color: #d11e06;
+  text-decoration-thickness: 2px;
 }
 
 .responsive-img {
