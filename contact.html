@@ -26,8 +26,30 @@
       <main>
         <h1>Contact</h1>
         <p class="fade-in-1">You can contact me via email here:</p>
+        <p class="fade-in-2"><span id="email"></span></p>
+        <p class="fade-in-2">Or connect with me here:</p>
+        <ul class="social-links fade-in-3">
+          <li>
+            <a href="https://github.com/michaelkleyn" target="_blank">Github</a>
+          </li>
+          <li>
+            <a href="https://www.linkedin.com/in/mkleyn/" target="_blank"
+              >LinkedIn</a
+            >
+          </li>
+          <li>
+            <a href="https://x.com/kleynmichael" target="_blank">Twitter</a>
+          </li>
+        </ul>
+        <p class="fade-in-3">
+          Download my <a href="path/to/your-cv.pdf" target="_blank">CV</a>
+        </p>
       </main>
     </div>
+    <script>
+      document.getElementById("email").innerText =
+        "michaelkleyn" + "@" + "gmail.com";
+    </script>
     <script src="js/script.js"></script>
   </body>
 </html>

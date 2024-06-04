@@ -12,6 +12,16 @@ body {
   padding: 0 15px;
 }
 
+.projects p {
+  margin: 0;
+}
+
+.projects a {
+  text-decoration: underline;
+  text-decoration-color: #d11e06;
+  text-decoration-thickness: 2px;
+}
+
 @media (max-width: 1600px) {
   .container {
     width: 40%;
@@ -219,6 +229,29 @@ nav a:hover {
     transform: translateY(0);
     opacity: 1;
   }
+}
+
+/* Contact page styles */
+.social-links {
+  list-style-type: none;
+  padding: 0;
+}
+
+.social-links li {
+  display: inline;
+  margin-right: 10px;
+}
+
+.social-links a {
+  text-decoration: none;
+  color: #d11e06;
+  font-weight: 600;
+}
+
+.social-links a:hover {
+  text-decoration: underline;
+  text-decoration-color: #d11e06;
+  text-decoration-thickness: 2px;
 }
 
 .fade-in-1 {
