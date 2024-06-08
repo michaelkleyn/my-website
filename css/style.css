@@ -5,6 +5,12 @@ body {
   background-color: #f4f4f4;
 }
 
+.fixed-width {
+  display: inline-block;
+  width: 1ch; /* Ensures each character span has a fixed width */
+  text-align: center; /* Centers the text within the width */
+}
+
 .projects p {
   margin: 0;
 }
