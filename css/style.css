@@ -108,21 +108,6 @@ nav a:hover {
   height: auto;
 }
 
-.animated-text::after {
-  content: "|";
-  animation: blink 0.7s infinite;
-}
-
-@keyframes blink {
-  0%,
-  100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0;
-  }
-}
-
 /* Contact page styles */
 .social-links {
   list-style-type: none;
