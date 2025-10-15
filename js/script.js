@@ -24,7 +24,8 @@ document.addEventListener("DOMContentLoaded", function () {
   // Generate gradient sidebar cells dynamically
   const gradientSidebar = document.querySelector('.gradient-sidebar');
   if (gradientSidebar) {
-    for (let i = 0; i < 60; i++) {
+    // Generate 100 cells for mobile (5 rows × 20 cols), desktop only uses first 60
+    for (let i = 0; i < 100; i++) {
       const sidebarRow = document.createElement('div');
       sidebarRow.className = 'sidebar-row';
       gradientSidebar.appendChild(sidebarRow);
@@ -134,7 +135,8 @@ document.addEventListener("DOMContentLoaded", function () {
     jellyfish: null,
     butterfly: null,
     deer: null,
-    moonwalk: null
+    moonwalk: null,
+    flag: null
   };
 
   // Load all animation frames
@@ -142,13 +144,15 @@ document.addEventListener("DOMContentLoaded", function () {
     fetch('./assets/jellyfish-ascii-frames.json').then(r => r.json()),
     fetch('./assets/ascii-frames-butterfly.json').then(r => r.json()),
     fetch('./assets/ascii-frames-deer.json').then(r => r.json()),
-    fetch('./assets/ascii-frames-moonwalk.json').then(r => r.json())
+    fetch('./assets/ascii-frames-moonwalk.json').then(r => r.json()),
+    fetch('./assets/ascii-frames-flag.json').then(r => r.json())
   ])
-    .then(([jellyfish, butterfly, deer, moonwalk]) => {
+    .then(([jellyfish, butterfly, deer, moonwalk, flag]) => {
       animationFrames.jellyfish = jellyfish;
       animationFrames.butterfly = butterfly;
       animationFrames.deer = deer;
       animationFrames.moonwalk = moonwalk;
+      animationFrames.flag = flag;
       console.log('Loaded all ASCII animations');
 
       // Start the animation cycle
@@ -274,6 +278,63 @@ document.addEventListener("DOMContentLoaded", function () {
     await animateASCII(animationFrames.moonwalk, 1.0, 200, 10000, getFixedPosition(10, 'left', 0));
   }
 
+  // Show single flag (right side) - 12 seconds
+  async function showFlag() {
+    return new Promise((resolve) => {
+      if (!animationFrames.flag) {
+        resolve();
+        return;
+      }
+
+      const position = getFixedPosition(25, 'right', 10);
+      const asciiElement = createASCIIElement(position, 1.0);
+      asciiLayer.appendChild(asciiElement);
+
+      // Sample frames (every 3rd frame)
+      const sampledFrames = animationFrames.flag.filter((_, index) => index % 3 === 0);
+      const lastFramesToLoop = 3; // Number of frames to loop at the end
+      const loopStartFrame = Math.max(0, sampledFrames.length - lastFramesToLoop);
+
+      let currentFrame = 0;
+      let isInLoopMode = false;
+      let animationInterval;
+
+      // Fade in
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          asciiElement.classList.add('active');
+        });
+      });
+
+      // Start frame cycling
+      animationInterval = setInterval(() => {
+        asciiElement.textContent = sampledFrames[currentFrame].join('\n');
+
+        currentFrame++;
+
+        // Once we reach the end, start looping the last 30 frames
+        if (currentFrame >= sampledFrames.length) {
+          currentFrame = loopStartFrame;
+          isInLoopMode = true;
+        }
+      }, 350); // Slower: 350ms per frame instead of 200ms
+
+      // Duration: show for 6 seconds
+      setTimeout(() => {
+        // Fade out
+        asciiElement.classList.remove('active');
+        asciiElement.classList.add('fading');
+
+        // Clean up after fade completes
+        setTimeout(() => {
+          clearInterval(animationInterval);
+          asciiLayer.removeChild(asciiElement);
+          resolve();
+        }, 1500);
+      }, 6000);
+    });
+  }
+
   // Right side animation cycle
   async function rightSideAnimationCycle() {
     while (true) {
@@ -281,6 +342,9 @@ document.addEventListener("DOMContentLoaded", function () {
       await new Promise(resolve => setTimeout(resolve, 2000)); // Pause between animations
 
       await showDeer();
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      await showFlag();
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Cycle repeats
