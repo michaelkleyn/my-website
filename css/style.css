@@ -260,6 +260,9 @@ header {
 nav {
   width: 100%;
   box-sizing: border-box; /* Ensure no overflow caused by padding or margin */
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 nav a {
@@ -267,11 +270,39 @@ nav a {
   margin: 0 1rem; /* Default margin */
   text-decoration: none;
   font-size: 1.4rem; /* Default nav link size */
+  transition: opacity 0.3s ease;
 }
 
 .a-margin {
   margin: 0 0rem;
 }
+
+.toggle-wrapper {
+  height: 1.5rem;
+  width: 2rem;
+  position: relative;
+  margin: 0 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  flex-shrink: 0;
+}
+
+.toggle-icon-display {
+  line-height: 0.8;
+  font-size: 1rem;
+  font-family: monospace;
+  color: #000;
+  margin: 0;
+  padding: 0;
+  transform: scale(0.05);
+  transform-origin: center center;
+  white-space: pre;
+  position: absolute;
+}
+
 
 main {
   padding: 1rem 0; /* Adjust padding as needed */

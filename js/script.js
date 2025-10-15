@@ -12,6 +12,137 @@ document.addEventListener("DOMContentLoaded", function () {
   window.addEventListener("resize", updateLinkText);
   updateLinkText();
 
+  // Mode toggle functionality
+  const modeToggle = document.getElementById('mode-toggle');
+  const navLinks = document.querySelectorAll('.nav-link');
+
+  // Get current mode from localStorage or default to 'work'
+  let currentMode = localStorage.getItem('siteMode') || 'work';
+
+  // Link text for each mode
+  const linkText = {
+    work: ['projects', 'blog', 'contact'],
+    life: ['music', 'books', 'photos']
+  };
+
+  // Load toggle animation frames
+  let toggleFrames = null;
+  let isAnimating = false;
+
+  fetch('./assets/ascii-button.json')
+    .then(r => r.json())
+    .then(frames => {
+      toggleFrames = frames;
+      // Set initial frame (life = first frame, work = last frame)
+      if (modeToggle && toggleFrames.length > 0) {
+        if (currentMode === 'work') {
+          modeToggle.textContent = toggleFrames[toggleFrames.length - 1].join('\n');
+        } else {
+          modeToggle.textContent = toggleFrames[0].join('\n');
+        }
+      }
+    })
+    .catch(error => {
+      console.error('Failed to load toggle animation:', error);
+    });
+
+  // Animate toggle icon
+  function animateToggleIcon(mode) {
+    if (!toggleFrames || !modeToggle || isAnimating) return;
+
+    isAnimating = true;
+    let currentFrame;
+    let frameIncrement;
+    let endFrame;
+
+    if (mode === 'life') {
+      // Play backward: computer → yoga (last frame to first frame)
+      currentFrame = toggleFrames.length - 1;
+      frameIncrement = -3;
+      endFrame = 0;
+    } else {
+      // Play forward: yoga → computer (first frame to last frame)
+      currentFrame = 0;
+      frameIncrement = 3; 
+      endFrame = toggleFrames.length - 1;
+    }
+
+    const animationInterval = setInterval(() => {
+      modeToggle.textContent = toggleFrames[currentFrame].join('\n');
+
+      // Check if we've passed the end frame
+      if ((frameIncrement > 0 && currentFrame >= endFrame) ||
+          (frameIncrement < 0 && currentFrame <= endFrame)) {
+        clearInterval(animationInterval);
+        isAnimating = false;
+      } else {
+        currentFrame += frameIncrement;
+        // Clamp to valid range
+        if (frameIncrement > 0 && currentFrame > endFrame) currentFrame = endFrame;
+        if (frameIncrement < 0 && currentFrame < endFrame) currentFrame = endFrame;
+      }
+    }, 10); // 10ms per frame for very fast animation
+  }
+
+  // Update links based on mode
+  function updateMode(mode, skipAnimation = false) {
+    currentMode = mode;
+    localStorage.setItem('siteMode', mode);
+
+    // Animate the toggle icon
+    if (!skipAnimation) {
+      animateToggleIcon(mode);
+
+      // Fade out links
+      navLinks.forEach(link => {
+        link.style.opacity = '0';
+      });
+
+      // Wait for fade out to complete, then change text and fade back in
+      setTimeout(() => {
+        navLinks.forEach((link, index) => {
+          if (mode === 'work') {
+            link.href = link.dataset.work;
+            link.textContent = linkText.work[index];
+          } else {
+            link.href = link.dataset.life;
+            link.textContent = linkText.life[index];
+          }
+        });
+
+        // Fade back in after text change
+        requestAnimationFrame(() => {
+          navLinks.forEach(link => {
+            link.style.opacity = '1';
+          });
+        });
+      }, 350);
+    } else {
+      // Initial load - no animation
+      navLinks.forEach((link, index) => {
+        if (mode === 'work') {
+          link.href = link.dataset.work;
+          link.textContent = linkText.work[index];
+        } else {
+          link.href = link.dataset.life;
+          link.textContent = linkText.life[index];
+        }
+      });
+    }
+  }
+
+  // Set initial mode (skip animation on page load)
+  updateMode(currentMode, true);
+
+  // Toggle mode on button click
+  const toggleWrapper = document.querySelector('.toggle-wrapper');
+  if (toggleWrapper) {
+    toggleWrapper.addEventListener('click', () => {
+      const newMode = currentMode === 'work' ? 'life' : 'work';
+      updateMode(newMode);
+    });
+  }
+
   // Simplified navigation handling
   document.querySelectorAll('nav a').forEach(link => {
     link.addEventListener('click', (e) => {
@@ -125,6 +256,90 @@ document.addEventListener("DOMContentLoaded", function () {
   }, 400); // Check every 400ms
 
   // ============================================
+  // Occasional Pattern Animations
+  // ============================================
+
+  // Ripple effect - emanates from a random cell
+  function triggerRipple() {
+    const centerIndex = Math.floor(Math.random() * 60); // Only use first 60 cells for desktop
+    const centerRow = Math.floor(centerIndex / numCols);
+    const centerCol = centerIndex % numCols;
+
+    // Calculate distance from center for each cell
+    const cellsWithDistance = [];
+    for (let i = 0; i < 60; i++) {
+      const row = Math.floor(i / numCols);
+      const col = i % numCols;
+      const distance = Math.sqrt(Math.pow(row - centerRow, 2) + Math.pow(col - centerCol, 2));
+      cellsWithDistance.push({ index: i, distance });
+    }
+
+    // Sort by distance
+    cellsWithDistance.sort((a, b) => a.distance - b.distance);
+
+    // Animate ripple
+    cellsWithDistance.forEach((cell, idx) => {
+      setTimeout(() => {
+        if (cell.index < sidebarRows.length) {
+          sidebarRows[cell.index].classList.add('random-lit');
+          setTimeout(() => {
+            sidebarRows[cell.index].classList.remove('random-lit');
+          }, 200);
+        }
+      }, idx * 30);
+    });
+  }
+
+  // Random path tracer - zooms through random cells
+  function triggerRandomTracer() {
+    const pathLength = 15 + Math.floor(Math.random() * 10); // 15-25 cells
+    const path = [];
+
+    // Generate random path
+    let currentIndex = Math.floor(Math.random() * 60);
+    path.push(currentIndex);
+
+    for (let i = 1; i < pathLength; i++) {
+      const currentRow = Math.floor(currentIndex / numCols);
+      const currentCol = currentIndex % numCols;
+
+      // Move to adjacent cell (up, down, left, right)
+      const moves = [];
+      if (currentRow > 0) moves.push(currentIndex - numCols); // up
+      if (currentRow < numRows - 1) moves.push(currentIndex + numCols); // down
+      if (currentCol > 0) moves.push(currentIndex - 1); // left
+      if (currentCol < numCols - 1) moves.push(currentIndex + 1); // right
+
+      currentIndex = moves[Math.floor(Math.random() * moves.length)];
+      path.push(currentIndex);
+    }
+
+    // Animate tracer along path
+    path.forEach((cellIndex, idx) => {
+      setTimeout(() => {
+        if (cellIndex < sidebarRows.length) {
+          sidebarRows[cellIndex].classList.add('random-lit');
+          setTimeout(() => {
+            sidebarRows[cellIndex].classList.remove('random-lit');
+          }, 150);
+        }
+      }, idx * 50);
+    });
+  }
+
+  // Trigger occasional patterns
+  function triggerRandomPattern() {
+    const patterns = [triggerRipple, triggerRandomTracer];
+    const randomPattern = patterns[Math.floor(Math.random() * patterns.length)];
+    randomPattern();
+  }
+
+  // Run patterns every 15-25 seconds
+  setInterval(() => {
+    triggerRandomPattern();
+  }, 15000 + Math.random() * 10000); // Random interval between 15-25 seconds
+
+  // ============================================
   // ASCII Animation System - Cyclic
   // ============================================
 
@@ -136,7 +351,8 @@ document.addEventListener("DOMContentLoaded", function () {
     butterfly: null,
     deer: null,
     moonwalk: null,
-    flag: null
+    horse: null,
+    whale: null
   };
 
   // Load all animation frames
@@ -145,14 +361,16 @@ document.addEventListener("DOMContentLoaded", function () {
     fetch('./assets/ascii-frames-butterfly.json').then(r => r.json()),
     fetch('./assets/ascii-frames-deer.json').then(r => r.json()),
     fetch('./assets/ascii-frames-moonwalk.json').then(r => r.json()),
-    fetch('./assets/ascii-frames-flag.json').then(r => r.json())
+    fetch('./assets/ascii-frames-horse.json').then(r => r.json()),
+    fetch('./assets/ascii-frames-whale.json').then(r => r.json())
   ])
-    .then(([jellyfish, butterfly, deer, moonwalk, flag]) => {
+    .then(([jellyfish, butterfly, deer, moonwalk, horse, whale]) => {
       animationFrames.jellyfish = jellyfish;
       animationFrames.butterfly = butterfly;
       animationFrames.deer = deer;
       animationFrames.moonwalk = moonwalk;
-      animationFrames.flag = flag;
+      animationFrames.horse = horse;
+      animationFrames.whale = whale;
       console.log('Loaded all ASCII animations');
 
       // Start the animation cycle
@@ -278,61 +496,14 @@ document.addEventListener("DOMContentLoaded", function () {
     await animateASCII(animationFrames.moonwalk, 1.0, 200, 10000, getFixedPosition(10, 'left', 0));
   }
 
-  // Show single flag (right side) - 12 seconds
-  async function showFlag() {
-    return new Promise((resolve) => {
-      if (!animationFrames.flag) {
-        resolve();
-        return;
-      }
+  // Show single horse (right side) - 8 seconds
+  async function showHorse() {
+    await animateASCII(animationFrames.horse, 1.0, 200, 8000, getFixedPosition(0, 'right', 0));
+  }
 
-      const position = getFixedPosition(25, 'right', 10);
-      const asciiElement = createASCIIElement(position, 1.0);
-      asciiLayer.appendChild(asciiElement);
-
-      // Sample frames (every 3rd frame)
-      const sampledFrames = animationFrames.flag.filter((_, index) => index % 3 === 0);
-      const lastFramesToLoop = 3; // Number of frames to loop at the end
-      const loopStartFrame = Math.max(0, sampledFrames.length - lastFramesToLoop);
-
-      let currentFrame = 0;
-      let isInLoopMode = false;
-      let animationInterval;
-
-      // Fade in
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          asciiElement.classList.add('active');
-        });
-      });
-
-      // Start frame cycling
-      animationInterval = setInterval(() => {
-        asciiElement.textContent = sampledFrames[currentFrame].join('\n');
-
-        currentFrame++;
-
-        // Once we reach the end, start looping the last 30 frames
-        if (currentFrame >= sampledFrames.length) {
-          currentFrame = loopStartFrame;
-          isInLoopMode = true;
-        }
-      }, 350); // Slower: 350ms per frame instead of 200ms
-
-      // Duration: show for 6 seconds
-      setTimeout(() => {
-        // Fade out
-        asciiElement.classList.remove('active');
-        asciiElement.classList.add('fading');
-
-        // Clean up after fade completes
-        setTimeout(() => {
-          clearInterval(animationInterval);
-          asciiLayer.removeChild(asciiElement);
-          resolve();
-        }, 1500);
-      }, 6000);
-    });
+  // Show single whale (left side) - 10 seconds
+  async function showWhale() {
+    await animateASCII(animationFrames.whale, 1.0, 200, 10000, getFixedPosition(35, 'left', 10));
   }
 
   // Right side animation cycle
@@ -344,7 +515,7 @@ document.addEventListener("DOMContentLoaded", function () {
       await showDeer();
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      await showFlag();
+      await showHorse();
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       // Cycle repeats
@@ -358,6 +529,9 @@ document.addEventListener("DOMContentLoaded", function () {
       await new Promise(resolve => setTimeout(resolve, 1500)); // Pause between animations
 
       await showMoonwalk();
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      await showWhale();
       await new Promise(resolve => setTimeout(resolve, 1500));
 
       // Cycle repeats
