@@ -1,0 +1,370 @@
+/**
+ * Advanced Popup System Styles
+ * Matches the teal/peach gradient aesthetic
+ */
+
+/* Popup Window Base Styles */
+.popup-window {
+  position: fixed;
+  width: 450px;
+  max-width: 90vw;
+  max-height: 80vh;
+  background: #ffffff;
+  border: 2px solid #80cbc4;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  font-family: "Cormorant Garamond", serif;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.popup-window.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.popup-window.dragging {
+  cursor: move;
+  transition: none;
+  user-select: none;
+}
+
+/* Popup Header */
+.popup-header {
+  background: linear-gradient(135deg, #80cbc4 0%, #ff9878 100%);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  cursor: move;
+  user-select: none;
+}
+
+.popup-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #ffffff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.popup-controls {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.popup-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 6px;
+  cursor: pointer;
+  color: #ffffff;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+
+.popup-btn:hover {
+  background: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+}
+
+.popup-btn:active {
+  transform: scale(0.95);
+}
+
+.popup-btn.active {
+  background: rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.popup-btn svg {
+  pointer-events: none;
+}
+
+/* Popup Body */
+.popup-body {
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #000;
+}
+
+.popup-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+  display: block;
+}
+
+.popup-body h1,
+.popup-body h2,
+.popup-body h3 {
+  margin-top: 0;
+  margin-bottom: 0.5em;
+  color: #000;
+}
+
+.popup-body p {
+  margin: 0 0 1em 0;
+}
+
+.popup-body a {
+  color: #d11e06;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+
+.popup-body a:hover {
+  color: #ff5722;
+}
+
+.popup-loading {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+  font-style: italic;
+}
+
+.popup-error {
+  color: #d11e06;
+  text-align: center;
+  padding: 20px;
+  font-style: italic;
+}
+
+/* Inset Mode Styles */
+.popup-window.inset-mode {
+  position: static;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  height: auto;
+  min-height: 400px;
+  border-radius: 0;
+  border: none;
+  border-left: 3px solid #80cbc4;
+  box-shadow: none;
+  opacity: 1;
+  transform: none;
+}
+
+.popup-window.inset-mode .popup-header {
+  cursor: default;
+  border-radius: 0;
+}
+
+.popup-window.inset-mode .popup-body {
+  max-height: none;
+}
+
+/* Inset Container Layout */
+.popup-inset-container {
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 0;
+  height: 100vh;
+  overflow-y: auto;
+  background: #f9f9f9;
+  transition: width 0.4s ease;
+  z-index: 999;
+  box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.container.has-inset-popup {
+  transition: margin-right 0.4s ease;
+  margin-right: 450px;
+}
+
+.container.has-inset-popup + .popup-inset-container {
+  width: 450px;
+}
+
+/* Windowed Mode Styles */
+.popup-window.windowed-mode {
+  /* Default windowed styles already applied */
+}
+
+/* Links with popup data */
+a[data-popup] {
+  cursor: pointer;
+  position: relative;
+}
+
+a[data-popup]:hover {
+  /* Add subtle indicator that link has popup */
+  text-decoration-style: dotted;
+}
+
+/* Scrollbar Styling for Popup Body */
+.popup-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.popup-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.popup-body::-webkit-scrollbar-thumb {
+  background: #80cbc4;
+  border-radius: 4px;
+}
+
+.popup-body::-webkit-scrollbar-thumb:hover {
+  background: #4db6ac;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+  .popup-window {
+    width: 90vw;
+    max-height: 70vh;
+  }
+
+  .popup-header {
+    padding: 10px 12px;
+  }
+
+  .popup-title {
+    font-size: 1rem;
+  }
+
+  .popup-body {
+    padding: 16px;
+    font-size: 1rem;
+  }
+
+  .popup-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  /* Disable inset mode on mobile - too small */
+  .popup-window.inset-mode {
+    position: fixed;
+    width: 90vw;
+    max-width: 90vw;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    border-radius: 8px;
+    border: 2px solid #80cbc4;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  }
+
+  .popup-window.inset-mode .popup-header {
+    cursor: move;
+  }
+
+  .container.has-inset-popup {
+    margin-right: 0;
+  }
+
+  .popup-inset-container {
+    display: none;
+  }
+}
+
+@media (max-width: 576px) {
+  .popup-window {
+    width: 95vw;
+    max-height: 80vh;
+  }
+
+  .popup-body {
+    padding: 12px;
+  }
+}
+
+/* Animation for inset transition */
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.popup-window.inset-mode {
+  animation: slideInFromRight 0.4s ease;
+}
+
+/* Z-index management */
+.popup-window {
+  z-index: 10000; /* Start high to be above other content */
+}
+
+/* Special styling for image popups */
+.popup-body img:only-child {
+  margin: 0;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+/* Text content styling */
+.popup-body > p:last-child {
+  margin-bottom: 0;
+}
+
+/* Nested content support */
+.popup-body ul,
+.popup-body ol {
+  margin: 0 0 1em 0;
+  padding-left: 1.5em;
+}
+
+.popup-body li {
+  margin-bottom: 0.5em;
+}
+
+.popup-body blockquote {
+  border-left: 3px solid #80cbc4;
+  padding-left: 1em;
+  margin: 1em 0;
+  color: #666;
+  font-style: italic;
+}
+
+.popup-body code {
+  background: #f4f4f4;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9em;
+}
+
+.popup-body pre {
+  background: #f4f4f4;
+  padding: 12px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 1em 0;
+}
+
+.popup-body pre code {
+  background: none;
+  padding: 0;
+}
