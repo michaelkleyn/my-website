@@ -31,18 +31,41 @@ class PopupManager {
     const links = document.querySelectorAll('a[data-popup]');
 
     links.forEach(link => {
-      let hoverTimeout;
+      let showTimeout;
+      let hideTimeout;
 
       // Show popup on hover (with delay)
       link.addEventListener('mouseenter', (e) => {
-        hoverTimeout = setTimeout(() => {
-          this.showPopup(link, e);
+        // Clear any pending hide timeout
+        clearTimeout(hideTimeout);
+
+        showTimeout = setTimeout(() => {
+          const popup = this.showPopup(link, e);
+          if (popup) {
+            // Store reference to link for this popup
+            const popupData = this.findPopupByContent(link.dataset.popup);
+            if (popupData) {
+              popupData.triggerLink = link;
+            }
+          }
         }, 300); // 300ms delay before showing
       });
 
-      // Cancel hover if mouse leaves quickly
+      // Start hide timer when mouse leaves link
       link.addEventListener('mouseleave', () => {
-        clearTimeout(hoverTimeout);
+        clearTimeout(showTimeout);
+
+        // Find the popup for this link
+        const popupData = this.findPopupByContent(link.dataset.popup);
+        if (popupData) {
+          // Start 1-second countdown to close
+          hideTimeout = setTimeout(() => {
+            this.closePopup(popupData.id);
+          }, 300);
+
+          // Store the timeout so popup can cancel it
+          popupData.hideTimeout = hideTimeout;
+        }
       });
     });
   }
@@ -55,7 +78,12 @@ class PopupManager {
     const existingPopup = this.findPopupByContent(popupContent);
     if (existingPopup) {
       this.bringToFront(existingPopup.id);
-      return;
+      // Clear any pending hide timeout since we're re-hovering
+      if (existingPopup.hideTimeout) {
+        clearTimeout(existingPopup.hideTimeout);
+        existingPopup.hideTimeout = null;
+      }
+      return existingPopup;
     }
 
     // Create popup element
@@ -70,13 +98,16 @@ class PopupManager {
 
     // Add to DOM and tracking
     document.body.appendChild(popup);
-    this.popups.set(popupId, {
+    const popupData = {
       id: popupId,
       element: popup,
       content: popupContent,
       mode: 'windowed', // windowed or inset
-      isDragging: false
-    });
+      isDragging: false,
+      hideTimeout: null,
+      triggerLink: link
+    };
+    this.popups.set(popupId, popupData);
 
     // Fade in
     requestAnimationFrame(() => {
@@ -85,6 +116,11 @@ class PopupManager {
 
     // Setup interactions
     this.setupPopupInteractions(popupId);
+
+    // Setup hover behavior for the popup itself
+    this.setupPopupHover(popupId);
+
+    return popupData;
   }
 
   createPopupElement(popupId) {
@@ -94,35 +130,117 @@ class PopupManager {
     popup.style.zIndex = this.zIndexCounter++;
 
     popup.innerHTML = `
-      <div class="popup-header">
-        <div class="popup-title">Loading...</div>
-        <div class="popup-controls">
-          <button class="popup-btn popup-inset-btn" title="Inset Mode" aria-label="Inset mode">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <rect x="2" y="2" width="12" height="12" stroke="currentColor" stroke-width="1.5"/>
-              <line x1="10" y1="2" x2="10" y2="14" stroke="currentColor" stroke-width="1.5"/>
-            </svg>
-          </button>
-          <button class="popup-btn popup-windowed-btn active" title="Windowed Mode" aria-label="Windowed mode">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <rect x="3" y="3" width="10" height="10" stroke="currentColor" stroke-width="1.5"/>
-              <line x1="3" y1="6" x2="13" y2="6" stroke="currentColor" stroke-width="1.5"/>
-            </svg>
-          </button>
-          <button class="popup-btn popup-close-btn" title="Close" aria-label="Close popup">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <line x1="4" y1="4" x2="12" y2="12" stroke="currentColor" stroke-width="1.5"/>
-              <line x1="12" y1="4" x2="4" y2="12" stroke="currentColor" stroke-width="1.5"/>
-            </svg>
-          </button>
+      <div class="popup-dithered-border"></div>
+      <div class="popup-content-wrapper">
+        <div class="popup-header">
+          <div class="popup-title">Loading...</div>
+          <div class="popup-controls">
+            <button class="popup-btn popup-inset-btn" title="Inset Mode" aria-label="Inset mode">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="2" y="2" width="12" height="12" stroke="currentColor" stroke-width="1.5"/>
+                <line x1="10" y1="2" x2="10" y2="14" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+            </button>
+            <button class="popup-btn popup-windowed-btn active" title="Windowed Mode" aria-label="Windowed mode">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="3" y="3" width="10" height="10" stroke="currentColor" stroke-width="1.5"/>
+                <line x1="3" y1="6" x2="13" y2="6" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+            </button>
+            <button class="popup-btn popup-close-btn" title="Close" aria-label="Close popup">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <line x1="4" y1="4" x2="12" y2="12" stroke="currentColor" stroke-width="1.5"/>
+                <line x1="12" y1="4" x2="4" y2="12" stroke="currentColor" stroke-width="1.5"/>
+              </svg>
+            </button>
+          </div>
         </div>
-      </div>
-      <div class="popup-body">
-        <div class="popup-loading">Loading content...</div>
+        <div class="popup-body">
+          <div class="popup-loading">Loading content...</div>
+        </div>
       </div>
     `;
 
+    // Generate and add dithered border
+    const borderContainer = popup.querySelector('.popup-dithered-border');
+    const canvas = this.generateDitheredBorder(450, 400); // Approximate size, will be styled to fit
+    borderContainer.appendChild(canvas);
+
     return popup;
+  }
+
+  generateDitheredBorder(width, height) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Add extra space for dispersion
+    const dispersionDistance = 50;
+    const totalWidth = width + (dispersionDistance * 2);
+    const totalHeight = height + (dispersionDistance * 2);
+
+    canvas.width = totalWidth;
+    canvas.height = totalHeight;
+
+    // Parameters
+    const borderThickness = 25; // Dense region near edge
+    const maxDispersion = dispersionDistance; // How far dots spread
+    const dotSize = 2;
+    const gridSpacing = 4; // Check every N pixels
+    const baseDensity = 0.85; // Base probability multiplier
+
+    // Color
+    const tealColor = [128, 203, 196]; // #80cbc4
+
+    // Helper: Get distance from nearest edge
+    const getDistanceFromEdge = (x, y) => {
+      const leftDist = x - dispersionDistance;
+      const rightDist = (totalWidth - dispersionDistance) - x;
+      const topDist = y - dispersionDistance;
+      const bottomDist = (totalHeight - dispersionDistance) - y;
+
+      return Math.min(
+        Math.max(0, leftDist),
+        Math.max(0, rightDist),
+        Math.max(0, topDist),
+        Math.max(0, bottomDist)
+      );
+    };
+
+    // Generate dots
+    for (let x = 0; x < totalWidth; x += gridSpacing) {
+      for (let y = 0; y < totalHeight; y += gridSpacing) {
+        const distFromEdge = getDistanceFromEdge(x, y);
+
+        // Only draw in border region
+        if (distFromEdge <= maxDispersion) {
+          // Calculate probability: higher near edge, lower further out
+          let probability = baseDensity * (1 - (distFromEdge / maxDispersion));
+
+          // Add some randomness to make it more organic
+          probability *= (0.8 + Math.random() * 0.4);
+
+          if (Math.random() < probability) {
+            // Calculate opacity based on distance (fade out)
+            const opacity = 1 - (distFromEdge / maxDispersion) * 0.7;
+
+            ctx.fillStyle = `rgba(${tealColor[0]}, ${tealColor[1]}, ${tealColor[2]}, ${opacity})`;
+
+            // Add slight random offset for more organic look
+            const offsetX = Math.random() * gridSpacing;
+            const offsetY = Math.random() * gridSpacing;
+
+            ctx.fillRect(x + offsetX, y + offsetY, dotSize, dotSize);
+          }
+        }
+      }
+    }
+
+    // Add subtle glow effect
+    ctx.globalCompositeOperation = 'destination-over';
+    ctx.filter = 'blur(1px)';
+    ctx.drawImage(canvas, 0, 0);
+
+    return canvas;
   }
 
   async loadContent(popup, contentPath, contentType) {
@@ -223,8 +341,31 @@ class PopupManager {
       this.bringToFront(popupId);
     });
 
-    // Dragging (will be implemented in next phase)
+    // Dragging
     this.setupDragging(popupId, header);
+  }
+
+  setupPopupHover(popupId) {
+    const popupData = this.popups.get(popupId);
+    if (!popupData) return;
+
+    const popup = popupData.element;
+
+    // Cancel hide timer when mouse enters popup
+    popup.addEventListener('mouseenter', () => {
+      if (popupData.hideTimeout) {
+        clearTimeout(popupData.hideTimeout);
+        popupData.hideTimeout = null;
+      }
+    });
+
+    // Start hide timer when mouse leaves popup
+    popup.addEventListener('mouseleave', () => {
+      // Start 1-second countdown to close
+      popupData.hideTimeout = setTimeout(() => {
+        this.closePopup(popupId);
+      }, 1000);
+    });
   }
 
   setupDragging(popupId, dragHandle) {
@@ -353,6 +494,12 @@ class PopupManager {
 
     const popup = popupData.element;
     const container = document.querySelector('.container');
+
+    // Clear any pending hide timeout
+    if (popupData.hideTimeout) {
+      clearTimeout(popupData.hideTimeout);
+      popupData.hideTimeout = null;
+    }
 
     // Clean up inset mode if active
     if (popupData.mode === 'inset') {
