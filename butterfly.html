@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Butterfly — 3D demo</title>
+  <style>
+    :root {
+      /* paper / cream backdrop, matching the reference art */
+      --paper: #f3efe2;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      overflow: hidden;
+      background: var(--paper);
+      font-family: "Cormorant Garamond", Georgia, serif;
+      color: #23448d;
+    }
+    #scene {
+      position: fixed;
+      inset: 0;
+      width: 100vw;
+      height: 100vh;
+      display: block;
+    }
+    /* tiny dev HUD */
+    #hud {
+      position: fixed;
+      left: 14px;
+      bottom: 12px;
+      z-index: 10;
+      font-family: "Courier New", monospace;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      color: rgba(35, 68, 141, 0.55);
+      pointer-events: none;
+      user-select: none;
+    }
+    #hud b { color: rgba(231, 78, 77, 0.8); font-weight: 700; }
+  </style>
+</head>
+<body>
+  <canvas id="scene"></canvas>
+  <div id="hud">state: <b id="hud-state">…</b> · move the mouse near the butterfly when it perches</div>
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.169.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.169.0/examples/jsm/"
+      }
+    }
+  </script>
+  <script type="module" src="./js/butterfly/scene.js"></script>
+</body>
+</html>

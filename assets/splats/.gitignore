@@ -1,0 +1,8 @@
+# Heavy, regenerable splat intermediates — not committed.
+# Final web-ready frames live in frames3_opt/ and ARE committed.
+gen/
+crops/
+frames/
+frames_opt/
+_excluded/
+atlas.ply

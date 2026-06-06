@@ -1,0 +1,57 @@
+[
+  {
+    "file": "assets/splats/frames3_opt/cell_r0_c0.ply",
+    "row": 0,
+    "col": 0
+  },
+  {
+    "file": "assets/splats/frames3_opt/cell_r0_c1.ply",
+    "row": 0,
+    "col": 1
+  },
+  {
+    "file": "assets/splats/frames3_opt/cell_r0_c2.ply",
+    "row": 0,
+    "col": 2
+  },
+  {
+    "file": "assets/splats/frames3_opt/cell_r0_c3.ply",
+    "row": 0,
+    "col": 3
+  },
+  {
+    "file": "assets/splats/frames3_opt/cell_r1_c0.ply",
+    "row": 1,
+    "col": 0
+  },
+  {
+    "file": "assets/splats/frames3_opt/cell_r1_c1.ply",
+    "row": 1,
+    "col": 1
+  },
+  {
+    "file": "assets/splats/frames3_opt/cell_r1_c2.ply",
+    "row": 1,
+    "col": 2
+  },
+  {
+    "file": "assets/splats/frames3_opt/cell_r2_c0.ply",
+    "row": 2,
+    "col": 0
+  },
+  {
+    "file": "assets/splats/frames3_opt/cell_r2_c1.ply",
+    "row": 2,
+    "col": 1
+  },
+  {
+    "file": "assets/splats/frames3_opt/cell_r2_c2.ply",
+    "row": 2,
+    "col": 2
+  },
+  {
+    "file": "assets/splats/frames3_opt/cell_r2_c3.ply",
+    "row": 2,
+    "col": 3
+  }
+]
