@@ -79,6 +79,18 @@ function flightAt(phase, radius) {
   return { x, y, z, a };
 }
 
+// Project a world point in the butterfly's scene to page coordinates, so the
+// shared ripple bus can route an impact to whatever text panel sits under it.
+const _proj = new THREE.Vector3();
+function projectToPage(inst, x, y, z) {
+  _proj.set(x, y, z).project(inst.camera);
+  const r = inst.canvas.getBoundingClientRect();
+  return {
+    x: r.left + window.scrollX + (_proj.x * 0.5 + 0.5) * r.width,
+    y: r.top + window.scrollY + (-_proj.y * 0.5 + 0.5) * r.height,
+  };
+}
+
 // --- sizing --------------------------------------------------------------
 function sizeRenderer(inst) {
   const w = Math.max(1, inst.container.clientWidth || 300);
@@ -197,6 +209,13 @@ function tick(inst, timeMs) {
     const bank = THREE.MathUtils.clamp(-vx * 7, -0.5, 0.5); // lean into the turn
     inst._qb.setFromAxisAngle(inst._zAxis, bank);
     q.premultiply(inst._qb);
+    // punch-through: when the path crosses the text plane (z=0), fire a ripple
+    // at the butterfly's screen position; the bus routes it to any panel there.
+    if (!paused && inst.prevZ * pz < 0 && window.__rippleTextBus) {
+      const pg = projectToPage(inst, px, py, 0);
+      window.__rippleTextBus.impact(pg.x, pg.y, 1.1);
+    }
+    inst.prevZ = pz;
   }
   if (cfg.autoRotate) {
     inst._qb.setFromAxisAngle(inst._yAxis, timeMs * 0.0004);
@@ -264,7 +283,7 @@ const def = {
       meshes: [], order: [], weight: [],
       baseQuat: baseOrientQuat(config.orientation),
       ready: false, disposed: false,
-      flapPhase: 0, flightPhase: 0, lastT: 0,
+      flapPhase: 0, flightPhase: 0, lastT: 0, prevZ: 0,
       unframe: null, sizeRO: null,
       _q: new THREE.Quaternion(), _qb: new THREE.Quaternion(),
       _zAxis: new THREE.Vector3(0, 0, 1), _yAxis: new THREE.Vector3(0, 1, 0),
