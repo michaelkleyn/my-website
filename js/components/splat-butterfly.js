@@ -111,61 +111,143 @@ function worldFromNorm(camera, u, v, depth, out) {
   );
 }
 
-// Build a closed Catmull-Rom curve from the authored flightPath, or null (=>
-// circle). Also caches per-point rotation quaternions + scales for keyframing.
-function buildCurve(inst) {
-  inst.curve = null;
-  inst.pathPoints = null;
-  inst.pathQuats = null;
-  const raw = inst.config && inst.config.flightPath;
+const _idQuat = new THREE.Quaternion();
+const _stepTmp = new THREE.Vector3();
+
+// Parse config.routes (or migrate a single legacy flightPath) into per-route
+// world geometry. Each route is { kind:'path'|'rest', world[], quats[],
+// rawPts[], curve?, len, duration }. 'path' = an OPEN centripetal route the
+// butterfly flies start->end; 'rest' = a single spot it lands on and flaps in
+// place for `duration` seconds. The butterfly wanders between them at random.
+function buildRoutes(inst) {
+  inst.routes = null;
+  const cfg = inst.config || {};
+  let raw = cfg.routes;
+  if (!raw && cfg.flightPath) { // migrate the old single path -> one route
+    raw = JSON.stringify([{ kind: 'path', points: cfg.flightPath }]);
+  }
   if (!raw) return;
-  let pts;
-  try { pts = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return; }
-  if (!Array.isArray(pts) || pts.length < 2) return;
-  const world = pts.map((p) => worldFromNorm(
-    inst.camera,
-    p.u != null ? p.u : p.x,
-    p.v != null ? p.v : p.y,
-    p.depth != null ? p.depth : (p.z || 0),
-    new THREE.Vector3()
-  ));
-  // centripetal: passes through every control point WITHOUT the overshoot/loops
-  // of uniform catmull-rom, so the butterfly hugs the drawn path instead of
-  // bulging outside it. getPoint(i/N) still lands exactly on control point i
-  // (closed curve uses uniform t->segment mapping), so keyframes stay aligned.
-  inst.curve = new THREE.CatmullRomCurve3(world, true, 'centripetal');
-  inst.pathPoints = pts;
-  inst.pathQuats = pts.map((p) => {
-    const r = p.rot || {};
-    const d = Math.PI / 180;
-    return new THREE.Quaternion().setFromEuler(
-      new THREE.Euler((r.x || 0) * d, (r.y || 0) * d, (r.z || 0) * d));
-  });
+  let arr;
+  try { arr = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return; }
+  if (!Array.isArray(arr) || !arr.length) return;
+  const d = Math.PI / 180;
+  const routes = [];
+  for (const seg of arr) {
+    let pts = seg.points;
+    if (typeof pts === 'string') { try { pts = JSON.parse(pts); } catch (e) { pts = null; } }
+    if (!pts && seg.point) pts = [seg.point];
+    if (!Array.isArray(pts) || !pts.length) continue;
+    const world = pts.map((p) => worldFromNorm(inst.camera,
+      p.u != null ? p.u : p.x, p.v != null ? p.v : p.y,
+      p.depth != null ? p.depth : (p.z || 0), new THREE.Vector3()));
+    const quats = pts.map((p) => {
+      const r = p.rot || {};
+      return new THREE.Quaternion().setFromEuler(new THREE.Euler((r.x || 0) * d, (r.y || 0) * d, (r.z || 0) * d));
+    });
+    const kind = (seg.kind === 'rest' || world.length < 2) ? 'rest' : 'path';
+    const route = { kind, world, quats, rawPts: pts, len: 0, duration: seg.duration != null ? seg.duration : 1.5 };
+    if (kind === 'path') {
+      route.curve = new THREE.CatmullRomCurve3(world, false, 'centripetal'); // OPEN route
+      route.len = route.curve.getLength() || 0;
+    }
+    routes.push(route);
+  }
+  inst.routes = routes.length ? routes : null;
+  // Preserve the wander across rebuilds (resize/edit remaps the same geometry) —
+  // only restart if the current segment index no longer exists. Resetting every
+  // rebuild would peg the butterfly to segment 0 forever on a resizing viewport.
+  if (inst.segIdx != null && (!inst.routes || inst.segIdx >= inst.routes.length)) {
+    inst.segIdx = null;
+  }
 }
 
-// position along the flight loop at phase in [0,1): custom spline or default
-// circle. Uses natural param (getPoint) for the spline so keyframes (point i at
-// t=i/N) stay aligned with the geometry.
-function pathPoint(inst, t, out) {
-  if (inst.curve) return inst.curve.getPoint(((t % 1) + 1) % 1, out);
-  const a = t * Math.PI * 2, r = inst.config.pathRadius || 1;
-  return out.set(Math.cos(a) * r, Math.sin(a) * r * 0.62, Math.sin(a * 2) * 0.45);
-}
-
-// Interpolate per-keyframe rotation (slerp) + scale (lerp) between adjacent
-// control points at phase t. Returns the scale multiplier; writes rot to outQuat.
-function keyframeAt(inst, t, outQuat) {
-  const qs = inst.pathQuats, pts = inst.pathPoints;
-  if (!qs || !qs.length) { outQuat.identity(); return 1; }
-  const N = qs.length;
-  const f = ((((t % 1) + 1) % 1)) * N;
-  const i0 = Math.floor(f) % N;
-  const i1 = (i0 + 1) % N;
-  const frac = f - Math.floor(f);
-  outQuat.copy(qs[i0]).slerp(qs[i1], frac);
+// Per-keyframe rotation (slerp) + scale (lerp) along an OPEN route at t in [0,1].
+function keyframeOpen(route, t, outQ) {
+  const q = route.quats, pts = route.rawPts, N = q.length;
+  if (N < 2) { outQ.copy(q[0] || _idQuat); return (pts[0] && pts[0].scale != null) ? pts[0].scale : 1; }
+  const f = Math.min(0.999999, Math.max(0, t)) * (N - 1);
+  const i0 = Math.floor(f), i1 = Math.min(N - 1, i0 + 1), frac = f - i0;
+  outQ.copy(q[i0]).slerp(q[i1], frac);
   const s0 = pts[i0].scale != null ? pts[i0].scale : 1;
   const s1 = pts[i1].scale != null ? pts[i1].scale : 1;
   return s0 + (s1 - s0) * frac;
+}
+
+// Pick a random next segment (avoid repeating the current one when possible).
+function pickNextSeg(inst) {
+  const n = inst.routes.length;
+  if (n <= 1) return 0;
+  let next;
+  do { next = Math.floor(Math.random() * n); } while (next === inst.segIdx);
+  return next;
+}
+
+// Begin traversing segment `idx`, transiting from `fromPos` to its start.
+function startSeg(inst, idx, fromPos) {
+  inst.segIdx = idx;
+  inst.fromPos.copy(fromPos);
+  inst.phaseT = 0;
+  inst.restElapsed = 0;
+  const seg = inst.routes[idx];
+  inst.transitDist = inst.fromPos.distanceTo(seg.world[0]);
+  inst.phase = inst.transitDist > 0.03 ? 'transit' : (seg.kind === 'rest' ? 'rest' : 'route');
+}
+
+// Advance the wander state machine one step. Writes inst._p (position),
+// inst._heading (Vector2 travel direction), inst._kfQuat + inst._kfScale.
+function stepFlight(inst, dt, cfg) {
+  inst._kfScale = 1;
+  inst._kfQuat.identity();
+  inst._heading.set(0, 0);
+  const routes = inst.routes;
+  if (!routes) { // no routes -> the default wandering circle
+    inst.flightPhase += dt * (cfg.flightSpeed || 0.13);
+    const a = inst.flightPhase * Math.PI * 2, r = cfg.pathRadius || 1;
+    inst._p.set(Math.cos(a) * r, Math.sin(a) * r * 0.62, Math.sin(a * 2) * 0.45);
+    inst._heading.set(-Math.sin(a), Math.cos(a) * 0.62);
+    return;
+  }
+  if (inst.segIdx == null || inst.segIdx >= routes.length) startSeg(inst, 0, inst._p);
+  const seg = routes[inst.segIdx];
+  const ups = Math.max(0.05, (cfg.flightSpeed || 0.13) * 6); // world units / sec
+
+  if (inst.phase === 'transit') {
+    const dur = Math.max(0.15, inst.transitDist / ups);
+    inst.phaseT += dt / dur;
+    if (inst.phaseT >= 1) {
+      inst.phase = seg.kind === 'rest' ? 'rest' : 'route';
+      inst.phaseT = 0;
+      inst.restElapsed = 0;
+    } else {
+      inst._p.lerpVectors(inst.fromPos, seg.world[0], inst.phaseT);
+      _stepTmp.lerpVectors(inst.fromPos, seg.world[0], Math.max(0, inst.phaseT - 0.03));
+      inst._heading.set(inst._p.x - _stepTmp.x, inst._p.y - _stepTmp.y);
+      return;
+    }
+  }
+
+  if (inst.phase === 'route') {
+    const dur = Math.max(0.2, (seg.len || 1) / ups);
+    inst.phaseT += dt / dur;
+    if (inst.phaseT >= 1) {
+      startSeg(inst, pickNextSeg(inst), seg.world[seg.world.length - 1]);
+      return stepFlight(inst, 0, cfg); // settle the new segment's first frame
+    }
+    const t = inst.phaseT;
+    seg.curve.getPoint(t, inst._p);
+    seg.curve.getPoint(Math.min(1, t + 0.02), _stepTmp);
+    inst._heading.set(_stepTmp.x - inst._p.x, _stepTmp.y - inst._p.y);
+    inst._kfScale = keyframeOpen(seg, t, inst._kfQuat);
+    return;
+  }
+
+  // rest: hold position + flap in place for `duration`, then wander on
+  inst._p.copy(seg.world[0]);
+  inst.restElapsed += dt;
+  if (inst.restElapsed >= (seg.duration || 1.5)) {
+    startSeg(inst, pickNextSeg(inst), seg.world[0]);
+    return stepFlight(inst, 0, cfg);
+  }
 }
 
 // Project a world point in the butterfly's scene to page coordinates, so the
@@ -188,7 +270,7 @@ function sizeRenderer(inst) {
   inst.renderer.setSize(w, h, false);
   inst.camera.aspect = w / h;
   inst.camera.updateProjectionMatrix();
-  buildCurve(inst); // flight path maps through the camera; rebuild on aspect change
+  buildRoutes(inst); // routes map through the camera; rebuild on aspect change
 }
 
 // --- frame loading + warm-up --------------------------------------------
@@ -290,14 +372,10 @@ function tick(inst, timeMs) {
   const q = inst._q;
   q.copy(inst.baseQuat);
   if (cfg.mode === 'flight') {
-    if (!paused) inst.flightPhase += dt * (cfg.flightSpeed || 0.13);
-    const fp = ((inst.flightPhase % 1) + 1) % 1;
-    pathPoint(inst, fp, inst._p);
-    pathPoint(inst, (fp + 0.02) % 1, inst._pa);
+    stepFlight(inst, paused ? 0 : dt, cfg); // wander: transit -> route -> rest
     px = inst._p.x; py = inst._p.y; pz = inst._p.z;
-    // normalized heading so bank/heading don't depend on sample step or point density
-    let vx = inst._pa.x - inst._p.x;
-    let vy = inst._pa.y - inst._p.y;
+    // normalized heading so bank/heading don't depend on sample step or speed
+    let vx = inst._heading.x, vy = inst._heading.y;
     const vlen = Math.hypot(vx, vy);
     if (vlen > 1e-5) { vx /= vlen; vy /= vlen; } else { vx = 0; vy = 0; }
     if (cfg.orientation === 'face-path') {
@@ -310,11 +388,8 @@ function tick(inst, timeMs) {
       q.premultiply(inst._qb);
     }
     // 'free' => no auto-bank; only base + authored keyframe rotation applies
-    // per-keyframe rotation (slerp) + scale (lerp) between control points
-    if (inst.curve) {
-      frameScale *= keyframeAt(inst, fp, inst._qk);
-      q.multiply(inst._qk);
-    }
+    frameScale *= inst._kfScale;       // per-keyframe scale (route points)
+    q.multiply(inst._kfQuat);          // per-keyframe rotation (route points)
   }
   if (cfg.autoRotate) {
     inst._qb.setFromAxisAngle(inst._yAxis, timeMs * 0.0004);
@@ -431,9 +506,12 @@ const def = {
       flapPhase: 0, flightPhase: 0, lastT: 0,
       wasOverPanel: false, lastRipple: 0,
       unframe: null, _onResize: null,
-      curve: null, pathPoints: null, pathQuats: null,
-      _p: new THREE.Vector3(), _pa: new THREE.Vector3(),
-      _q: new THREE.Quaternion(), _qb: new THREE.Quaternion(), _qk: new THREE.Quaternion(),
+      // wander state machine (multi-route: transit -> route -> rest)
+      routes: null, segIdx: null, phase: null, phaseT: 0, restElapsed: 0, transitDist: 0,
+      fromPos: new THREE.Vector3(), _heading: new THREE.Vector2(),
+      _kfQuat: new THREE.Quaternion(), _kfScale: 1,
+      _p: new THREE.Vector3(),
+      _q: new THREE.Quaternion(), _qb: new THREE.Quaternion(),
       _zAxis: new THREE.Vector3(0, 0, 1), _yAxis: new THREE.Vector3(0, 1, 0),
     };
     sizeRenderer(inst);
