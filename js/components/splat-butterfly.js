@@ -65,12 +65,23 @@ function baseOrientQuat(orientation) {
   return q;
 }
 
+// Cache the WebGL2 probe and release its context — creating a probe context per
+// mount (under editor churn) otherwise leaks GL contexts toward the ~16 limit.
+let _webgl2 = null;
 function hasWebGL2() {
+  if (_webgl2 !== null) return _webgl2;
   try {
-    return !!document.createElement('canvas').getContext('webgl2');
+    const c = document.createElement('canvas');
+    const gl = c.getContext('webgl2');
+    _webgl2 = !!gl;
+    if (gl) {
+      const ext = gl.getExtension('WEBGL_lose_context');
+      if (ext) ext.loseContext();
+    }
   } catch (e) {
-    return false;
+    _webgl2 = false;
   }
+  return _webgl2;
 }
 
 // Resolve a manifest URL to a base dir for the frame .ply files.
@@ -86,13 +97,17 @@ const DEPTH_SCALE = 0.6;
 // to a world point on the z=0 plane (+ depth in z), via the component camera.
 // The editor authors paths in this space so they line up with the on-screen box.
 function worldFromNorm(camera, u, v, depth, out) {
+  const targetZ = (depth || 0) * DEPTH_SCALE;
+  // unproject the screen point, then intersect the camera ray with the ACTUAL
+  // depth plane z=targetZ (not z=0 then override) so the point projects back to
+  // exactly (u,v) under perspective and stays glued to the drawn spline.
   out.set(u * 2 - 1, 1 - v * 2, 0.5).unproject(camera);
   const dz = out.z - camera.position.z;
-  const t = dz !== 0 ? (0 - camera.position.z) / dz : 0;
+  const t = dz !== 0 ? (targetZ - camera.position.z) / dz : 0;
   return out.set(
     camera.position.x + (out.x - camera.position.x) * t,
     camera.position.y + (out.y - camera.position.y) * t,
-    (depth || 0) * DEPTH_SCALE
+    targetZ
   );
 }
 
@@ -229,11 +244,6 @@ function tick(inst, timeMs) {
   const dt = inst.lastT ? Math.min((timeMs - inst.lastT) / 1000, 0.05) : 0;
   inst.lastT = timeMs;
 
-  // gotcha 4: nudge camera every frame so Spark re-sorts (even when paused).
-  const nx = Math.sin(timeMs * 0.0017) * 0.0009;
-  inst.camera.position.set(nx, 0, CAM_DIST);
-  inst.camera.lookAt(0, 0, 0);
-
   if (!inst.ready) { inst.renderer.render(inst.scene, inst.camera); return; }
 
   const paused = inst.ctx.reducedMotion || cfg.mode === 'static';
@@ -244,7 +254,10 @@ function tick(inst, timeMs) {
   const L = loop === 'ping-pong' && N > 2 ? N * 2 - 2 : N;
 
   if (!paused) inst.flapPhase += dt * (cfg.fps || 12);
-  let phase = ((inst.flapPhase % L) + L) % L;
+  // 'once' clamps at the final frame (and holds); loop / ping-pong wrap.
+  const phase = loop === 'once'
+    ? Math.min(inst.flapPhase, L - 1)
+    : ((inst.flapPhase % L) + L) % L;
 
   // weighted multi-frame blend (interpolation) -> per-mesh opacity weight
   const blend = Math.max(1, cfg.blend || 1.6);
@@ -276,35 +289,50 @@ function tick(inst, timeMs) {
     if (!paused) inst.flightPhase += dt * (cfg.flightSpeed || 0.13);
     const fp = ((inst.flightPhase % 1) + 1) % 1;
     pathPoint(inst, fp, inst._p);
-    pathPoint(inst, (fp + 0.01) % 1, inst._pa);
+    pathPoint(inst, (fp + 0.02) % 1, inst._pa);
     px = inst._p.x; py = inst._p.y; pz = inst._p.z;
-    const vx = inst._pa.x - inst._p.x;
-    const vy = inst._pa.y - inst._p.y;
+    // normalized heading so bank/heading don't depend on sample step or point density
+    let vx = inst._pa.x - inst._p.x;
+    let vy = inst._pa.y - inst._p.y;
+    const vlen = Math.hypot(vx, vy);
+    if (vlen > 1e-5) { vx /= vlen; vy /= vlen; } else { vx = 0; vy = 0; }
     if (cfg.orientation === 'face-path') {
       const head = Math.atan2(vy, vx) - Math.PI / 2; // head points along travel
       inst._qb.setFromAxisAngle(inst._zAxis, head);
       q.premultiply(inst._qb);
-    } else {
-      const bank = THREE.MathUtils.clamp(-vx * 7, -0.5, 0.5); // lean into the turn
+    } else if (cfg.orientation !== 'free') {
+      const bank = THREE.MathUtils.clamp(-vx * 0.6, -0.5, 0.5); // lean into the turn
       inst._qb.setFromAxisAngle(inst._zAxis, bank);
       q.premultiply(inst._qb);
     }
+    // 'free' => no auto-bank; only base + authored keyframe rotation applies
     // per-keyframe rotation (slerp) + scale (lerp) between control points
     if (inst.curve) {
       frameScale *= keyframeAt(inst, fp, inst._qk);
       q.multiply(inst._qk);
     }
-    // punch-through: when the path crosses the text plane (z=0), fire a ripple
-    // at the butterfly's screen position; the bus routes it to any panel there.
-    if (!paused && inst.prevZ * pz < 0 && window.__rippleTextBus) {
-      const pg = projectToPage(inst, px, py, 0);
-      window.__rippleTextBus.impact(pg.x, pg.y, 1.1);
-    }
-    inst.prevZ = pz;
   }
   if (cfg.autoRotate) {
     inst._qb.setFromAxisAngle(inst._yAxis, timeMs * 0.0004);
     q.multiply(inst._qb);
+  }
+
+  // Ripple on ENTERING a registered text panel — a screen-space test (works for
+  // any drawn path regardless of depth), with a cooldown so it fires once per
+  // pass instead of every frame while overlapping. Flight-only: in flap/static
+  // px/py/pz stay at the origin and would fire a spurious fixed-point ripple.
+  if (!paused && cfg.mode === 'flight') {
+    const bus = inst.ctx.helpers && inst.ctx.helpers.bus;
+    if (bus) {
+      const pg = projectToPage(inst, px, py, pz);
+      const over = bus.hitTest(pg.x, pg.y);
+      const now = timeMs / 1000;
+      if (over && !inst.wasOverPanel && now - inst.lastRipple > 0.45) {
+        bus.impact(pg.x, pg.y, 1.1);
+        inst.lastRipple = now;
+      }
+      inst.wasOverPanel = over;
+    }
   }
 
   // apply: visibility (updateGenerator only on hidden->visible), opacity, transform
@@ -337,6 +365,24 @@ function mountFallback(container, reason) {
   return { fallback: true, box, unframe: null, disposed: false };
 }
 
+// Tear down a live GL instance that has FAILED (load/reload error) and swap in a
+// fallback. Marks it disposed + removes listeners so a later resize/update can't
+// touch a null renderer, and stores the fallback box so destroy() cleans it up.
+// Shared by the mount and reload failure paths; idempotent (guards on disposed).
+function failGL(inst, reason) {
+  if (!inst || inst.disposed) return;
+  inst.disposed = true;
+  if (typeof inst.unframe === 'function') { inst.unframe(); inst.unframe = null; }
+  if (inst._onResize) { window.removeEventListener('resize', inst._onResize); inst._onResize = null; }
+  if (inst._onCtxLost && inst.canvas) { inst.canvas.removeEventListener('webglcontextlost', inst._onCtxLost); inst._onCtxLost = null; }
+  if (inst.meshes) { inst.meshes.forEach((m) => { if (m) { try { inst.scene.remove(m); m.dispose?.(); } catch (e) { /* noop */ } } }); inst.meshes = []; }
+  if (inst.spark) { try { inst.scene.remove(inst.spark); inst.spark.dispose?.(); } catch (e) { /* noop */ } inst.spark = null; }
+  if (inst.renderer) { try { inst.renderer.dispose(); } catch (e) { /* noop */ } inst.renderer = null; }
+  if (inst.canvas && inst.canvas.parentNode) inst.canvas.parentNode.removeChild(inst.canvas);
+  inst.canvas = null;
+  if (inst.container) { inst.fallback = true; inst.box = mountFallback(inst.container, reason).box; }
+}
+
 const def = {
   name: COMPONENT_NAME,
   configSchema,
@@ -355,13 +401,14 @@ const def = {
     });
     container.appendChild(canvas);
 
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(0x000000, 0); // transparent — page shows through
 
     const scene = new THREE.Scene();
     const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 100);
     camera.position.set(0, 0, CAM_DIST);
+    camera.lookAt(0, 0, 0); // set once; Spark's SparkRenderer.autoUpdate re-sorts each frame
     const spark = new SparkRenderer({ renderer });
     scene.add(spark);
 
@@ -370,8 +417,9 @@ const def = {
       config, ctx,
       meshes: [], order: [], weight: [],
       baseQuat: baseOrientQuat(config.orientation),
-      ready: false, disposed: false,
-      flapPhase: 0, flightPhase: 0, lastT: 0, prevZ: 0,
+      ready: false, disposed: false, _loadGen: 0,
+      flapPhase: 0, flightPhase: 0, lastT: 0,
+      wasOverPanel: false, lastRipple: 0,
       unframe: null, _onResize: null,
       curve: null, pathPoints: null, pathQuats: null,
       _p: new THREE.Vector3(), _pa: new THREE.Vector3(),
@@ -381,11 +429,16 @@ const def = {
     sizeRenderer(inst);
     inst._onResize = () => sizeRenderer(inst);
     window.addEventListener('resize', inst._onResize);
+    inst._onCtxLost = (e) => { e.preventDefault(); inst.ready = false; }; // keep restorable, stop ticking
+    canvas.addEventListener('webglcontextlost', inst._onCtxLost, false);
 
     loadFrames(inst)
       .then(() => { inst.weight = inst.meshes.map(() => 0); return warmUp(inst); })
       .then(() => { if (!inst.disposed) inst.ready = true; })
-      .catch((err) => { console.warn('[splat-butterfly] load failed', err); });
+      .catch((err) => {
+        console.warn('[splat-butterfly] load failed', err);
+        failGL(inst, 'load-failed'); // disposes + removes listeners + shows fallback
+      });
 
     if (ctx.helpers && typeof ctx.helpers.onFrame === 'function') {
       inst.unframe = ctx.helpers.onFrame((t) => tick(inst, t));
@@ -394,11 +447,14 @@ const def = {
   },
 
   update(instance, ctx) {
-    if (!instance || instance.fallback) return;
+    // No-op on a torn-down/failed instance (renderer null) — the editor fast path
+    // (fastUpdate -> updateComponents -> update) must not deref a dead renderer.
+    if (!instance || instance.fallback || instance.disposed || !instance.renderer) return;
     const prevManifest = instance.config && instance.config.manifest;
     instance.config = withDefaults(ctx.config);
     instance.ctx = ctx;
     instance.baseQuat = baseOrientQuat(instance.config.orientation);
+    instance.wasOverPanel = false; // path/mode may have changed; re-arm the entry test
     sizeRenderer(instance);
     // re-orient + re-register every mesh after transform/config change (gotcha 2/3)
     const s = instance.config.scale || 1;
@@ -408,15 +464,23 @@ const def = {
       m.scale.setScalar(s);
       m.updateGenerator?.();
     });
-    // manifest changed -> reload + re-warm
+    // manifest changed -> reload + re-warm (guarded so rapid edits / failures are safe)
     if (instance.config.manifest !== prevManifest) {
       instance.ready = false;
       instance.meshes.forEach((m) => { if (m) { instance.scene.remove(m); m.dispose?.(); } });
       instance.meshes = [];
+      const gen = ++instance._loadGen;
       loadFrames(instance)
-        .then(() => { instance.weight = instance.meshes.map(() => 0); return warmUp(instance); })
-        .then(() => { if (!instance.disposed) instance.ready = true; })
-        .catch((err) => console.warn('[splat-butterfly] reload failed', err));
+        .then(() => {
+          if (instance.disposed || gen !== instance._loadGen) return; // superseded by a newer reload
+          instance.weight = instance.meshes.map(() => 0);
+          return warmUp(instance);
+        })
+        .then(() => { if (!instance.disposed && gen === instance._loadGen) instance.ready = true; })
+        .catch((err) => {
+          console.warn('[splat-butterfly] reload failed', err);
+          if (!instance.disposed && gen === instance._loadGen) failGL(instance, 'reload-failed');
+        });
     }
   },
 
@@ -425,11 +489,14 @@ const def = {
     instance.disposed = true;
     if (typeof instance.unframe === 'function') { instance.unframe(); instance.unframe = null; }
     if (instance._onResize) { window.removeEventListener('resize', instance._onResize); instance._onResize = null; }
+    if (instance._onCtxLost && instance.canvas) { instance.canvas.removeEventListener('webglcontextlost', instance._onCtxLost); instance._onCtxLost = null; }
     if (instance.meshes) {
       instance.meshes.forEach((m) => { if (m) { try { instance.scene.remove(m); m.dispose?.(); } catch (e) { /* noop */ } } });
       instance.meshes = [];
     }
-    if (instance.renderer) { try { instance.renderer.dispose(); } catch (e) { /* noop */ } }
+    // dispose the SparkRenderer (its GL resources) BEFORE the WebGLRenderer
+    if (instance.spark) { try { instance.scene.remove(instance.spark); instance.spark.dispose?.(); } catch (e) { /* noop */ } instance.spark = null; }
+    if (instance.renderer) { try { instance.renderer.dispose(); } catch (e) { /* noop */ } instance.renderer = null; }
     if (instance.canvas && instance.canvas.parentNode) instance.canvas.parentNode.removeChild(instance.canvas);
     if (instance.box && instance.box.parentNode) instance.box.parentNode.removeChild(instance.box);
   },

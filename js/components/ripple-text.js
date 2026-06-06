@@ -30,15 +30,7 @@ function withDefaults(config) {
   return out;
 }
 
-// Shared, additive cross-component channel so the butterfly (or anything) can
-// fire ripples by page coordinates. Components self-register their panels.
-const bus = (window.__rippleTextBus = window.__rippleTextBus || {
-  panels: new Set(),
-  // impact(pageX, pageY, strength): route to any panel under that point.
-  impact(pageX, pageY, strength) {
-    this.panels.forEach((p) => p._impactPage(pageX, pageY, strength == null ? 1 : strength));
-  },
-});
+const RIPPLE_LIFE = 1.9; // seconds; mirror of LIFE in the fragment shader
 
 const VERT = /* glsl */ `
   varying vec2 vUv;
@@ -130,7 +122,28 @@ function rebuildTexture(inst) {
 
 function tick(inst, timeMs) {
   if (inst.disposed) return;
-  inst.uniforms.uTime.value = timeMs / 1000;
+  const t = timeMs / 1000;
+  inst.uniforms.uTime.value = t;
+
+  // pointer-driven ripples sampled from the shared pointer (no per-panel DOM
+  // listener) — spawn as the pointer moves across the panel.
+  if (!inst.ctx.reducedMotion && inst.ctx.helpers && inst.ctx.helpers.pointer) {
+    const p = inst.ctx.helpers.pointer(); // client coords
+    const r = inst.container.getBoundingClientRect();
+    if (r.width && r.height) {
+      const u = (p.x - r.left) / r.width;
+      const v = 1 - (p.y - r.top) / r.height;
+      if (u >= 0 && u <= 1 && v >= 0 && v <= 1 &&
+          (inst._lastPx == null || Math.hypot(p.x - inst._lastPx, p.y - inst._lastPy) > 16)) {
+        inst._lastPx = p.x; inst._lastPy = p.y;
+        inst._addRipple(u, v, 0.6);
+      }
+    }
+  }
+
+  // Always render: this canvas uses preserveDrawingBuffer:false (default), so
+  // skipping a frame lets the compositor clear it and the text vanishes. A
+  // single full-screen quad is trivial, so just draw every frame.
   inst.renderer.render(inst.scene, inst.camera);
 }
 
@@ -147,7 +160,7 @@ const def = {
     });
     container.appendChild(canvas);
 
-    const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setClearColor(0x000000, 0);
     const scene = new THREE.Scene();
@@ -197,18 +210,22 @@ const def = {
       inst.sizeRO.observe(container);
     }
 
-    // pointer-driven ripples (throttled by movement); .scene-layer is
-    // click-through so we read the shared pointer rather than DOM events.
-    inst._lastSpawn = 0;
-    inst._onMove = (e) => {
-      const now = performance.now();
-      if (now - inst._lastSpawn < 90) return;
-      inst._lastSpawn = now;
-      inst._impactPage(e.clientX, e.clientY, 0.7);
-    };
-    window.addEventListener('pointermove', inst._onMove, { passive: true });
-
-    bus.panels.add(inst);
+    // Register on the host bus so other components (e.g. the butterfly) can fire
+    // a ripple here by page coords. rect() reports this panel in page coords.
+    inst._lastPx = null;
+    inst._lastPy = null;
+    if (ctx.helpers && ctx.helpers.bus) {
+      inst._unbus = ctx.helpers.bus.register({
+        rect: () => {
+          const r = inst.container.getBoundingClientRect();
+          return {
+            left: r.left + window.scrollX, top: r.top + window.scrollY,
+            right: r.right + window.scrollX, bottom: r.bottom + window.scrollY,
+          };
+        },
+        impact: (x, y, s) => inst._impactPage(x, y, s),
+      });
+    }
     if (ctx.helpers && typeof ctx.helpers.onFrame === 'function') {
       inst.unframe = ctx.helpers.onFrame((t) => tick(inst, t));
     }
@@ -226,9 +243,8 @@ const def = {
     if (!instance) return;
     instance.disposed = true;
     if (typeof instance.unframe === 'function') { instance.unframe(); instance.unframe = null; }
-    if (instance._onMove) window.removeEventListener('pointermove', instance._onMove);
+    if (typeof instance._unbus === 'function') { instance._unbus(); instance._unbus = null; }
     if (instance.sizeRO) { try { instance.sizeRO.disconnect(); } catch (e) { /* noop */ } }
-    if (bus.panels) bus.panels.delete(instance);
     if (instance.uniforms && instance.uniforms.uMap.value) instance.uniforms.uMap.value.dispose();
     if (instance.quad) { instance.quad.geometry.dispose(); instance.quad.material.dispose(); }
     if (instance.renderer) { try { instance.renderer.dispose(); } catch (e) { /* noop */ } }
