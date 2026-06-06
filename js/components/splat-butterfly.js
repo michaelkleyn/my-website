@@ -70,13 +70,45 @@ function dirOf(url) {
 }
 
 // --- flight path ---------------------------------------------------------
-// phase in [0,1) around the loop -> world position + heading-derived roll.
-function flightAt(phase, radius) {
-  const a = phase * Math.PI * 2;
-  const x = Math.cos(a) * radius;
-  const y = Math.sin(a) * radius * 0.62;        // gentle ellipse (more horizontal)
-  const z = Math.sin(a * 2) * 0.45;             // weave toward/away (depth)
-  return { x, y, z, a };
+const DEPTH_SCALE = 0.6;
+
+// Map node-box-normalized coords (u,v in [0,1] across the box, depth in [-1,1])
+// to a world point on the z=0 plane (+ depth in z), via the component camera.
+// The editor authors paths in this space so they line up with the on-screen box.
+function worldFromNorm(camera, u, v, depth, out) {
+  out.set(u * 2 - 1, 1 - v * 2, 0.5).unproject(camera);
+  const dz = out.z - camera.position.z;
+  const t = dz !== 0 ? (0 - camera.position.z) / dz : 0;
+  return out.set(
+    camera.position.x + (out.x - camera.position.x) * t,
+    camera.position.y + (out.y - camera.position.y) * t,
+    (depth || 0) * DEPTH_SCALE
+  );
+}
+
+// Build a closed Catmull-Rom curve from the authored flightPath, or null (=> circle).
+function buildCurve(inst) {
+  inst.curve = null;
+  const raw = inst.config && inst.config.flightPath;
+  if (!raw) return;
+  let pts;
+  try { pts = typeof raw === 'string' ? JSON.parse(raw) : raw; } catch (e) { return; }
+  if (!Array.isArray(pts) || pts.length < 2) return;
+  const world = pts.map((p) => worldFromNorm(
+    inst.camera,
+    p.u != null ? p.u : p.x,
+    p.v != null ? p.v : p.y,
+    p.depth != null ? p.depth : (p.z || 0),
+    new THREE.Vector3()
+  ));
+  inst.curve = new THREE.CatmullRomCurve3(world, true, 'catmullrom', 0.5);
+}
+
+// position along the flight loop at phase in [0,1): custom spline or default circle.
+function pathPoint(inst, t, out) {
+  if (inst.curve) return inst.curve.getPointAt(((t % 1) + 1) % 1, out);
+  const a = t * Math.PI * 2, r = inst.config.pathRadius || 1;
+  return out.set(Math.cos(a) * r, Math.sin(a) * r * 0.62, Math.sin(a * 2) * 0.45);
 }
 
 // Project a world point in the butterfly's scene to page coordinates, so the
@@ -98,6 +130,7 @@ function sizeRenderer(inst) {
   inst.renderer.setSize(w, h, false);
   inst.camera.aspect = w / h;
   inst.camera.updateProjectionMatrix();
+  buildCurve(inst); // flight path maps through the camera; rebuild on aspect change
 }
 
 // --- frame loading + warm-up --------------------------------------------
@@ -202,10 +235,10 @@ function tick(inst, timeMs) {
   if (cfg.mode === 'flight') {
     if (!paused) inst.flightPhase += dt * (cfg.flightSpeed || 0.13);
     const fp = ((inst.flightPhase % 1) + 1) % 1;
-    const p = flightAt(fp, cfg.pathRadius || 1);
-    const pAhead = flightAt((fp + 0.01) % 1, cfg.pathRadius || 1);
-    px = p.x; py = p.y; pz = p.z;
-    const vx = pAhead.x - p.x;
+    pathPoint(inst, fp, inst._p);
+    pathPoint(inst, (fp + 0.01) % 1, inst._pa);
+    px = inst._p.x; py = inst._p.y; pz = inst._p.z;
+    const vx = inst._pa.x - inst._p.x;
     const bank = THREE.MathUtils.clamp(-vx * 7, -0.5, 0.5); // lean into the turn
     inst._qb.setFromAxisAngle(inst._zAxis, bank);
     q.premultiply(inst._qb);
@@ -285,6 +318,7 @@ const def = {
       ready: false, disposed: false,
       flapPhase: 0, flightPhase: 0, lastT: 0, prevZ: 0,
       unframe: null, sizeRO: null,
+      curve: null, _p: new THREE.Vector3(), _pa: new THREE.Vector3(),
       _q: new THREE.Quaternion(), _qb: new THREE.Quaternion(),
       _zAxis: new THREE.Vector3(0, 0, 1), _yAxis: new THREE.Vector3(0, 1, 0),
     };
