@@ -129,7 +129,11 @@ function buildCurve(inst) {
     p.depth != null ? p.depth : (p.z || 0),
     new THREE.Vector3()
   ));
-  inst.curve = new THREE.CatmullRomCurve3(world, true, 'catmullrom', 0.5);
+  // centripetal: passes through every control point WITHOUT the overshoot/loops
+  // of uniform catmull-rom, so the butterfly hugs the drawn path instead of
+  // bulging outside it. getPoint(i/N) still lands exactly on control point i
+  // (closed curve uses uniform t->segment mapping), so keyframes stay aligned.
+  inst.curve = new THREE.CatmullRomCurve3(world, true, 'centripetal');
   inst.pathPoints = pts;
   inst.pathQuats = pts.map((p) => {
     const r = p.rot || {};
@@ -395,11 +399,17 @@ const def = {
     // Full-viewport, fixed: the butterfly roams the whole page and is NOT clipped
     // to the node box (the box is just the editor's selection anchor; size is the
     // `scale` config, the route is `flightPath`).
+    // CRITICAL: do NOT append into `container` — the node container carries a CSS
+    // transform (from its placement), and a transformed ancestor becomes the
+    // containing block for position:fixed, which would offset this canvas by the
+    // box's transform (so the butterfly drifts off the drawn path, and the drift
+    // changes when the box moves/scales). Mount into the non-transformed
+    // .scene-layer (the container's parent) so `fixed` is truly viewport-relative.
     Object.assign(canvas.style, {
       position: 'fixed', left: '0', top: '0', width: '100vw', height: '100vh',
       display: 'block', pointerEvents: 'none',
     });
-    container.appendChild(canvas);
+    (container.parentNode || document.body).appendChild(canvas);
 
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
