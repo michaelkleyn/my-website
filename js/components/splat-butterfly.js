@@ -26,7 +26,8 @@ const configSchema = [
   { key: 'autoRotate', label: 'Auto-rotate', type: 'boolean', default: false },
   { key: 'lazyLoad', label: 'Lazy load', type: 'boolean', default: true },
   { key: 'scale', label: 'Scale', type: 'number', default: 1, min: 0.05, max: 20, step: 0.05 },
-  { key: 'orientation', label: 'Orientation', type: 'text', default: 'upright' },
+  { key: 'orientation', label: 'Orientation', type: 'enum', default: 'upright',
+    options: ['upright', 'face-path', 'tilt', 'free'] },
   // --- flight (additive; defaults keep existing behaviour) -----------------
   { key: 'blend', label: 'Interp blend', type: 'number', default: 1.6, min: 1, max: 4, step: 0.1 },
   { key: 'flightSpeed', label: 'Flight speed', type: 'number', default: 0.13, min: 0.01, max: 2, step: 0.01 },
@@ -51,7 +52,16 @@ const blendKernel = (x) => (x < 1 ? 0.5 * (1 + Math.cos(Math.PI * x)) : 0);
 // the dorsal side to the camera, head already up. (gotcha 5; applied per mesh.)
 function baseOrientQuat(orientation) {
   const q = new THREE.Quaternion();
-  q.setFromEuler(new THREE.Euler(0, -Math.PI / 2, 0));
+  switch (orientation) {
+    case 'free':                                              // keyframe rotations are absolute
+      q.identity(); break;
+    case 'tilt':                                              // 3/4 downward tilt — dynamic look
+      q.setFromEuler(new THREE.Euler(0.6, -Math.PI / 2, 0)); break;
+    case 'face-path':                                         // base upright; heading roll added in flight
+    case 'upright':
+    default:
+      q.setFromEuler(new THREE.Euler(0, -Math.PI / 2, 0));    // dorsal to camera, head up
+  }
   return q;
 }
 
@@ -86,9 +96,12 @@ function worldFromNorm(camera, u, v, depth, out) {
   );
 }
 
-// Build a closed Catmull-Rom curve from the authored flightPath, or null (=> circle).
+// Build a closed Catmull-Rom curve from the authored flightPath, or null (=>
+// circle). Also caches per-point rotation quaternions + scales for keyframing.
 function buildCurve(inst) {
   inst.curve = null;
+  inst.pathPoints = null;
+  inst.pathQuats = null;
   const raw = inst.config && inst.config.flightPath;
   if (!raw) return;
   let pts;
@@ -102,13 +115,38 @@ function buildCurve(inst) {
     new THREE.Vector3()
   ));
   inst.curve = new THREE.CatmullRomCurve3(world, true, 'catmullrom', 0.5);
+  inst.pathPoints = pts;
+  inst.pathQuats = pts.map((p) => {
+    const r = p.rot || {};
+    const d = Math.PI / 180;
+    return new THREE.Quaternion().setFromEuler(
+      new THREE.Euler((r.x || 0) * d, (r.y || 0) * d, (r.z || 0) * d));
+  });
 }
 
-// position along the flight loop at phase in [0,1): custom spline or default circle.
+// position along the flight loop at phase in [0,1): custom spline or default
+// circle. Uses natural param (getPoint) for the spline so keyframes (point i at
+// t=i/N) stay aligned with the geometry.
 function pathPoint(inst, t, out) {
-  if (inst.curve) return inst.curve.getPointAt(((t % 1) + 1) % 1, out);
+  if (inst.curve) return inst.curve.getPoint(((t % 1) + 1) % 1, out);
   const a = t * Math.PI * 2, r = inst.config.pathRadius || 1;
   return out.set(Math.cos(a) * r, Math.sin(a) * r * 0.62, Math.sin(a * 2) * 0.45);
+}
+
+// Interpolate per-keyframe rotation (slerp) + scale (lerp) between adjacent
+// control points at phase t. Returns the scale multiplier; writes rot to outQuat.
+function keyframeAt(inst, t, outQuat) {
+  const qs = inst.pathQuats, pts = inst.pathPoints;
+  if (!qs || !qs.length) { outQuat.identity(); return 1; }
+  const N = qs.length;
+  const f = ((((t % 1) + 1) % 1)) * N;
+  const i0 = Math.floor(f) % N;
+  const i1 = (i0 + 1) % N;
+  const frac = f - Math.floor(f);
+  outQuat.copy(qs[i0]).slerp(qs[i1], frac);
+  const s0 = pts[i0].scale != null ? pts[i0].scale : 1;
+  const s1 = pts[i1].scale != null ? pts[i1].scale : 1;
+  return s0 + (s1 - s0) * frac;
 }
 
 // Project a world point in the butterfly's scene to page coordinates, so the
@@ -125,8 +163,9 @@ function projectToPage(inst, x, y, z) {
 
 // --- sizing --------------------------------------------------------------
 function sizeRenderer(inst) {
-  const w = Math.max(1, inst.container.clientWidth || 300);
-  const h = Math.max(1, inst.container.clientHeight || 300);
+  // Full-viewport: the butterfly's world spans the page, not the node box.
+  const w = Math.max(1, window.innerWidth);
+  const h = Math.max(1, window.innerHeight);
   inst.renderer.setSize(w, h, false);
   inst.camera.aspect = w / h;
   inst.camera.updateProjectionMatrix();
@@ -228,8 +267,9 @@ function tick(inst, timeMs) {
     }
   }
 
-  // flight transform (position + banking roll), shared by all visible meshes
+  // flight transform (position + orientation + scale), shared by all visible meshes
   let px = 0, py = 0, pz = 0;
+  let frameScale = cfg.scale || 1;
   const q = inst._q;
   q.copy(inst.baseQuat);
   if (cfg.mode === 'flight') {
@@ -239,9 +279,21 @@ function tick(inst, timeMs) {
     pathPoint(inst, (fp + 0.01) % 1, inst._pa);
     px = inst._p.x; py = inst._p.y; pz = inst._p.z;
     const vx = inst._pa.x - inst._p.x;
-    const bank = THREE.MathUtils.clamp(-vx * 7, -0.5, 0.5); // lean into the turn
-    inst._qb.setFromAxisAngle(inst._zAxis, bank);
-    q.premultiply(inst._qb);
+    const vy = inst._pa.y - inst._p.y;
+    if (cfg.orientation === 'face-path') {
+      const head = Math.atan2(vy, vx) - Math.PI / 2; // head points along travel
+      inst._qb.setFromAxisAngle(inst._zAxis, head);
+      q.premultiply(inst._qb);
+    } else {
+      const bank = THREE.MathUtils.clamp(-vx * 7, -0.5, 0.5); // lean into the turn
+      inst._qb.setFromAxisAngle(inst._zAxis, bank);
+      q.premultiply(inst._qb);
+    }
+    // per-keyframe rotation (slerp) + scale (lerp) between control points
+    if (inst.curve) {
+      frameScale *= keyframeAt(inst, fp, inst._qk);
+      q.multiply(inst._qk);
+    }
     // punch-through: when the path crosses the text plane (z=0), fire a ripple
     // at the butterfly's screen position; the bus routes it to any panel there.
     if (!paused && inst.prevZ * pz < 0 && window.__rippleTextBus) {
@@ -256,7 +308,7 @@ function tick(inst, timeMs) {
   }
 
   // apply: visibility (updateGenerator only on hidden->visible), opacity, transform
-  const s = cfg.scale || 1;
+  const s = frameScale;
   for (let idx = 0; idx < inst.meshes.length; idx++) {
     const m = inst.meshes[idx];
     if (!m) continue;
@@ -294,8 +346,11 @@ const def = {
     if (!hasWebGL2()) return mountFallback(container, 'no-webgl2');
 
     const canvas = document.createElement('canvas');
+    // Full-viewport, fixed: the butterfly roams the whole page and is NOT clipped
+    // to the node box (the box is just the editor's selection anchor; size is the
+    // `scale` config, the route is `flightPath`).
     Object.assign(canvas.style, {
-      position: 'absolute', inset: '0', width: '100%', height: '100%',
+      position: 'fixed', left: '0', top: '0', width: '100vw', height: '100vh',
       display: 'block', pointerEvents: 'none',
     });
     container.appendChild(canvas);
@@ -317,16 +372,15 @@ const def = {
       baseQuat: baseOrientQuat(config.orientation),
       ready: false, disposed: false,
       flapPhase: 0, flightPhase: 0, lastT: 0, prevZ: 0,
-      unframe: null, sizeRO: null,
-      curve: null, _p: new THREE.Vector3(), _pa: new THREE.Vector3(),
-      _q: new THREE.Quaternion(), _qb: new THREE.Quaternion(),
+      unframe: null, _onResize: null,
+      curve: null, pathPoints: null, pathQuats: null,
+      _p: new THREE.Vector3(), _pa: new THREE.Vector3(),
+      _q: new THREE.Quaternion(), _qb: new THREE.Quaternion(), _qk: new THREE.Quaternion(),
       _zAxis: new THREE.Vector3(0, 0, 1), _yAxis: new THREE.Vector3(0, 1, 0),
     };
     sizeRenderer(inst);
-    if (typeof ResizeObserver !== 'undefined') {
-      inst.sizeRO = new ResizeObserver(() => sizeRenderer(inst));
-      inst.sizeRO.observe(container);
-    }
+    inst._onResize = () => sizeRenderer(inst);
+    window.addEventListener('resize', inst._onResize);
 
     loadFrames(inst)
       .then(() => { inst.weight = inst.meshes.map(() => 0); return warmUp(inst); })
@@ -370,7 +424,7 @@ const def = {
     if (!instance) return;
     instance.disposed = true;
     if (typeof instance.unframe === 'function') { instance.unframe(); instance.unframe = null; }
-    if (instance.sizeRO) { try { instance.sizeRO.disconnect(); } catch (e) { /* noop */ } instance.sizeRO = null; }
+    if (instance._onResize) { window.removeEventListener('resize', instance._onResize); instance._onResize = null; }
     if (instance.meshes) {
       instance.meshes.forEach((m) => { if (m) { try { instance.scene.remove(m); m.dispose?.(); } catch (e) { /* noop */ } } });
       instance.meshes = [];
