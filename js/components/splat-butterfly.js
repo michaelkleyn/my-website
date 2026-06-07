@@ -49,18 +49,21 @@ function withDefaults(config) {
 const blendKernel = (x) => (x < 1 ? 0.5 * (1 + Math.cos(Math.PI * x)) : 0);
 
 // Orientation for these TripoSplat frames: thin axis is X; -90° about Y turns
-// the dorsal side to the camera, head already up. (gotcha 5; applied per mesh.)
+// the dorsal side to the camera. The frames render head-DOWN that way, so a 180°
+// roll about the view axis (Z) flips it head-up. (gotcha 5; applied per mesh.)
+const _rollZ = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI);
 function baseOrientQuat(orientation) {
   const q = new THREE.Quaternion();
   switch (orientation) {
     case 'free':                                              // keyframe rotations are absolute
       q.identity(); break;
     case 'tilt':                                              // 3/4 downward tilt — dynamic look
-      q.setFromEuler(new THREE.Euler(0.6, -Math.PI / 2, 0)); break;
+      q.setFromEuler(new THREE.Euler(0.6, -Math.PI / 2, 0)); q.premultiply(_rollZ); break;
     case 'face-path':                                         // base upright; heading roll added in flight
     case 'upright':
     default:
-      q.setFromEuler(new THREE.Euler(0, -Math.PI / 2, 0));    // dorsal to camera, head up
+      q.setFromEuler(new THREE.Euler(0, -Math.PI / 2, 0));    // dorsal to camera
+      q.premultiply(_rollZ);                                  // roll head-up (frames are head-down)
   }
   return q;
 }
