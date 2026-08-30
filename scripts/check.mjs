@@ -50,16 +50,16 @@ check('site-design-mode', async () => {
 });
 
 check('site-navigate', async () => {
-  const s = shot('site-nav', BASE + '/?edit=0', SITE_READY, "(async function(){ var s = __site, f0 = s.pond.frameCount; await s.router.go('/projects'); await s.navigator.idle(); var bs = document.getElementById('book-space').getBoundingClientRect(), f = s.pond.screenFit; return JSON.stringify({ path: location.pathname, page: s.renderer.pageKey(), spread: document.querySelector('#spread').dataset.page, zoom: s.pond.camera.zoom, rect: [bs.left, bs.top, bs.width, bs.height], expect: [f.x, f.y, f.s*1536, f.s*1024], frames: s.pond.frameCount - f0, active: (document.querySelector('nav a.is-active')||{}).textContent }); })()");
+  const s = shot('site-nav', BASE + '/?edit=0', SITE_READY, "(async function(){ var s = __site, f0 = s.pond.frameCount; await s.router.go('/work'); await s.navigator.idle(); var bs = document.getElementById('book-space').getBoundingClientRect(), f = s.pond.screenFit; return JSON.stringify({ path: location.pathname, page: s.renderer.pageKey(), spread: document.querySelector('#spread').dataset.page, zoom: s.pond.camera.zoom, rect: [bs.left, bs.top, bs.width, bs.height], expect: [f.x, f.y, f.s*1536, f.s*1024], frames: s.pond.frameCount - f0, active: (document.querySelector('nav a.is-active')||{}).textContent }); })()");
   const d = s.data || {};
   const aligned = d.rect && d.rect.every((v, i) => near(v, d.expect[i], 1));
-  return { ok: s.ready && d.path === '/projects' && d.page === 'projects' && d.spread === 'projects' && near(d.zoom, 1.45, 0.01) && aligned && d.frames > 0 && d.active === 'projects', detail: { ...d, aligned, exceptions: s.exceptions } };
+  return { ok: s.ready && d.path === '/work' && d.page === 'work' && d.spread === 'work' && near(d.zoom, 1.45, 0.01) && aligned && d.frames > 0 && d.active === 'work', detail: { ...d, aligned, exceptions: s.exceptions } };
 });
 
 check('site-direct-route', async () => {
-  const s = shot('site-direct', BASE + '/projects?edit=0', SITE_READY, "JSON.stringify({ path: location.pathname, page: __site.renderer.pageKey(), spread: document.querySelector('#spread').dataset.page, zoom: __site.pond.camera.zoom })");
+  const s = shot('site-direct', BASE + '/work?edit=0', SITE_READY, "JSON.stringify({ path: location.pathname, page: __site.renderer.pageKey(), spread: document.querySelector('#spread').dataset.page, zoom: __site.pond.camera.zoom })");
   const d = s.data || {};
-  return { ok: s.ready && d.page === 'projects' && d.spread === 'projects' && near(d.zoom, 1.45, 0.01), detail: { ...d, exceptions: s.exceptions } };
+  return { ok: s.ready && d.page === 'work' && d.spread === 'work' && near(d.zoom, 1.45, 0.01), detail: { ...d, exceptions: s.exceptions } };
 });
 
 check('capsule-v2', async () => {

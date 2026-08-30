@@ -15,20 +15,6 @@ const renderer = window.sceneRenderer;
 const edit = !!(renderer && renderer.isEditEnvironment());
 const $ = (s) => document.querySelector(s);
 
-// ---- work / life: the nav's second life (links swap; the spreads themselves come later)
-const MODE_KEY = 'siteMode';
-function applyMode(mode) {
-  document.documentElement.dataset.mode = mode;
-  document.querySelectorAll('nav a[data-work]').forEach((a) => {
-    const href = a.dataset[mode === 'life' ? 'life' : 'work']; if (href) a.setAttribute('href', href);
-    const label = a.dataset[mode === 'life' ? 'lifeLabel' : 'workLabel']; if (label) a.textContent = label;
-    if (mode === 'life' && /^https?:/.test(href || '')) a.setAttribute('data-no-router', ''); else a.removeAttribute('data-no-router');
-  });
-  const t = $('#mode-toggle'); if (t) { t.setAttribute('aria-pressed', mode === 'life' ? 'true' : 'false'); t.textContent = mode === 'life' ? 'life' : 'work'; }
-  try { localStorage.setItem(MODE_KEY, mode); } catch (e) { /* private mode */ }
-}
-let mode = 'work'; try { mode = localStorage.getItem(MODE_KEY) === 'life' ? 'life' : 'work'; } catch (e) { /* private mode */ }
-
 async function start() {
   const pond = await bootPond({
     canvas: $('#tank'), journalRoot: $('#journal-root'), root: document.body,
@@ -41,13 +27,11 @@ async function start() {
   const navigator = createNavigator({ pond, camera, spreadEl: $('#spread'), renderer, onPage: () => bookSpace.apply(), openPost: (slug) => modal.open('blog/' + slug, null, { reading: true }) });
   const router = createRouter({ onNavigate: (nav, meta) => navigator.navigate(nav, meta) });
 
-  applyMode(mode);
-  const toggle = $('#mode-toggle'); if (toggle) toggle.addEventListener('click', () => { mode = mode === 'life' ? 'work' : 'life'; applyMode(mode); });
-
   await (renderer ? renderer.ready : Promise.resolve());
   await router.start();
   ROUTES.forEach((r) => { if (r.page !== (router.current() || {}).route?.page) prefetchFragment(r.page); });
 
+  document.addEventListener('click', (e) => { const t = e.target.closest && e.target.closest('[data-leave-fish]'); if (!t) return; e.preventDefault(); const b = document.getElementById('btn-leave'); if (b) b.click(); });
   window.__site = { pond, camera, bookSpace, router, navigator, modal, renderer };
   document.documentElement.classList.add('site-ready');
 }

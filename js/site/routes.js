@@ -4,10 +4,12 @@
 
 export const ROUTES = [
   { path: '/', page: 'index', spread: 0, title: 'Michael Kleyn' },
-  { path: '/projects', page: 'projects', spread: 1, title: 'Projects · Michael Kleyn' },
+  { path: '/work', page: 'work', spread: 1, title: 'Work · Michael Kleyn' },
+  { path: '/projects', page: 'work', spread: 1, title: 'Work · Michael Kleyn' },        // the old address
   { path: '/blog', page: 'blog', spread: 2, title: 'Blog · Michael Kleyn' },
   { path: '/blog/:slug', page: 'blog', spread: 2, open: 'post', title: 'Blog · Michael Kleyn' },
-  { path: '/contact', page: 'contact', spread: 3, title: 'Contact · Michael Kleyn' },
+  { path: '/about', page: 'about', spread: 3, title: 'About · Michael Kleyn' },
+  { path: '/contact', page: 'about', spread: 3, title: 'About · Michael Kleyn' },       // the old address
   { path: '/iterations', page: 'iterations', spread: 4, title: 'Iterations · Michael Kleyn' },
 ];
 
