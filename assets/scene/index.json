@@ -1,18 +1,10 @@
 {
   "page": "index",
   "version": 1,
-  "space": "book",
-  "camera": {
-    "desktop": {
-      "zoom": 1,
-      "cx": 768,
-      "cy": 512
-    },
-    "mobile": {
-      "zoom": 1.6,
-      "cx": 1080,
-      "cy": 330
-    }
+  "breakpoints": {
+    "mobile": 576,
+    "tablet": 768,
+    "desktop": 99999
   },
   "nodes": [
     {
@@ -34,5 +26,18 @@
         }
       }
     }
-  ]
+  ],
+  "space": "book",
+  "camera": {
+    "desktop": {
+      "zoom": 1,
+      "cx": 768,
+      "cy": 512
+    },
+    "mobile": {
+      "zoom": 1.6,
+      "cx": 1080,
+      "cy": 330
+    }
+  }
 }
