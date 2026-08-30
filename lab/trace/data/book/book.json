@@ -1,0 +1,22 @@
+{
+ "W": 1536,
+ "H": 1024,
+ "left": [
+  148,
+  21,
+  759,
+  783
+ ],
+ "right": [
+  783,
+  26,
+  1384,
+  783
+ ],
+ "spine": 771,
+ "gap": 26,
+ "surround": "#4d3627",
+ "surroundTop": "#7c5b47",
+ "surroundBottom": "#151009",
+ "alpha": true
+}

@@ -1,0 +1,73 @@
+{
+ "source": "journal2.png",
+ "W": 1448,
+ "H": 1086,
+ "parts": [
+  {
+   "name": "shadow",
+   "z": 0,
+   "bbox": [
+    47,
+    63,
+    1375,
+    1023
+   ],
+   "blend": "multiply"
+  },
+  {
+   "name": "cover",
+   "z": 1,
+   "bbox": [
+    72,
+    67,
+    1341,
+    975
+   ],
+   "blend": "normal"
+  },
+  {
+   "name": "block",
+   "z": 2,
+   "bbox": [
+    103,
+    98,
+    1216,
+    941
+   ],
+   "blend": "normal"
+  },
+  {
+   "name": "page-left",
+   "z": 3,
+   "bbox": [
+    108,
+    230,
+    687,
+    716
+   ],
+   "blend": "normal"
+  },
+  {
+   "name": "page-right",
+   "z": 4,
+   "bbox": [
+    593,
+    98,
+    726,
+    795
+   ],
+   "blend": "normal"
+  },
+  {
+   "name": "stitches",
+   "z": 5,
+   "bbox": [
+    607,
+    320,
+    177,
+    441
+   ],
+   "blend": "normal"
+  }
+ ]
+}

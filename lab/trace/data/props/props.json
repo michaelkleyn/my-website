@@ -1,0 +1,5 @@
+[
+ { "name": "boulder", "action": null, "layer": "under", "x": 543, "y": 440, "s": 1.93, "r": 0 },
+ { "name": "rock-left", "action": "back", "x": -21, "y": 722, "s": 0.48, "r": -17 },
+ { "name": "rock-right", "action": "forward", "x": 1311, "y": 402, "s": 0.48, "r": -17 }
+]

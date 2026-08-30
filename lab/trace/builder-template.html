@@ -1,0 +1,260 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Journal Builder</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root { --panel: #f6f8fa; --panel-2: #eaeef2; --panel-3: #dfe5eb; --ink: #1b2631; --ink-2: #5a6b79; --line: #d3dae1; --accent: #ff7f5c; --accent-ink: #1b2631; --accent-2: #78c0e0; --shadow: 0 10px 30px rgba(27,38,49,0.12); color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --panel: #161b20; --panel-2: #1f262d; --panel-3: #29323b; --ink: #e6ecf1; --ink-2: #94a3b0; --line: #2c3640; --accent: #ff8f6e; --accent-ink: #161b20; --shadow: 0 10px 30px rgba(0,0,0,0.45); color-scheme: dark; } }
+  :root[data-theme="dark"] { --panel: #161b20; --panel-2: #1f262d; --panel-3: #29323b; --ink: #e6ecf1; --ink-2: #94a3b0; --line: #2c3640; --accent: #ff8f6e; --accent-ink: #161b20; --shadow: 0 10px 30px rgba(0,0,0,0.45); color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: #f2efe8; color: var(--ink); font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; font-size: 13px; line-height: 1.45; overflow: hidden; }
+  #stage { position: fixed; top: 0; left: 0; bottom: 0; right: 348px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  #stage.wide { right: 0; }
+  #stage.over::after { content: "drop to add a piece"; position: absolute; inset: 16px; border: 2px dashed var(--accent); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-family: "Cormorant Garamond", serif; font-style: italic; font-size: 28px; color: var(--accent); background: rgba(255,127,92,0.06); pointer-events: none; }
+  #table { position: relative; }
+  #source { position: absolute; left: 0; top: 0; width: 100%; height: 100%; opacity: 0.5; display: none; pointer-events: none; }
+  .layer { position: absolute; left: 0; top: 0; transform-origin: center center; cursor: grab; touch-action: none; user-select: none; will-change: transform; }
+  .layer.moving { transition: transform 420ms cubic-bezier(.2,.8,.2,1); }
+  .layer.locked { cursor: default; }
+  .layer.lifted img { filter: drop-shadow(0 18px 22px rgba(60,40,20,0.35)); }
+  .layer img { display: block; width: 100%; height: 100%; pointer-events: none; }
+  .layer.multiply { mix-blend-mode: multiply; }
+  .layer.hidden { display: none; }
+  @media (prefers-reduced-motion: reduce) { .layer.moving { transition: none; } }
+  #panel { position: fixed; top: 0; right: 0; bottom: 0; width: 348px; background: var(--panel); color: var(--ink); border-left: 1px solid var(--line); box-shadow: var(--shadow); display: flex; flex-direction: column; z-index: 20; transition: transform 240ms ease; }
+  #panel.hidden { transform: translateX(100%); }
+  #panel-head { padding: 16px 18px 12px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 6px 10px; }
+  #panel-head h1 { margin: 0; font-family: "Cormorant Garamond", Georgia, serif; font-weight: 600; font-style: italic; font-size: 30px; line-height: 1; }
+  #status { grid-column: 1 / -1; font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 11px; color: var(--ink-2); min-height: 16px; }
+  .head-actions { display: flex; gap: 6px; }
+  #panel-body { flex: 1; overflow-y: auto; padding-bottom: 24px; }
+  details.group { border-bottom: 1px solid var(--line); }
+  details.group > summary { list-style: none; cursor: pointer; padding: 11px 18px; display: flex; align-items: baseline; gap: 10px; user-select: none; }
+  details.group > summary::-webkit-details-marker { display: none; }
+  details.group > summary .name { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+  details.group > summary .hint { font-size: 11px; color: var(--ink-2); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  details.group > summary::after { content: ""; width: 7px; height: 7px; border-right: 1.5px solid var(--ink-2); border-bottom: 1.5px solid var(--ink-2); transform: rotate(-45deg); flex: none; }
+  details.group[open] > summary::after { transform: rotate(45deg); }
+  details.group > .content { padding: 2px 18px 14px; }
+  .lrow { display: grid; grid-template-columns: 18px 1fr 60px 24px 24px; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px dashed var(--line); }
+  .lrow:last-child { border-bottom: 0; }
+  .lrow .nm { font-family: "IBM Plex Mono", monospace; font-size: 12px; }
+  .lrow input[type="checkbox"] { width: 15px; height: 15px; margin: 0; accent-color: var(--accent); }
+  .lrow input[type="range"] { width: 100%; }
+  .ib { font: inherit; font-size: 11px; width: 24px; height: 22px; border: 1px solid var(--line); border-radius: 5px; background: var(--panel-2); color: var(--ink); cursor: pointer; padding: 0; }
+  .ib.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .ctl { display: grid; grid-template-columns: 112px 1fr 44px; align-items: center; gap: 8px; padding: 5px 0; }
+  .ctl label { font-size: 12px; }
+  .ctl .val { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-2); text-align: right; }
+  .ctl.wide { grid-template-columns: 112px 1fr; }
+  .ctl input[type="checkbox"] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); justify-self: start; }
+  .ctl input[type="color"] { width: 100%; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); }
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; background: transparent; margin: 0; }
+  input[type="range"]::-webkit-slider-runnable-track { height: 3px; background: var(--panel-3); border-radius: 2px; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; margin-top: -5.5px; background: var(--panel); border: 2px solid var(--accent); }
+  input[type="range"]::-moz-range-track { height: 3px; background: var(--panel-3); }
+  input[type="range"]::-moz-range-thumb { width: 10px; height: 10px; border-radius: 50%; background: var(--panel); border: 2px solid var(--accent); }
+  :is(button, input, select, textarea, summary):focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+  .btn { font: inherit; font-size: 12px; font-weight: 500; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; cursor: pointer; }
+  .btn:hover { border-color: var(--ink-2); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.small { padding: 4px 8px; font-size: 11px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .drop { margin-top: 8px; padding: 14px; border: 1.5px dashed var(--line); border-radius: 8px; text-align: center; color: var(--ink-2); font-size: 12px; }
+  .drop.over { border-color: var(--accent); color: var(--accent); }
+  textarea#json { width: 100%; height: 120px; resize: vertical; font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+  #toggle-panel { position: fixed; top: 12px; right: 12px; z-index: 5; }
+  #panel:not(.hidden) ~ #toggle-panel { display: none; }
+  .foot { padding: 12px 18px 0; color: var(--ink-2); font-size: 11px; }
+  .foot p { margin: 4px 0; }
+  .kbd { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; }
+</style>
+
+<div id="stage"><div id="table"><img id="source" alt=""></div></div>
+
+<aside id="panel" aria-label="Controls">
+  <div id="panel-head">
+    <h1>Journal Builder</h1>
+    <div class="head-actions">
+      <button class="btn small" id="btn-lift" title="L">Lift pages</button>
+      <button class="btn small" id="btn-tidy" title="0">Tidy</button>
+      <button class="btn small" id="btn-hide" title="H">Hide</button>
+    </div>
+    <div id="status"></div>
+  </div>
+  <div id="panel-body">
+    <details class="group" open>
+      <summary><span class="name">Layers</span><span class="hint">bottom → top · eye, opacity, lock, remove</span></summary>
+      <div class="content">
+        <div id="layers"></div>
+        <div class="row"><button class="btn small" id="btn-up">Raise selected</button><button class="btn small" id="btn-down">Lower selected</button></div>
+      </div>
+    </details>
+    <details class="group" open>
+      <summary><span class="name">Add a piece</span><span class="hint">drop any image onto the journal</span></summary>
+      <div class="content">
+        <div class="drop" id="drop">Drop a PNG / JPG here or on the table<br><span style="opacity: 0.7;">— or —</span><br><input type="file" id="file" accept="image/*" multiple style="margin-top: 6px; font-size: 11px;"></div>
+      </div>
+    </details>
+    <details class="group">
+      <summary><span class="name">View</span><span class="hint">explode, source overlay, desk</span></summary>
+      <div class="content" id="c-view"></div>
+    </details>
+    <details class="group">
+      <summary><span class="name">Layout</span><span class="hint">positions as JSON</span></summary>
+      <div class="content">
+        <textarea id="json" spellcheck="false" aria-label="Layout JSON"></textarea>
+        <div class="row"><button class="btn small primary" id="btn-copy">Copy JSON</button><button class="btn small" id="btn-refresh">Refresh</button></div>
+      </div>
+    </details>
+    <div class="foot">
+      <p>The journal was cut into layers with Segment Anything: shadow, cover (leather continued under the pages), page block, left page, right page, stitches. Drag a layer to move it; click one to select it.</p>
+      <p><span class="kbd">l</span> lift pages · <span class="kbd">0</span> tidy · <span class="kbd">h</span> hide panel · <span class="kbd">del</span> remove selected</p>
+    </div>
+  </div>
+</aside>
+<button class="btn" id="toggle-panel">Controls</button>
+
+<script>window.JOURNAL_PARTS = __PARTS__;</script>
+<script>
+(function () {
+  'use strict';
+  var DATA = window.JOURNAL_PARTS; // { W, H, source, parts: [{name, z, bbox:[x,y,w,h], png}] }
+  var $ = function (s) { return document.querySelector(s); };
+  var stage = $('#stage'), table = $('#table'), statusEl = $('#status'), srcImg = $('#source');
+  srcImg.src = DATA.source;
+  var V = { explode: 0, source: false, desk: '#f2efe8' };
+  var layers = [], scale = 1, selected = null, uid = 0;
+
+  function layout() {
+    scale = Math.min(stage.clientWidth / DATA.W, stage.clientHeight / DATA.H) * 0.94;
+    table.style.width = DATA.W * scale + 'px'; table.style.height = DATA.H * scale + 'px';
+    layers.forEach(place);
+  }
+  function place(L) {
+    var ex = V.explode * L.z;
+    L.el.style.width = L.w * scale + 'px'; L.el.style.height = L.h * scale + 'px';
+    L.el.style.zIndex = String(10 + L.z);
+    var lift = L.lifted ? -28 : 0;
+    L.el.style.transform = 'translate(' + ((L.x + ex) * scale) + 'px,' + ((L.y + ex * 0.6 + lift) * scale) + 'px) rotate(' + L.rot + 'deg)';
+    L.el.style.opacity = L.visible ? L.opacity : 0;
+    L.el.classList.toggle('hidden', !L.visible);
+    L.el.classList.toggle('lifted', !!L.lifted);
+    L.el.classList.toggle('locked', !!L.locked);
+  }
+  function addLayer(p) {
+    var el = document.createElement('div'); el.className = 'layer' + (p.blend === 'multiply' ? ' multiply' : '');
+    var im = document.createElement('img'); im.src = p.png; im.alt = p.name; im.draggable = false; el.appendChild(im);
+    table.appendChild(el);
+    var L = { id: ++uid, name: p.name, el: el, x: p.bbox[0], y: p.bbox[1], w: p.bbox[2], h: p.bbox[3], home: p.bbox.slice(0, 2), rot: 0,
+              z: layers.length, visible: true, opacity: 1, locked: !!p.locked, lifted: false, png: p.png };
+    layers.push(L); bindDrag(L); place(L); renderList(); return L;
+  }
+  function removeLayer(L) { layers = layers.filter(function (x) { return x !== L; }); L.el.remove(); layers.forEach(function (x, i) { x.z = i; }); if (selected === L) selected = null; layers.forEach(place); renderList(); }
+  function select(L) { selected = L; renderList(); }
+
+  // ---- drag
+  var dragging = null;
+  function bindDrag(L) {
+    var sx, sy, lx, ly, t0;
+    L.el.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0) return; e.preventDefault(); select(L);
+      if (L.locked) return;
+      L.el.setPointerCapture(e.pointerId); dragging = L; sx = lx = e.clientX; sy = ly = e.clientY; t0 = performance.now(); L.el.classList.remove('moving');
+    });
+    L.el.addEventListener('pointermove', function (e) {
+      if (dragging !== L) return;
+      L.x += (e.clientX - lx) / scale; L.y += (e.clientY - ly) / scale; lx = e.clientX; ly = e.clientY; place(L);
+    });
+    var up = function () { if (dragging === L) { dragging = null; refreshJSON(); } };
+    L.el.addEventListener('pointerup', up); L.el.addEventListener('pointercancel', up);
+  }
+
+  // ---- layer list
+  function renderList() {
+    var box = $('#layers'); box.innerHTML = '';
+    layers.slice().reverse().forEach(function (L) {
+      var row = document.createElement('div'); row.className = 'lrow'; row.style.background = selected === L ? 'rgba(255,127,92,0.10)' : '';
+      var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = L.visible; cb.title = 'visible';
+      cb.addEventListener('change', function () { L.visible = cb.checked; place(L); });
+      var nm = document.createElement('span'); nm.className = 'nm'; nm.textContent = L.name; nm.style.cursor = 'pointer'; nm.addEventListener('click', function () { select(L); });
+      var op = document.createElement('input'); op.type = 'range'; op.min = 0; op.max = 1; op.step = 0.05; op.value = L.opacity; op.title = 'opacity';
+      op.addEventListener('input', function () { L.opacity = parseFloat(op.value); place(L); });
+      var lk = document.createElement('button'); lk.className = 'ib' + (L.locked ? ' on' : ''); lk.textContent = L.locked ? '🔒' : '🔓'; lk.title = 'lock / unlock dragging';
+      lk.addEventListener('click', function () { L.locked = !L.locked; place(L); renderList(); });
+      var rm = document.createElement('button'); rm.className = 'ib'; rm.textContent = '✕'; rm.title = 'remove layer'; rm.addEventListener('click', function () { removeLayer(L); });
+      row.appendChild(cb); row.appendChild(nm); row.appendChild(op); row.appendChild(lk); row.appendChild(rm); box.appendChild(row);
+    });
+    statusEl.textContent = layers.length + ' layers' + (selected ? ' · selected: ' + selected.name : '');
+  }
+  function move(L, dir) { var i = layers.indexOf(L), j = i + dir; if (i < 0 || j < 0 || j >= layers.length) return; layers.splice(i, 1); layers.splice(j, 0, L); layers.forEach(function (x, k) { x.z = k; place(x); }); renderList(); }
+  $('#btn-up').addEventListener('click', function () { if (selected) move(selected, 1); });
+  $('#btn-down').addEventListener('click', function () { if (selected) move(selected, -1); });
+
+  // ---- add pieces by drop / file
+  function addImageFile(file, atX, atY) {
+    if (!/^image\//.test(file.type)) return;
+    var r = new FileReader();
+    r.onload = function () {
+      var im = new Image();
+      im.onload = function () {
+        var k = Math.min(1, (DATA.W * 0.3) / im.naturalWidth, (DATA.H * 0.3) / im.naturalHeight);
+        var w = im.naturalWidth * k, h = im.naturalHeight * k;
+        var x = atX == null ? DATA.W / 2 - w / 2 : atX - w / 2, y = atY == null ? DATA.H / 2 - h / 2 : atY - h / 2;
+        var L = addLayer({ name: file.name.replace(/\.[a-z0-9]+$/i, ''), bbox: [x, y, w, h], png: r.result });
+        select(L); refreshJSON();
+      };
+      im.src = r.result;
+    };
+    r.readAsDataURL(file);
+  }
+  function tablePoint(e) { var b = table.getBoundingClientRect(); return [(e.clientX - b.left) / scale, (e.clientY - b.top) / scale]; }
+  ['dragenter', 'dragover'].forEach(function (ev) { stage.addEventListener(ev, function (e) { e.preventDefault(); stage.classList.add('over'); }); $('#drop').addEventListener(ev, function (e) { e.preventDefault(); $('#drop').classList.add('over'); }); });
+  ['dragleave', 'drop'].forEach(function (ev) { stage.addEventListener(ev, function () { stage.classList.remove('over'); }); $('#drop').addEventListener(ev, function () { $('#drop').classList.remove('over'); }); });
+  stage.addEventListener('drop', function (e) { e.preventDefault(); var p = tablePoint(e); Array.prototype.forEach.call(e.dataTransfer.files, function (f) { addImageFile(f, p[0], p[1]); }); });
+  $('#drop').addEventListener('drop', function (e) { e.preventDefault(); Array.prototype.forEach.call(e.dataTransfer.files, function (f) { addImageFile(f); }); });
+  $('#file').addEventListener('change', function () { Array.prototype.forEach.call(this.files, function (f) { addImageFile(f); }); this.value = ''; });
+
+  // ---- view controls
+  var VIEW = [
+    { k: 'explode', l: 'Explode', t: 'range', min: 0, max: 120, step: 2 },
+    { k: 'source', l: 'Show source', t: 'bool' },
+    { k: 'desk', l: 'Desk', t: 'color' },
+  ];
+  var box = $('#c-view');
+  VIEW.forEach(function (c) {
+    var row = document.createElement('div'); row.className = 'ctl' + (c.t === 'range' ? '' : ' wide');
+    var label = document.createElement('label'); label.textContent = c.l; row.appendChild(label);
+    var input = document.createElement('input'); input.type = c.t === 'range' ? 'range' : c.t === 'bool' ? 'checkbox' : 'color';
+    if (c.t === 'range') { input.min = c.min; input.max = c.max; input.step = c.step; input.value = V[c.k]; }
+    else if (c.t === 'bool') input.checked = V[c.k]; else input.value = V[c.k];
+    var val = c.t === 'range' ? document.createElement('span') : null; if (val) { val.className = 'val'; val.textContent = V[c.k]; }
+    input.addEventListener('input', function () { V[c.k] = c.t === 'range' ? parseFloat(input.value) : c.t === 'bool' ? input.checked : input.value; if (val) val.textContent = V[c.k]; applyView(); });
+    row.appendChild(input); if (val) row.appendChild(val); box.appendChild(row);
+  });
+  function applyView() { document.body.style.background = V.desk; srcImg.style.display = V.source ? 'block' : 'none'; layers.forEach(place); }
+
+  // ---- actions
+  function lift() { var on = !layers.some(function (L) { return L.lifted; }); layers.forEach(function (L) { if (/^page-/.test(L.name)) { L.lifted = on; L.el.classList.add('moving'); place(L); } }); }
+  function tidy() { layers.forEach(function (L) { L.x = L.home[0]; L.y = L.home[1]; L.rot = 0; L.lifted = false; L.el.classList.add('moving'); place(L); }); V.explode = 0; var r = box.querySelector('input[type="range"]'); if (r) { r.value = 0; r.nextSibling.textContent = '0'; } applyView(); refreshJSON(); }
+  function refreshJSON() { $('#json').value = JSON.stringify({ W: DATA.W, H: DATA.H, layers: layers.map(function (L) { return { name: L.name, x: Math.round(L.x), y: Math.round(L.y), w: Math.round(L.w), h: Math.round(L.h), z: L.z, locked: L.locked }; }) }, null, 1); }
+  $('#btn-lift').addEventListener('click', lift); $('#btn-tidy').addEventListener('click', tidy);
+  $('#btn-refresh').addEventListener('click', refreshJSON);
+  $('#btn-copy').addEventListener('click', function () { var ta = $('#json'); refreshJSON(); ta.select(); var done = function () { statusEl.textContent = 'Layout copied.'; }; if (navigator.clipboard) navigator.clipboard.writeText(ta.value).then(done, function () { document.execCommand('copy'); done(); }); else { document.execCommand('copy'); done(); } });
+  function hidePanel(v) { $('#panel').classList.toggle('hidden', v); stage.classList.toggle('wide', v); layout(); }
+  $('#btn-hide').addEventListener('click', function () { hidePanel(true); }); $('#toggle-panel').addEventListener('click', function () { hidePanel(false); });
+  document.addEventListener('keydown', function (e) {
+    if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    if (e.key === 'l') lift(); else if (e.key === '0') tidy(); else if (e.key === 'h') hidePanel(!$('#panel').classList.contains('hidden'));
+    else if ((e.key === 'Delete' || e.key === 'Backspace') && selected) removeLayer(selected);
+  });
+  window.addEventListener('resize', layout);
+
+  DATA.parts.forEach(function (p) { addLayer(p); });
+  layout(); applyView(); refreshJSON();
+  window.Builder = { layers: layers, DATA: DATA };
+})();
+</script>
