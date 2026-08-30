@@ -1,0 +1,485 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Journal Trace Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root { --panel: #f6f8fa; --panel-2: #eaeef2; --panel-3: #dfe5eb; --ink: #1b2631; --ink-2: #5a6b79; --line: #d3dae1; --accent: #ff7f5c; --accent-ink: #1b2631; --accent-2: #78c0e0; --shadow: 0 10px 30px rgba(27,38,49,0.12); color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --panel: #161b20; --panel-2: #1f262d; --panel-3: #29323b; --ink: #e6ecf1; --ink-2: #94a3b0; --line: #2c3640; --accent: #ff8f6e; --accent-ink: #161b20; --shadow: 0 10px 30px rgba(0,0,0,0.45); color-scheme: dark; } }
+  :root[data-theme="dark"] { --panel: #161b20; --panel-2: #1f262d; --panel-3: #29323b; --ink: #e6ecf1; --ink-2: #94a3b0; --line: #2c3640; --accent: #ff8f6e; --accent-ink: #161b20; --shadow: 0 10px 30px rgba(0,0,0,0.45); color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: #e9e0cc; color: var(--ink); font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; font-size: 13px; line-height: 1.45; overflow: hidden; }
+  #stage { position: fixed; top: 0; left: 0; bottom: 0; right: 348px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  #stage.wide { right: 0; }
+  #table { position: relative; }
+  #ref { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; display: none; }
+  .item { position: absolute; left: 0; top: 0; transform-origin: center center; cursor: grab; touch-action: none; will-change: transform; user-select: none; }
+  .item.moving { transition: transform 420ms cubic-bezier(.2,.8,.2,1); }
+  .item.dragging { cursor: grabbing; }
+  .item.pinned { cursor: default; }
+  .item canvas { display: block; width: 100%; height: 100%; pointer-events: none; filter: drop-shadow(0 1px 1px rgba(40,30,10,0.18)); }
+  .item.lifted canvas { filter: drop-shadow(0 14px 18px rgba(40,30,10,0.35)); }
+  #dim { position: fixed; inset: 0; background: rgba(30,25,15,0.35); display: none; }
+  #dim.on { display: block; }
+  #panel { position: fixed; top: 0; right: 0; bottom: 0; width: 348px; background: var(--panel); color: var(--ink); border-left: 1px solid var(--line); box-shadow: var(--shadow); display: flex; flex-direction: column; transition: transform 240ms ease; z-index: 20; }
+  #panel.hidden { transform: translateX(100%); }
+  @media (prefers-reduced-motion: reduce) { #panel, .item.moving { transition: none; } }
+  #panel-head { padding: 16px 18px 12px; border-bottom: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 6px 10px; }
+  #panel-head h1 { margin: 0; font-family: "Cormorant Garamond", Georgia, serif; font-weight: 600; font-style: italic; font-size: 30px; line-height: 1; letter-spacing: -0.01em; text-wrap: balance; }
+  #status { grid-column: 1 / -1; font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums; min-height: 16px; }
+  #status .painting { color: var(--accent); }
+  .head-actions { display: flex; gap: 6px; }
+  #panel-body { flex: 1; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 24px; }
+  details.group { border-bottom: 1px solid var(--line); }
+  details.group > summary { list-style: none; cursor: pointer; padding: 11px 18px; display: flex; align-items: baseline; gap: 10px; user-select: none; }
+  details.group > summary::-webkit-details-marker { display: none; }
+  details.group > summary .name { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; }
+  details.group > summary .hint { font-size: 11px; color: var(--ink-2); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  details.group > summary::after { content: ""; width: 7px; height: 7px; border-right: 1.5px solid var(--ink-2); border-bottom: 1.5px solid var(--ink-2); transform: rotate(-45deg); flex: none; }
+  details.group[open] > summary::after { transform: rotate(45deg); }
+  details.group > .content { padding: 2px 18px 14px; }
+  .ctl { display: grid; grid-template-columns: 112px 1fr 44px; align-items: center; gap: 8px; padding: 5px 0; }
+  .ctl label { font-size: 12px; }
+  .ctl .val { font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 11px; color: var(--ink-2); text-align: right; font-variant-numeric: tabular-nums; }
+  .ctl.wide { grid-template-columns: 112px 1fr; }
+  .ctl select { font: inherit; font-size: 12px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; width: 100%; }
+  .ctl input[type="checkbox"] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); justify-self: start; }
+  .ctl input[type="color"] { width: 100%; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2); }
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; background: transparent; margin: 0; }
+  input[type="range"]::-webkit-slider-runnable-track { height: 3px; background: var(--panel-3); border-radius: 2px; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; margin-top: -5.5px; background: var(--panel); border: 2px solid var(--accent); }
+  input[type="range"]::-moz-range-track { height: 3px; background: var(--panel-3); }
+  input[type="range"]::-moz-range-thumb { width: 10px; height: 10px; border-radius: 50%; background: var(--panel); border: 2px solid var(--accent); }
+  :is(button, input, select, textarea, summary):focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+  .sub { margin: 10px 0 2px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+  .btn { font: inherit; font-size: 12px; font-weight: 500; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; cursor: pointer; }
+  .btn:hover { border-color: var(--ink-2); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  .btn.small { padding: 4px 8px; font-size: 11px; }
+  .row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .objlist { display: grid; grid-template-columns: 1fr 1fr; gap: 2px 10px; }
+  .objlist label { display: flex; align-items: center; gap: 6px; font-size: 12px; font-family: "IBM Plex Mono", monospace; }
+  .objlist input { accent-color: var(--accent); margin: 0; }
+  textarea#json { width: 100%; height: 140px; resize: vertical; font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 10.5px; line-height: 1.4; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+  #toggle-panel { position: fixed; top: 12px; right: 12px; z-index: 5; }
+  #panel:not(.hidden) ~ #toggle-panel { display: none; }
+  .foot { padding: 12px 18px 0; color: var(--ink-2); font-size: 11px; }
+  .foot p { margin: 4px 0; }
+  .kbd { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; }
+  #unsupported { display: none; margin: 12px 18px; padding: 10px 12px; background: var(--panel-2); border: 1px solid var(--accent); border-radius: 8px; font-size: 12px; }
+</style>
+
+<div id="stage"><div id="table"><img id="ref" alt=""></div></div>
+<div id="dim"></div>
+
+<aside id="panel" aria-label="Controls">
+  <div id="panel-head">
+    <h1>Journal Trace Lab</h1>
+    <div class="head-actions">
+      <button class="btn small" id="btn-repaint" title="R">Repaint</button>
+      <button class="btn small" id="btn-reset" title="0">Tidy</button>
+      <button class="btn small" id="btn-hide" title="H">Hide</button>
+    </div>
+    <div id="status">loading p5.brush…</div>
+  </div>
+  <div id="unsupported">This browser has no WebGL2, which p5.brush needs to paint.</div>
+  <div id="panel-body">
+    <details class="group" open>
+      <summary><span class="name">Paint</span><span class="hint">washes, pencil, outline — applied to every object</span></summary>
+      <div class="content" id="c-paint"></div>
+    </details>
+    <details class="group" open>
+      <summary><span class="name">Objects</span><span class="hint">what gets painted; pinned = not draggable</span></summary>
+      <div class="content">
+        <div class="objlist" id="objlist"></div>
+        <div class="row"><button class="btn small" id="btn-all">All</button><button class="btn small" id="btn-none">None</button><button class="btn small" id="btn-unpin">Unpin journal</button></div>
+      </div>
+    </details>
+    <details class="group">
+      <summary><span class="name">Table</span><span class="hint">desk, reference photo, throw physics</span></summary>
+      <div class="content" id="c-table"></div>
+    </details>
+    <details class="group">
+      <summary><span class="name">Config</span><span class="hint">copy / paste JSON</span></summary>
+      <div class="content">
+        <textarea id="json" spellcheck="false" aria-label="Config JSON"></textarea>
+        <div class="row"><button class="btn small primary" id="btn-copy">Copy JSON</button><button class="btn small" id="btn-apply">Apply JSON</button></div>
+      </div>
+    </details>
+    <div class="foot">
+      <p>Every piece was cut from the photo with Segment Anything and turned into a recipe (outline · colour regions · edge lines); p5.brush paints each recipe once. Drag to move, flick to throw, click to open.</p>
+      <p><span class="kbd">r</span> repaint · <span class="kbd">0</span> tidy · <span class="kbd">h</span> hide panel · <span class="kbd">esc</span> close</p>
+    </div>
+  </div>
+</aside>
+<button class="btn" id="toggle-panel">Controls</button>
+
+<script src="https://cdn.jsdelivr.net/npm/p5.brush@2.2.2/dist/brush.js"></script>
+<script>window.JOURNAL_OBJECTS = __OBJECTS__; window.JOURNAL_REF = "data:image/jpeg;base64,__REF__";</script>
+<script>
+(function () {
+  'use strict';
+  var DATA = window.JOURNAL_OBJECTS;
+  var BRUSHES = ['2B', 'HB', '2H', 'cpencil', 'pen', 'rotring', 'spray', 'marker', 'marker2', 'charcoal'];
+  var P = {
+    washOpacity: 200, bleed: 0.22, texture: 0.5, border: 0.5, scatter: true, layersMax: 6, darkBoost: 1.3, darkPasses: 1, underpaint: 0.6, baseCoat: 0.6, density: 1.3,
+    lineBrush: '2B', lineWeight: 0.9, linePct: 0.6, ink: '#3a2f25', inkMix: 0.5,
+    outlineOn: true, outlineBrush: '2B', outlineWeight: 1.1, wiggle: 1.5,
+    brushScale: 3, seed: 3, spriteMax: 1000,
+    desk: '#e9e0cc', reference: false, refOpacity: 0.35, friction: 0.92, throwSpin: 1, unpin: false,
+  };
+  var SCHEMA = {
+    paint: [
+      { sub: 'Wash' },
+      { k: 'washOpacity', l: 'Opacity', t: 'range', min: 20, max: 255, step: 5, paint: true },
+      { k: 'bleed', l: 'Bleed', t: 'range', min: 0, max: 1, step: 0.02, paint: true },
+      { k: 'texture', l: 'Texture', t: 'range', min: 0, max: 1, step: 0.05, paint: true },
+      { k: 'border', l: 'Edge darkening', t: 'range', min: 0, max: 1, step: 0.05, paint: true },
+      { k: 'scatter', l: 'Edge scatter', t: 'bool', paint: true },
+      { k: 'layersMax', l: 'Colour layers', t: 'range', min: 1, max: 6, step: 1, paint: true },
+      { k: 'darkBoost', l: 'Dark boost', t: 'range', min: 0.5, max: 1.6, step: 0.05, paint: true },
+      { k: 'darkPasses', l: 'Dark passes', t: 'range', min: 0, max: 2, step: 1, paint: true, tip: 'extra coats on the darker half of the colour layers' },
+      { k: 'baseCoat', l: 'Base coat', t: 'range', min: 0, max: 1, step: 0.05, paint: true, tip: 'a first wash of the object&#39;s median colour over its whole outline' },
+      { k: 'density', l: 'Pigment density', t: 'range', min: 0.6, max: 4, step: 0.1, paint: true, tip: 'deepens the wash after painting — keeps the texture, loses the paleness' },
+      { k: 'underpaint', l: 'Paper body', t: 'range', min: 0, max: 1, step: 0.05, paint: true },
+      { sub: 'Pencil lines' },
+      { k: 'lineBrush', l: 'Brush', t: 'select', o: BRUSHES, paint: true },
+      { k: 'lineWeight', l: 'Weight', t: 'range', min: 0.2, max: 3, step: 0.05, paint: true },
+      { k: 'linePct', l: 'How many', t: 'range', min: 0, max: 1, step: 0.05, paint: true },
+      { k: 'ink', l: 'Ink', t: 'color', paint: true },
+      { k: 'inkMix', l: 'Ink vs. own colour', t: 'range', min: 0, max: 1, step: 0.05, paint: true },
+      { sub: 'Outline' },
+      { k: 'outlineOn', l: 'Outline', t: 'bool', paint: true },
+      { k: 'outlineBrush', l: 'Brush', t: 'select', o: BRUSHES, paint: true },
+      { k: 'outlineWeight', l: 'Weight', t: 'range', min: 0.2, max: 3, step: 0.05, paint: true },
+      { k: 'wiggle', l: 'Hand wobble', t: 'range', min: 0, max: 8, step: 0.5, paint: true },
+      { sub: 'Brush' },
+      { k: 'brushScale', l: 'Brush scale', t: 'range', min: 1, max: 6, step: 0.25, paint: true },
+      { k: 'seed', l: 'Seed', t: 'range', min: 0, max: 99, step: 1, paint: true },
+      { k: 'spriteMax', l: 'Sprite px', t: 'range', min: 300, max: 1150, step: 50, paint: true },
+    ],
+    table: [
+      { k: 'desk', l: 'Desk', t: 'color' },
+      { k: 'reference', l: 'Show photo', t: 'bool' },
+      { k: 'refOpacity', l: 'Photo opacity', t: 'range', min: 0.05, max: 1, step: 0.05 },
+      { k: 'friction', l: 'Glide', t: 'range', min: 0.8, max: 0.99, step: 0.01 },
+      { k: 'throwSpin', l: 'Spin on throw', t: 'range', min: 0, max: 3, step: 0.1 },
+    ],
+  };
+  var PINNED = { journal: true, flap: true };
+
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+  function hex2rgb(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
+  function rgb2hex(c) { return '#' + c.map(function (v) { return Math.round(clamp(v, 0, 255)).toString(16).padStart(2, '0'); }).join(''); }
+  function mix(a, b, t) { var A = hex2rgb(a), B = hex2rgb(b); return rgb2hex([A[0] + (B[0] - A[0]) * t, A[1] + (B[1] - A[1]) * t, A[2] + (B[2] - A[2]) * t]); }
+  function darken(h, f) { var c = hex2rgb(h); return rgb2hex([c[0] * f, c[1] * f, c[2] * f]); }
+
+  // ---------------------------------------------------------------- painter
+  var Painter = {
+    gl: null, ok: false, scaleApplied: 1, job: 0, MAX: 1200,
+    init: function () {
+      if (typeof window.brush === 'undefined') return false;
+      var c = document.createElement('canvas'); c.width = this.MAX; c.height = this.MAX;
+      try { if (!c.getContext('webgl2')) return false; brush.load(c); brush.angleMode(brush.DEGREES); } catch (e) { console.error(e); return false; }
+      this.gl = c; this.ok = true; return true;
+    },
+    setScale: function (s) { if (Math.abs(s - this.scaleApplied) < 1e-6) return; brush.scaleBrushes(s / this.scaleApplied); this.scaleApplied = s; },
+    knockOutWhite: function (ctx, w, h, density) {
+      var img = ctx.getImageData(0, 0, w, h), d = img.data, g = density || 1;
+      for (var i = 0; i < d.length; i += 4) {
+        var a = d[i + 3]; if (a === 0) continue;
+        var r = d[i], gg = d[i + 1], b = d[i + 2], al = 255 - Math.min(r, gg, b);
+        if (al === 0) { d[i + 3] = 0; continue; }
+        var k = 255 / al;
+        d[i] = 255 - (255 - r) * k; d[i + 1] = 255 - (255 - gg) * k; d[i + 2] = 255 - (255 - b) * k;
+        var alpha = (al * a) / 255 / 255;
+        if (g !== 1) alpha = 1 - Math.pow(1 - alpha, g);
+        d[i + 3] = alpha * 255;
+      }
+      ctx.putImageData(img, 0, 0);
+    },
+    paintOne: function (o) {
+      var gl = this.gl, M = 22, P = Object.assign({}, window.TraceLab ? TraceLab.P : {}, o.paint || {});
+      var s = Math.min(1.2, (Math.min(P.spriteMax, this.MAX - 2 * M)) / Math.max(o.bbox[2], o.bbox[3]));
+      var w = Math.ceil(o.bbox[2] * s) + 2 * M, h = Math.ceil(o.bbox[3] * s) + 2 * M;
+      var seed = P.seed * 131 + o.name.length * 17;
+      brush.seed(seed); brush.noiseSeed(seed);
+      brush.clear();
+      brush.push();
+      brush.translate(-gl.width / 2, -gl.height / 2);
+      brush.translate(M, M);
+      brush.scale(s);
+      brush.noField(); brush.noHatch(); brush.noStroke(); brush.noFill();
+      if (P.baseCoat > 0 && o.base && o.outline.length > 2) {
+        brush.fill(o.base, clamp(P.washOpacity * P.baseCoat, 8, 255)); brush.fillBleed(P.bleed * 0.6, 'out'); brush.fillTexture(P.texture, P.border * 0.5, false);
+        brush.polygon(o.outline);
+      }
+      var layers = o.layers.slice(0, P.layersMax), nL = Math.max(1, layers.length - 1);
+      layers.forEach(function (L, i) {
+        var op = clamp(P.washOpacity * (1 + (P.darkBoost - 1) * (i / nL)), 8, 255);
+        var passes = 1 + (i > nL / 2 ? (P.darkPasses || 0) : 0);
+        for (var pass = 0; pass < passes; pass++) {
+          brush.fill(L.color, op); brush.fillBleed(pass ? P.bleed * 0.5 : P.bleed, 'out'); brush.fillTexture(P.texture, P.border, P.scatter && !pass);
+          L.polys.forEach(function (poly) { brush.polygon(poly); });
+        }
+      });
+      brush.noFill();
+      var own = o.layers.length ? darken(o.layers[o.layers.length - 1].color, 0.75) : P.ink;
+      var ink = mix(own, P.ink, P.inkMix);
+      var n = Math.round(o.lines.length * P.linePct);
+      if (n > 0) {
+        brush.set(P.lineBrush, ink, P.lineWeight);
+        for (var i = 0; i < n; i++) brush.spline(o.lines[i], 0.15);
+      }
+      if (P.outlineOn && o.outline.length > 2) {
+        if (P.wiggle > 0) brush.wiggle(P.wiggle);
+        brush.set(P.outlineBrush, ink, P.outlineWeight);
+        brush.beginShape(0.05);
+        for (var j = 0; j < o.outline.length; j++) brush.vertex(o.outline[j][0], o.outline[j][1]);
+        brush.endShape(true);
+        brush.noField();
+      }
+      brush.noStroke(); brush.noFill();
+      brush.pop();
+      brush.render();
+      var c = document.createElement('canvas'); c.width = w; c.height = h;
+      var ctx = c.getContext('2d');
+      ctx.drawImage(gl, 0, 0, w, h, 0, 0, w, h);
+      this.knockOutWhite(ctx, w, h, P.density);
+      if (P.underpaint > 0 && o.outline.length > 2) {
+        // give the piece a body: off-white paper inside its outline, the painting on top
+        var c2 = document.createElement('canvas'); c2.width = w; c2.height = h;
+        var x2 = c2.getContext('2d');
+        x2.fillStyle = 'rgba(251,249,244,' + P.underpaint + ')';
+        x2.beginPath();
+        for (var q = 0; q < o.outline.length; q++) { var px = M + o.outline[q][0] * s, py = M + o.outline[q][1] * s; if (q) x2.lineTo(px, py); else x2.moveTo(px, py); }
+        x2.closePath(); x2.fill();
+        x2.drawImage(c, 0, 0);
+        c = c2;
+      }
+      return { canvas: c, s: s, M: M };
+    },
+    /** Paint the enabled objects one per tick; onEach(item, sprite) as they land. */
+    paintAll: function (list, onEach, onDone) {
+      var self = this, job = ++this.job, i = 0, t0 = performance.now();
+      this.setScale(P.brushScale);
+      function step() {
+        if (job !== self.job) return;
+        if (i >= list.length) { onDone(Math.round(performance.now() - t0)); return; }
+        var it = list[i++];
+        try { onEach(it, self.paintOne(it.o), i, list.length); } catch (e) { console.error('paint failed for', it.name, e); }
+        setTimeout(step, 10);
+      }
+      setTimeout(step, 0);
+    },
+  };
+
+  // ---------------------------------------------------------------- table + items
+  var $ = function (s) { return document.querySelector(s); };
+  var stage = $('#stage'), table = $('#table'), refImg = $('#ref'), dim = $('#dim'), statusEl = $('#status');
+  refImg.src = window.JOURNAL_REF;
+  var scale = 1, zTop = 10, items = [], byName = {};
+  var enabled = {};
+  DATA.objects.forEach(function (o) { enabled[o.name] = true; });
+  var params = new URLSearchParams(location.search);
+  if (params.get('objects')) { var only = params.get('objects').split(','); DATA.objects.forEach(function (o) { enabled[o.name] = only.indexOf(o.name) >= 0; }); }
+
+  function layout() {
+    var vw = stage.clientWidth, vh = stage.clientHeight;
+    scale = Math.min(vw / DATA.W, vh / DATA.H) * 0.96;
+    table.style.width = DATA.W * scale + 'px'; table.style.height = DATA.H * scale + 'px';
+    items.forEach(place);
+  }
+  function place(it) {
+    if (!it.sprite) return;
+    var sp = it.sprite, w = sp.canvas.width / sp.s * scale, h = sp.canvas.height / sp.s * scale;
+    it.el.style.width = w + 'px'; it.el.style.height = h + 'px';
+    var x = (it.x - sp.M / sp.s) * scale, y = (it.y - sp.M / sp.s) * scale;
+    if (it.open) {
+      var k = Math.min((stage.clientHeight * 0.82) / h, (stage.clientWidth * 0.82) / w, 3);
+      var cx = stage.clientWidth / 2 - table.offsetLeft - w / 2, cy = stage.clientHeight / 2 - table.offsetTop - h / 2;
+      it.el.style.transform = 'translate(' + cx + 'px,' + cy + 'px) rotate(0deg) scale(' + k + ')';
+    } else {
+      it.el.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + it.rot + 'deg)';
+    }
+  }
+  function ensureItem(o) {
+    var it = byName[o.name];
+    if (it) return it;
+    var el = document.createElement('div');
+    el.className = 'item' + (PINNED[o.name] ? ' pinned' : '');
+    el.dataset.name = o.name;
+    el.style.zIndex = String(DATA.objects.indexOf(o) + 1);
+    table.appendChild(el);
+    it = { name: o.name, o: o, el: el, x: o.bbox[0], y: o.bbox[1], rot: o.rot || 0, vx: 0, vy: 0, vr: 0, sprite: null, open: false };
+    byName[o.name] = it; items.push(it);
+    bindDrag(it);
+    return it;
+  }
+  function setSprite(it, sprite) {
+    it.sprite = sprite;
+    it.el.innerHTML = '';
+    it.el.appendChild(sprite.canvas);
+    place(it);
+  }
+
+  // drag / throw / open
+  var moving = false, dragging = null;
+  function bindDrag(it) {
+    var el = it.el, sx, sy, lx, ly, lt, t0, samples;
+    el.addEventListener('pointerdown', function (e) {
+      if (e.button !== 0) return;
+      if (PINNED[it.name] && !P.unpin) return;
+      e.preventDefault();
+      el.setPointerCapture(e.pointerId);
+      dragging = it; it.vx = it.vy = it.vr = 0;
+      sx = lx = e.clientX; sy = ly = e.clientY; lt = t0 = performance.now(); samples = [];
+      it.grab = { dx: (e.clientX - table.getBoundingClientRect().left) / scale - (it.x + it.o.bbox[2] / 2), dy: (e.clientY - table.getBoundingClientRect().top) / scale - (it.y + it.o.bbox[3] / 2) };
+      el.style.zIndex = String(++zTop);
+      el.classList.add('dragging', 'lifted'); el.classList.remove('moving');
+    });
+    el.addEventListener('pointermove', function (e) {
+      if (dragging !== it) return;
+      var now = performance.now(), dx = (e.clientX - lx) / scale, dy = (e.clientY - ly) / scale, dt = Math.max(1, now - lt);
+      if (it.open) return;
+      it.x += dx; it.y += dy;
+      samples.push({ vx: dx / dt * 1000, vy: dy / dt * 1000, t: now });
+      samples = samples.filter(function (s) { return now - s.t < 120; });
+      lx = e.clientX; ly = e.clientY; lt = now;
+      place(it);
+    });
+    function up(e) {
+      if (dragging !== it) return;
+      dragging = null;
+      el.classList.remove('dragging');
+      var moved = Math.hypot(e.clientX - sx, e.clientY - sy), held = performance.now() - t0;
+      if (moved < 5 && held < 350) { toggleOpen(it); el.classList.remove('lifted'); return; }
+      if (samples.length) {
+        var vx = 0, vy = 0; samples.forEach(function (s) { vx += s.vx; vy += s.vy; }); vx /= samples.length; vy /= samples.length;
+        it.vx = vx; it.vy = vy;
+        // spin from where it was grabbed relative to the centre
+        it.vr = P.throwSpin * (vx * it.grab.dy - vy * it.grab.dx) / (Math.max(it.o.bbox[2], it.o.bbox[3]) * 20);
+      }
+      el.classList.remove('lifted');
+      kick();
+    }
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+  }
+  function toggleOpen(it) {
+    if (it.open) { it.open = false; it.el.classList.add('moving'); dim.classList.remove('on'); place(it); return; }
+    items.forEach(function (x) { if (x.open) { x.open = false; x.el.classList.add('moving'); place(x); } });
+    it.open = true; it.el.classList.add('moving', 'lifted'); it.el.style.zIndex = String(++zTop); dim.classList.add('on'); place(it);
+  }
+  dim.addEventListener('click', function () { items.forEach(function (x) { if (x.open) toggleOpen(x); }); });
+  var raf = 0;
+  function kick() { if (!raf) raf = requestAnimationFrame(tick); }
+  function tick() {
+    raf = 0;
+    var any = false;
+    items.forEach(function (it) {
+      if (dragging === it || it.open) return;
+      if (Math.abs(it.vx) < 4 && Math.abs(it.vy) < 4 && Math.abs(it.vr) < 0.05) { it.vx = it.vy = it.vr = 0; return; }
+      any = true;
+      it.x += it.vx / 60; it.y += it.vy / 60; it.rot += it.vr;
+      it.vx *= P.friction; it.vy *= P.friction; it.vr *= P.friction;
+      var cx = it.x + it.o.bbox[2] / 2, cy = it.y + it.o.bbox[3] / 2, m = 40;
+      if (cx < m) { it.x += m - cx; it.vx = Math.abs(it.vx) * 0.5; }
+      if (cx > DATA.W - m) { it.x -= cx - (DATA.W - m); it.vx = -Math.abs(it.vx) * 0.5; }
+      if (cy < m) { it.y += m - cy; it.vy = Math.abs(it.vy) * 0.5; }
+      if (cy > DATA.H - m) { it.y -= cy - (DATA.H - m); it.vy = -Math.abs(it.vy) * 0.5; }
+      place(it);
+    });
+    if (any) raf = requestAnimationFrame(tick);
+  }
+
+  // ---------------------------------------------------------------- UI
+  var ui = {};
+  function fmt(v) { if (typeof v === 'number') return Number.isInteger(v) ? String(v) : v.toFixed(v < 1 ? 3 : 2).replace(/\.?0+$/, ''); return String(v); }
+  function buildGroup(container, list) {
+    list.forEach(function (c) {
+      if (c.sub) { var hh = document.createElement('div'); hh.className = 'sub'; hh.textContent = c.sub; container.appendChild(hh); return; }
+      var row = document.createElement('div'); row.className = 'ctl' + (c.t === 'range' ? '' : ' wide');
+      var label = document.createElement('label'); label.textContent = c.l; label.htmlFor = 'in-' + c.k; row.appendChild(label);
+      var input, val;
+      if (c.t === 'range') { input = document.createElement('input'); input.type = 'range'; input.min = c.min; input.max = c.max; input.step = c.step; val = document.createElement('span'); val.className = 'val'; }
+      else if (c.t === 'select') { input = document.createElement('select'); c.o.forEach(function (o) { var op = document.createElement('option'); op.value = o; op.textContent = o; input.appendChild(op); }); }
+      else if (c.t === 'bool') { input = document.createElement('input'); input.type = 'checkbox'; }
+      else { input = document.createElement('input'); input.type = 'color'; }
+      input.id = 'in-' + c.k; row.appendChild(input); if (val) row.appendChild(val); container.appendChild(row);
+      ui[c.k] = { input: input, val: val, c: c };
+      var handler = function () { var v = c.t === 'range' ? parseFloat(input.value) : c.t === 'bool' ? input.checked : input.value; setParam(c.k, v, c.paint); };
+      input.addEventListener('input', handler); input.addEventListener('change', handler);
+    });
+  }
+  function refreshInputs() {
+    Object.keys(ui).forEach(function (k) { var u = ui[k], v = P[k]; if (u.c.t === 'bool') u.input.checked = !!v; else u.input.value = v; if (u.val) u.val.textContent = fmt(v); });
+    refreshJSON(); applyTable();
+  }
+  var repaintTimer = 0;
+  function setParam(k, v, paint) {
+    P[k] = v; if (ui[k] && ui[k].val) ui[k].val.textContent = fmt(v);
+    if (paint) { clearTimeout(repaintTimer); repaintTimer = setTimeout(repaint, 300); } else applyTable();
+    refreshJSON();
+  }
+  function applyTable() {
+    document.body.style.background = P.desk;
+    refImg.style.display = P.reference ? 'block' : 'none'; refImg.style.opacity = P.refOpacity;
+  }
+  function buildObjList() {
+    var box = $('#objlist'); box.innerHTML = '';
+    DATA.objects.forEach(function (o) {
+      var l = document.createElement('label'); var cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = enabled[o.name];
+      cb.addEventListener('change', function () { enabled[o.name] = cb.checked; if (!cb.checked && byName[o.name]) byName[o.name].el.style.display = 'none'; else if (byName[o.name] && byName[o.name].sprite) byName[o.name].el.style.display = ''; else repaintDebounced(); });
+      l.appendChild(cb); l.appendChild(document.createTextNode(o.name)); box.appendChild(l);
+    });
+  }
+  function repaintDebounced() { clearTimeout(repaintTimer); repaintTimer = setTimeout(repaint, 300); }
+  $('#btn-all').addEventListener('click', function () { DATA.objects.forEach(function (o) { enabled[o.name] = true; }); buildObjList(); repaint(); });
+  $('#btn-none').addEventListener('click', function () { DATA.objects.forEach(function (o) { enabled[o.name] = false; }); buildObjList(); items.forEach(function (it) { it.el.style.display = 'none'; }); });
+  $('#btn-unpin').addEventListener('click', function () { P.unpin = !P.unpin; this.textContent = P.unpin ? 'Pin journal' : 'Unpin journal'; items.forEach(function (it) { it.el.classList.toggle('pinned', !!PINNED[it.name] && !P.unpin); }); });
+
+  function refreshJSON() { $('#json').value = JSON.stringify(P, null, 1); }
+  $('#btn-copy').addEventListener('click', function () { var ta = $('#json'); refreshJSON(); ta.select(); var done = function () { statusEl.textContent = 'Config copied.'; }; if (navigator.clipboard) navigator.clipboard.writeText(ta.value).then(done, function () { document.execCommand('copy'); done(); }); else { document.execCommand('copy'); done(); } });
+  $('#btn-apply').addEventListener('click', function () { try { Object.assign(P, JSON.parse($('#json').value)); refreshInputs(); repaint(); } catch (e) { statusEl.textContent = 'That JSON did not parse: ' + e.message; } });
+
+  var painting = false;
+  function repaint() {
+    if (!Painter.ok) return;
+    var list = DATA.objects.filter(function (o) { return enabled[o.name]; }).map(ensureItem);
+    items.forEach(function (it) { it.el.style.display = enabled[it.name] ? '' : 'none'; });
+    painting = true;
+    statusEl.innerHTML = '<span class="painting">painting 0/' + list.length + '…</span>';
+    Painter.paintAll(list, function (it, sprite, i, n) {
+      setSprite(it, sprite);
+      statusEl.innerHTML = '<span class="painting">painting ' + i + '/' + n + '… ' + it.name + '</span>';
+    }, function (ms) {
+      painting = false;
+      statusEl.textContent = list.length + ' objects painted in ' + (ms / 1000).toFixed(1) + ' s';
+    });
+  }
+  function tidy() { items.forEach(function (it) { it.x = it.o.bbox[0]; it.y = it.o.bbox[1]; it.rot = it.o.rot || 0; it.vx = it.vy = it.vr = 0; if (it.open) { it.open = false; dim.classList.remove('on'); } it.el.classList.add('moving'); place(it); }); }
+  $('#btn-repaint').addEventListener('click', function () { P.seed = (P.seed + 1) % 100; refreshInputs(); repaint(); });
+  $('#btn-reset').addEventListener('click', tidy);
+  function hidePanel(v) { $('#panel').classList.toggle('hidden', v); stage.classList.toggle('wide', v); layout(); }
+  $('#btn-hide').addEventListener('click', function () { hidePanel(true); });
+  $('#toggle-panel').addEventListener('click', function () { hidePanel(false); });
+  document.addEventListener('keydown', function (e) {
+    if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    if (e.key === 'r') $('#btn-repaint').click(); else if (e.key === '0') tidy(); else if (e.key === 'h') hidePanel(!$('#panel').classList.contains('hidden'));
+    else if (e.key === 'Escape') items.forEach(function (x) { if (x.open) toggleOpen(x); });
+  });
+  window.addEventListener('resize', layout);
+
+  buildGroup($('#c-paint'), SCHEMA.paint);
+  buildGroup($('#c-table'), SCHEMA.table);
+  buildObjList();
+  refreshInputs();
+  layout();
+  if (!Painter.init()) { $('#unsupported').style.display = 'block'; statusEl.textContent = typeof window.brush === 'undefined' ? 'p5.brush failed to load from the CDN.' : 'WebGL2 unavailable.'; }
+  else repaint();
+  window.TraceLab = { get P() { return P; }, items: items, Painter: Painter, repaint: repaint, get painting() { return painting; } };
+})();
+</script>

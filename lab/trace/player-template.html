@@ -1,0 +1,211 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Journal Turn Player</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;1,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root { --panel: #f6f8fa; --panel-2: #eaeef2; --panel-3: #dfe5eb; --ink: #1b2631; --ink-2: #5a6b79; --line: #d3dae1; --accent: #ff7f5c; --accent-ink: #1b2631; --accent-2: #78c0e0; color-scheme: light; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --panel: #161b20; --panel-2: #1f262d; --panel-3: #29323b; --ink: #e6ecf1; --ink-2: #94a3b0; --line: #2c3640; --accent: #ff8f6e; --accent-ink: #161b20; color-scheme: dark; } }
+  :root[data-theme="dark"] { --panel: #161b20; --panel-2: #1f262d; --panel-3: #29323b; --ink: #e6ecf1; --ink-2: #94a3b0; --line: #2c3640; --accent: #ff8f6e; --accent-ink: #161b20; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { margin: 0; background: #f2efe8; color: var(--ink); font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; font-size: 13px; overflow: hidden; }
+  #stage { position: fixed; inset: 0 0 84px 0; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  /* ---- the compiled object: a fixed W×H box, scaled as one unit ---- */
+  .journal-anim { position: relative; transform-origin: center center; }
+  .journal-anim .layer, .journal-anim .page { position: absolute; left: 0; top: 0; }
+  .journal-anim .layer.multiply { mix-blend-mode: multiply; }
+  .journal-anim img { display: block; width: 100%; height: 100%; }
+  .journal-anim .page { transform-origin: center center; will-change: transform; }
+  .journal-anim .prop { position: absolute; left: 0; top: 0; transform-origin: center center; cursor: pointer; touch-action: none; user-select: none; transition: filter 120ms ease; }
+  .journal-anim .prop img { filter: drop-shadow(0 6px 6px rgba(60,40,20,0.30)); transition: transform 120ms ease, filter 120ms ease; }
+  .journal-anim .prop:hover img { filter: drop-shadow(0 10px 10px rgba(60,40,20,0.35)) brightness(1.04); transform: translateY(-3px); }
+  .journal-anim .prop.pressed img, .journal-anim .prop:active img { transform: translateY(1px) scale(0.97); filter: drop-shadow(0 2px 3px rgba(60,40,20,0.35)); }
+  .journal-anim .prop.disabled { cursor: default; opacity: 0.6; }
+  .journal-anim .prop.under { cursor: default; }
+  .journal-anim .prop.under img { filter: none; transform: none !important; }
+  .journal-anim .prop.under:hover img { filter: none; transform: none; }
+  .journal-anim.arrange .prop { cursor: grab; outline: 2px dashed rgba(255,127,92,0.8); outline-offset: 2px; }
+  .journal-anim.arrange .prop img { transform: none !important; }
+  #arrange { position: fixed; right: 18px; bottom: 92px; z-index: 31; width: 300px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; display: none; font-size: 12px; box-shadow: 0 10px 30px rgba(27,38,49,0.18); }
+  #arrange.on { display: block; }
+  #arrange h2 { margin: 0 0 8px; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+  #arrange .kv { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; margin: 6px 0 10px; }
+  #arrange label { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  #arrange input[type="number"] { width: 70px; font: inherit; font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; padding: 3px 5px; }
+  #arrange textarea { width: 100%; height: 70px; font-family: "IBM Plex Mono", monospace; font-size: 10px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 6px; resize: vertical; }
+  #bar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; min-height: 84px; background: var(--panel); border-top: 1px solid var(--line); color: var(--ink); display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 12px 18px; }
+  #bar .btn, #bar select { white-space: nowrap; }
+  #bar h1 { margin: 0 8px 0 0; font-family: "Cormorant Garamond", Georgia, serif; font-weight: 600; font-style: italic; font-size: 22px; white-space: nowrap; }
+  .btn { font: inherit; font-size: 12px; font-weight: 500; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 7px; padding: 6px 10px; cursor: pointer; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  select { font: inherit; font-size: 12px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; }
+  .ctl { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  .ctl .val { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-2); min-width: 44px; }
+  input[type="range"] { -webkit-appearance: none; appearance: none; width: 140px; height: 22px; background: transparent; margin: 0; }
+  input[type="range"]::-webkit-slider-runnable-track { height: 3px; background: var(--panel-3); border-radius: 2px; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 14px; height: 14px; border-radius: 50%; margin-top: -5.5px; background: var(--panel); border: 2px solid var(--accent); }
+  input[type="range"]::-moz-range-track { height: 3px; background: var(--panel-3); }
+  input[type="range"]::-moz-range-thumb { width: 10px; height: 10px; border-radius: 50%; background: var(--panel); border: 2px solid var(--accent); }
+  :is(button, input, select):focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+  #status { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-2); margin-left: auto; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 34%; }
+</style>
+
+<div id="stage"><div class="journal-anim" id="anim"></div></div>
+<div id="arrange">
+  <h2>Arrange</h2>
+  <div style="display: flex; gap: 6px; align-items: center; margin-bottom: 4px;"><select id="a-pick" style="flex: 1;"></select><button class="btn" id="a-reset" title="back to the built-in positions">Reset</button></div>
+  <div class="kv">
+    <label>x <input type="number" id="a-x" step="1"></label><label>y <input type="number" id="a-y" step="1"></label>
+    <label>scale <input type="number" id="a-s" step="0.01" min="0.05" max="3"></label><label>rotation <input type="number" id="a-r" step="1"></label>
+  </div>
+  <div class="muted" style="font-size: 11px; color: var(--ink-2);">Drag a rock, or type. Arrows nudge (shift ×10), <span style="font-family: 'IBM Plex Mono', monospace;">[ ]</span> rotate, <span style="font-family: 'IBM Plex Mono', monospace;">- =</span> scale. Saved in this browser as you go; coordinates are notebook space (centre of the rock).</div>
+  <textarea id="a-json" spellcheck="false" style="margin-top: 8px;"></textarea>
+  <div style="display: flex; gap: 6px; margin-top: 6px;"><button class="btn" id="a-copy">Copy props JSON</button><button class="btn" id="a-apply">Apply JSON</button></div>
+</div>
+<div id="bar">
+  <h1>Journal Turn Player</h1>
+  <button class="btn primary" id="fwd" title="→">Turn ▶</button>
+  <button class="btn" id="back" title="←">◀ Back</button>
+  <button class="btn" id="loop" title="preview loop">Loop preview</button>
+  <select id="seq"></select>
+  <button class="btn" id="arr">Arrange</button>
+  <div class="ctl"><span>size</span><input type="range" id="size" min="0.1" max="1.5" step="0.01" value="0.6"><span class="val" id="size-v"></span></div>
+  <div class="ctl"><span>speed</span><input type="range" id="speed" min="0.25" max="3" step="0.05" value="1"><span class="val" id="speed-v">1×</span></div>
+  <div class="ctl"><span>step</span><input type="range" id="scrub" min="0" max="0" step="1" value="0"><span class="val" id="scrub-v"></span></div>
+  <div id="status"></div>
+</div>
+
+<script>window.TURN_DATA = __DATA__;</script>
+<script>
+(function () {
+  'use strict';
+  var D = window.TURN_DATA; // { W, H, notebook: [...], items: {name: {w,h,src}}, sequences: [...] }
+  var $ = function (s) { return document.querySelector(s); };
+  var anim = $('#anim'), stage = $('#stage');
+  var PAD = [0, 0], FW = D.W, FH = D.H;  // the object's frame: the notebook plus whatever room the props need (recomputed as they move)
+  var under = document.createElement('div'); under.style.position = 'absolute'; under.style.width = D.W + 'px'; under.style.height = D.H + 'px'; under.style.zIndex = '0'; anim.appendChild(under);
+  var nb = document.createElement('div'); nb.style.position = 'absolute'; nb.style.width = D.W + 'px'; nb.style.height = D.H + 'px'; nb.style.zIndex = '1'; anim.appendChild(nb);
+  function refit() {
+    var minX = 0, minY = 0, maxX = D.W, maxY = D.H, m = 24;
+    (props || []).forEach(function (p) { var e = Math.hypot(p.w * p.s, p.h * p.s) / 2; minX = Math.min(minX, p.x - e); minY = Math.min(minY, p.y - e); maxX = Math.max(maxX, p.x + e); maxY = Math.max(maxY, p.y + e); });
+    PAD = [Math.ceil(Math.max(0, -minX) + m), Math.ceil(Math.max(0, -minY) + m)];
+    FW = Math.ceil(maxX + PAD[0] + m); FH = Math.ceil(maxY + PAD[1] + m);
+    anim.style.width = FW + 'px'; anim.style.height = FH + 'px';
+    under.style.left = nb.style.left = PAD[0] + 'px'; under.style.top = nb.style.top = PAD[1] + 'px';
+    if (typeof fit === 'function') fit();
+  }
+  D.notebook.forEach(function (p) {
+    var el = document.createElement('div'); el.className = 'layer' + (p.blend === 'multiply' ? ' multiply' : ''); el.style.zIndex = String(p.z);
+    el.style.transform = 'translate(' + p.bbox[0] + 'px,' + p.bbox[1] + 'px)'; el.style.width = p.bbox[2] + 'px'; el.style.height = p.bbox[3] + 'px';
+    var im = document.createElement('img'); im.src = p.src; im.alt = p.name; el.appendChild(im); nb.appendChild(el);
+  });
+  var pageLayer = document.createElement('div'); pageLayer.style.position = 'absolute'; pageLayer.style.inset = '0'; pageLayer.style.zIndex = '50'; nb.appendChild(pageLayer);
+  // props: the rock buttons, positioned in notebook space (may sit outside the notebook box, inside the padded frame)
+  var props = (D.props || []).map(function (p) { return JSON.parse(JSON.stringify(p)); }), propEls = {}, arranging = false, arrSel = null;
+  var DEFAULT_PROPS = JSON.parse(JSON.stringify(props.map(function (p) { return { name: p.name, x: p.x, y: p.y, s: p.s, r: p.r }; })));
+  try { var savedProps = JSON.parse(localStorage.getItem('turn-player-props') || 'null'); if (savedProps) savedProps.forEach(function (q) { var p = props.filter(function (x) { return x.name === q.name; })[0]; if (p) { p.x = q.x; p.y = q.y; p.s = q.s; p.r = q.r; } }); } catch (e) {}
+  function saveProps() { try { localStorage.setItem('turn-player-props', JSON.stringify(props.map(function (p) { return { name: p.name, x: p.x, y: p.y, s: p.s, r: p.r }; }))); } catch (e) {} }
+  props.forEach(function (p) {
+    var el = document.createElement('div'); el.className = 'prop' + (p.layer === 'under' ? ' under' : ''); el.dataset.name = p.name; el.style.zIndex = p.layer === 'under' ? '0' : '80';
+    var im = document.createElement('img'); im.src = p.src; im.alt = p.name; im.draggable = false; el.appendChild(im); (p.layer === 'under' ? under : nb).appendChild(el); propEls[p.name] = el;
+    el.addEventListener('click', function () { if (arranging) return; if (p.action === 'forward') turn(1); else if (p.action === 'back') turn(-1); });
+    var lx, ly;
+    el.addEventListener('pointerdown', function (e) { if (!arranging || e.button !== 0) return; e.preventDefault(); arrSel = p; el.setPointerCapture(e.pointerId); lx = e.clientX; ly = e.clientY; fillArr(); });
+    el.addEventListener('pointermove', function (e) { if (!arranging || arrSel !== p || !el.hasPointerCapture(e.pointerId)) return; var k = currentScale(); p.x = Math.round(p.x + (e.clientX - lx) / k); p.y = Math.round(p.y + (e.clientY - ly) / k); lx = e.clientX; ly = e.clientY; placeProps(); refit(); fillArr(); });
+    el.addEventListener('pointerup', function () { if (arranging) saveProps(); });
+  });
+  function placeProps() {
+    props.forEach(function (p) {
+      var el = propEls[p.name], w = p.w * p.s, h = p.h * p.s;
+      el.style.width = w + 'px'; el.style.height = h + 'px';
+      el.style.transform = 'translate(' + (p.x - w / 2) + 'px,' + (p.y - h / 2) + 'px) rotate(' + p.r + 'deg)';
+    });
+  }
+  placeProps(); refit();
+
+  var seq = D.sequences[0], cur = 0, playing = false, speed = 1, size = 0.6, raf = 0, last = 0, t = 0, dir = 1, looping = false, idle = true;
+  function showStep(i) {
+    cur = i; idle = false; pageLayer.innerHTML = '';
+    seq.steps[i].items.slice().sort(function (a, b) { return a.z - b.z; }).forEach(function (inst) {
+      var it = D.items[inst.item]; if (!it) return;
+      var el = document.createElement('div'); el.className = 'page';
+      var w = it.w * inst.s, h = it.h * inst.s;
+      el.style.width = w + 'px'; el.style.height = h + 'px'; el.style.zIndex = String(100 + inst.z); el.style.opacity = inst.o;
+      el.style.transform = 'translate(' + (inst.x - w / 2) + 'px,' + (inst.y - h / 2) + 'px) rotate(' + inst.r + 'deg) scale(' + (inst.mx ? -1 : 1) + ',' + (inst.my ? -1 : 1) + ')';
+      var im = document.createElement('img'); im.src = it.src; im.alt = inst.item; el.appendChild(im); pageLayer.appendChild(el);
+    });
+    $('#scrub').value = i; $('#scrub-v').textContent = (i + 1) + '/' + seq.steps.length;
+    $('#status').textContent = seq.name + ' · frame ' + FW + '×' + FH + ' @ ' + Math.round(size * 100) + '% = ' + Math.round(FW * size) + '×' + Math.round(FH * size) + ' px';
+  }
+  function showIdle() { idle = true; pageLayer.innerHTML = ''; $('#scrub-v').textContent = '–/' + seq.steps.length; }
+  function tick(now) {
+    if (!playing) return;
+    t += (now - last) * speed; last = now;
+    var d = seq.steps[cur].dur;
+    if (t >= d) {
+      t -= d;
+      var next = cur + dir;
+      if (next < 0 || next >= seq.steps.length) {
+        if (looping) { next = looping === 'pingpong' ? (dir = -dir, cur + dir) : (dir > 0 ? 0 : seq.steps.length - 1); }
+        else { stopTurn(); return; }
+      }
+      showStep(next);
+    }
+    raf = requestAnimationFrame(tick);
+  }
+  /** One page turn: forward plays the steps in order, back plays them reversed; the notebook returns to rest afterwards. */
+  function turn(d) {
+    if (playing && !looping) return;
+    looping = false; $('#loop').classList.remove('on');
+    dir = d; playing = true; t = 0; last = performance.now();
+    var el = propEls[d > 0 ? 'rock-right' : 'rock-left']; if (el) { el.classList.add('pressed'); setTimeout(function () { el.classList.remove('pressed'); }, 160); }
+    showStep(d > 0 ? 0 : seq.steps.length - 1);
+    cancelAnimationFrame(raf); raf = requestAnimationFrame(tick);
+  }
+  function stopTurn() { playing = false; cancelAnimationFrame(raf); showIdle(); }
+  function play() { playing = true; dir = 1; last = performance.now(); t = 0; if (idle) showStep(0); raf = requestAnimationFrame(tick); }
+  function pause() { playing = false; cancelAnimationFrame(raf); }
+  function currentScale() { var m = anim.style.transform.match(/scale\(([\d.]+)\)/); return m ? parseFloat(m[1]) : 1; }
+  function fit() {
+    var maxK = Math.min(stage.clientWidth / FW, stage.clientHeight / FH) * 0.96;
+    anim.style.transform = 'scale(' + Math.min(size, maxK) + ')';
+    $('#size-v').textContent = Math.round(size * 100) + '%';
+  }
+  $('#fwd').addEventListener('click', function () { turn(1); });
+  $('#back').addEventListener('click', function () { turn(-1); });
+  $('#loop').addEventListener('click', function () { if (looping) { looping = false; this.classList.remove('on'); stopTurn(); } else { looping = 'loop'; this.classList.add('on'); play(); } });
+  // ---- arrange mode for the props
+  function fillArr() { if (!arrSel) return; $('#a-pick').value = arrSel.name; $('#a-x').value = arrSel.x; $('#a-y').value = arrSel.y; $('#a-s').value = arrSel.s; $('#a-r').value = arrSel.r; $('#a-json').value = JSON.stringify(props.map(function (p) { return { name: p.name, action: p.action, x: p.x, y: p.y, s: p.s, r: p.r }; }), null, 1); }
+  $('#arr').addEventListener('click', function () { arranging = !arranging; this.classList.toggle('on', arranging); anim.classList.toggle('arrange', arranging); $('#arrange').classList.toggle('on', arranging); if (arranging) { arrSel = arrSel || props[0]; fillArr(); } });
+  [['a-x', 'x'], ['a-y', 'y'], ['a-s', 's'], ['a-r', 'r']].forEach(function (d) { $('#' + d[0]).addEventListener('input', function () { if (!arrSel) return; var v = parseFloat(this.value); if (isNaN(v)) return; arrSel[d[1]] = v; placeProps(); refit(); saveProps(); $('#a-json').value = JSON.stringify(props.map(function (p) { return { name: p.name, action: p.action, x: p.x, y: p.y, s: p.s, r: p.r }; }), null, 1); }); });
+  props.forEach(function (p) { var o = document.createElement('option'); o.value = p.name; o.textContent = p.name; $('#a-pick').appendChild(o); });
+  $('#a-pick').addEventListener('change', function () { arrSel = props.filter(function (p) { return p.name === $('#a-pick').value; })[0]; fillArr(); });
+  $('#a-reset').addEventListener('click', function () { DEFAULT_PROPS.forEach(function (q) { var p = props.filter(function (x) { return x.name === q.name; })[0]; if (p) { p.x = q.x; p.y = q.y; p.s = q.s; p.r = q.r; } }); placeProps(); refit(); saveProps(); fillArr(); });
+  $('#a-copy').addEventListener('click', function () { var ta = $('#a-json'); fillArr(); ta.select(); if (navigator.clipboard) navigator.clipboard.writeText(ta.value); else document.execCommand('copy'); $('#status').textContent = 'Props JSON copied.'; });
+  $('#a-apply').addEventListener('click', function () { try { JSON.parse($('#a-json').value).forEach(function (q) { var p = props.filter(function (x) { return x.name === q.name; })[0]; if (p) { p.x = q.x; p.y = q.y; p.s = q.s; p.r = q.r; } }); placeProps(); saveProps(); fillArr(); } catch (e) { $('#status').textContent = 'That JSON did not parse: ' + e.message; } });
+  $('#size').addEventListener('input', function () { size = parseFloat(this.value); fit(); showStep(cur); });
+  $('#speed').addEventListener('input', function () { speed = parseFloat(this.value); $('#speed-v').textContent = speed.toFixed(2).replace(/\.?0+$/, '') + '×'; });
+  $('#scrub').addEventListener('input', function () { pause(); looping = false; $('#loop').classList.remove('on'); t = 0; showStep(parseInt(this.value, 10)); });
+  D.sequences.forEach(function (q, i) { var o = document.createElement('option'); o.value = i; o.textContent = q.name + ' · ' + q.steps.length + ' steps'; $('#seq').appendChild(o); });
+  $('#seq').addEventListener('change', function () { seq = D.sequences[parseInt(this.value, 10)]; $('#scrub').max = seq.steps.length - 1; t = 0; stopTurn(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
+    if (arranging && arrSel) {
+      var big = e.shiftKey ? 10 : 1, k = e.key, p = arrSel;
+      if (k === 'ArrowLeft') p.x -= big; else if (k === 'ArrowRight') p.x += big; else if (k === 'ArrowUp') p.y -= big; else if (k === 'ArrowDown') p.y += big;
+      else if (k === '[') p.r -= big; else if (k === ']') p.r += big;
+      else if (k === '-') p.s = Math.max(0.05, +(p.s - 0.01 * big).toFixed(3)); else if (k === '=' || k === '+') p.s = +(p.s + 0.01 * big).toFixed(3);
+      else if (k === 'Tab') { e.preventDefault(); arrSel = props[(props.indexOf(p) + 1) % props.length]; fillArr(); return; }
+      else return;
+      e.preventDefault(); placeProps(); refit(); saveProps(); fillArr(); return;
+    }
+    if (e.key === 'ArrowRight') { e.preventDefault(); turn(1); } else if (e.key === 'ArrowLeft') { e.preventDefault(); turn(-1); }
+    else if (e.code === 'Space') { e.preventDefault(); if (playing) { pause(); } else if (idle) { turn(1); } else { play(); } }
+  });
+  window.addEventListener('resize', fit);
+  $('#scrub').max = seq.steps.length - 1; fit(); showIdle();
+  window.TurnPlayer = { showStep: showStep, turn: turn, get seq() { return seq; }, get props() { return props; } };
+})();
+</script>

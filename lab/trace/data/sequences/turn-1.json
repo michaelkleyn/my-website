@@ -1,0 +1,14 @@
+{
+ "W": 1086, "H": 814,
+ "sequences": [
+  { "id": "q1787990376901446", "name": "Turn 1", "steps": [
+    { "dur": 120, "items": [ { "id": 7, "item": "s1-6", "x": 708, "y": 349, "s": 1.22, "r": 0, "mx": false, "my": false, "o": 1, "z": 0 } ] },
+    { "dur": 120, "items": [ { "id": 6, "item": "s2-1", "x": 709, "y": 325, "s": 1.24, "r": -18, "mx": false, "my": false, "o": 1, "z": 1 } ] },
+    { "dur": 120, "items": [ { "id": 9, "item": "s1-2", "x": 676, "y": 364, "s": 1.2, "r": 3, "mx": false, "my": false, "o": 1, "z": 0 } ] },
+    { "dur": 120, "items": [ { "id": 10, "item": "s1-3", "x": 568, "y": 327, "s": 1.28, "r": -6, "mx": false, "my": false, "o": 1, "z": 0 } ] },
+    { "dur": 120, "items": [ { "id": 18, "item": "s4-3", "x": 365, "y": 413, "s": 1.24, "r": 162, "mx": false, "my": true, "o": 1, "z": 0 } ] },
+    { "dur": 120, "items": [ { "id": 19, "item": "s4-2", "x": 332, "y": 415, "s": 1.23, "r": 164, "mx": false, "my": true, "o": 1, "z": 0 } ] },
+    { "dur": 120, "items": [ { "id": 21, "item": "s1-6", "x": 325, "y": 470, "s": 1.26, "r": -37, "mx": true, "my": false, "o": 1, "z": 0 } ] }
+  ] }
+ ]
+}

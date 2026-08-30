@@ -1,0 +1,8 @@
+.DS_Store
+# Regeneration inputs and intermediates (SAM masks, sprite sheets, PNG masters) stay out of git:
+# the full set is kept in assets/_unshipped/pond-sources/ (ignored) — back it up outside git.
+trace/data/**
+!trace/data/**/
+!trace/data/**/*.json
+!trace/data/book/book.webp
+!trace/data/book/pages.png
