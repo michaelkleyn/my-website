@@ -1384,7 +1384,10 @@ class LayoutEditor {
   // ----- save --------------------------------------------------------------
 
   async save() {
+    if (!this.serverOnline) this.serverOnline = await pingServer();   // a failed ping at load must not turn every save into a download
     if (!this.serverOnline) {
+      this.statusEl.textContent = 'no dev server — downloaded JSON instead';
+      this.statusEl.className = 'le-status le-status-warn';
       this.downloadJSON();
       return;
     }

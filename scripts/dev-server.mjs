@@ -483,6 +483,8 @@ async function spaFallback(req, res, decoded) {
 // ---------- router ----------
 
 const server = createServer(async (req, res) => {
+  const t0 = Date.now(), reqUrl = req.url;
+  res.on('finish', () => { if (!/\.(webp|png|jpg|json|js|css|woff2|pbf|ply)$/.test((reqUrl || '').split('?')[0]) || reqUrl.startsWith('/__editor/')) console.log(`${new Date().toISOString().slice(11, 19)} ${req.method} ${reqUrl} → ${res.statusCode} ${Date.now() - t0}ms`); });
   try {
     const url = new URL(req.url, `http://${HOST}:${PORT}`);
     const { pathname } = url;

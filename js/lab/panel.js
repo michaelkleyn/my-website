@@ -313,7 +313,7 @@ export function mountPanel(pond, opts) {
   // ---- save to site: only when the dev server answers (never in the artifact or on the live site)
   (function () {
     var btn = $('#btn-save-site'); if (!btn) return;
-    fetch('/__editor/ping').then(function (r) { return r.ok ? r.json() : null; }).then(function (j) { if (j && j.ok) btn.hidden = false; }).catch(function () { /* no server */ });
+    if (/^https?:/.test(location.protocol)) btn.hidden = false;   // the POST itself reports whether a dev server is there
     btn.addEventListener('click', function () {
       btn.disabled = true;
       fetch('/__editor/pond', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(P, null, 2) })
