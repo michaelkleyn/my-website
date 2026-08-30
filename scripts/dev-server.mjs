@@ -5,19 +5,32 @@ import {
   writeFile,
   mkdir,
   stat,
+  rename,
 } from 'node:fs/promises';
-import { join, dirname, extname, normalize, sep, basename } from 'node:path';
+import { join, dirname, extname, normalize, sep, basename, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const SCENE_DIR = join(ROOT, 'assets', 'scene');
+// The repo root (where the editor reads and writes files) is script-relative; the directory served
+// as the site can differ (`--root dist`), so previewing a build never writes into it.
+const REPO = join(dirname(fileURLToPath(import.meta.url)), '..');
+const SCENE_DIR = join(REPO, 'assets', 'scene');
 const RAW_DIR = join(SCENE_DIR, '_raw');
+const POND_CONFIG = join(REPO, 'assets', 'pond', 'pond.config.json');
 
-const HOST = '127.0.0.1';
-const PORT = 5173;
+// ---------- flags: --root <dir> --port <n> --host <addr> ----------
+const ARGS = process.argv.slice(2);
+function argOf(name, fallback) {
+  const i = ARGS.indexOf(name);
+  return i >= 0 && ARGS[i + 1] != null ? ARGS[i + 1] : fallback;
+}
+const ROOT = ARGS.includes('--root') ? resolve(process.cwd(), argOf('--root', '.')) : REPO;
+const HOST = argOf('--host', '127.0.0.1');
+const PORT = parseInt(argOf('--port', '5173'), 10) || 5173;
 const MAX_BODY = 25 * 1024 * 1024; // ~25MB
+const MAX_POND_BODY = 1024 * 1024; // pond config: 1MB
+const MAX_BOOK_MASK = 512 * 1024; // the brush-edits PNG data URL inside it
 const RESPONSIVE_WIDTHS = [480, 960, 1536];
-const PAGE_RE = /^[a-z-]+$/;
+const PAGE_RE = /^_?[a-z0-9-]+$/; // page scene keys, plus `_global`
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -156,6 +169,71 @@ async function handlePostScene(req, res, page) {
   const file = join(SCENE_DIR, `${page}.json`);
   await mkdir(SCENE_DIR, { recursive: true });
   await writeFile(file, out);
+  sendJson(res, 200, { ok: true, bytes: Buffer.byteLength(out) });
+}
+
+// ---------- pond config (assets/pond/pond.config.json) ----------
+
+async function handleGetPond(res) {
+  try {
+    const text = await readFile(POND_CONFIG, 'utf8');
+    res.writeHead(200, {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store',
+    });
+    res.end(text);
+  } catch {
+    sendJson(res, 200, {});
+  }
+}
+
+// A pond config is a plain JSON object of finite numbers, booleans, strings, arrays and plain objects;
+// `bookMask`, if present, is a PNG data URL of bounded size. Returns an error string or null.
+function validatePondConfig(value, depth = 0) {
+  if (depth > 32) return 'nesting too deep';
+  if (value === null) return depth === 0 ? 'config must be an object' : null;
+  if (typeof value === 'number') return Number.isFinite(value) ? null : 'non-finite number';
+  if (typeof value === 'boolean' || typeof value === 'string') return null;
+  if (Array.isArray(value)) {
+    for (const v of value) { const e = validatePondConfig(v, depth + 1); if (e) return e; }
+    return null;
+  }
+  if (typeof value === 'object') {
+    if (Object.getPrototypeOf(value) !== Object.prototype && Object.getPrototypeOf(value) !== null) return 'not a plain object';
+    for (const k of Object.keys(value)) {
+      if (k === '__proto__' || k === 'constructor' || k === 'prototype') return 'forbidden key ' + k;
+      const e = validatePondConfig(value[k], depth + 1); if (e) return e;
+    }
+    return null;
+  }
+  return 'unsupported value';
+}
+
+async function handlePostPond(req, res) {
+  let raw;
+  try {
+    raw = await readBody(req, MAX_POND_BODY);
+  } catch {
+    return sendJson(res, 413, { ok: false, error: 'body too large (max 1MB)' });
+  }
+  let cfg;
+  try {
+    cfg = JSON.parse(raw.toString('utf8'));
+  } catch {
+    return sendJson(res, 400, { ok: false, error: 'invalid JSON' });
+  }
+  if (!cfg || typeof cfg !== 'object' || Array.isArray(cfg)) return sendJson(res, 400, { ok: false, error: 'config must be a JSON object' });
+  const err = validatePondConfig(cfg);
+  if (err) return sendJson(res, 400, { ok: false, error: err });
+  if (cfg.bookMask !== undefined && cfg.bookMask !== '') {
+    if (typeof cfg.bookMask !== 'string' || !cfg.bookMask.startsWith('data:image/png;base64,')) return sendJson(res, 400, { ok: false, error: 'bookMask must be a PNG data URL' });
+    if (cfg.bookMask.length > MAX_BOOK_MASK) return sendJson(res, 400, { ok: false, error: 'bookMask too large (max 512KB)' });
+  }
+  const out = JSON.stringify(cfg, null, 2) + '\n';
+  await mkdir(dirname(POND_CONFIG), { recursive: true });
+  const tmp = join(dirname(POND_CONFIG), `.pond.config.${process.pid}.${Date.now()}.tmp`);
+  await writeFile(tmp, out);
+  await rename(tmp, POND_CONFIG);
   sendJson(res, 200, { ok: true, bytes: Buffer.byteLength(out) });
 }
 
@@ -351,7 +429,7 @@ async function serveStatic(req, res, pathname) {
   try {
     info = await stat(target);
   } catch {
-    return sendText(res, 404, 'Not Found');
+    return spaFallback(req, res, decoded);
   }
 
   let filePath = target;
@@ -360,7 +438,7 @@ async function serveStatic(req, res, pathname) {
     try {
       info = await stat(filePath);
     } catch {
-      return sendText(res, 404, 'Not Found');
+      return spaFallback(req, res, decoded);
     }
   }
 
@@ -374,6 +452,27 @@ async function serveStatic(req, res, pathname) {
   const type = MIME[extname(filePath).toLowerCase()] || 'application/octet-stream';
   res.writeHead(200, {
     'Content-Type': type,
+    'Content-Length': data.length,
+    'Cache-Control': 'no-store',
+  });
+  if (req.method === 'HEAD') return res.end();
+  res.end(data);
+}
+
+// Single-page-app fallback (what Cloudflare Pages does when there is no 404.html): an extension-less
+// path that does not exist, asked for as a document, gets the root index.html with a 200. Anything
+// else — a missing image, a bad API call — still 404s.
+async function spaFallback(req, res, decoded) {
+  const wantsHtml = String(req.headers.accept || '').includes('text/html');
+  if (extname(decoded) !== '' || !wantsHtml) return sendText(res, 404, 'Not Found');
+  let data;
+  try {
+    data = await readFile(join(ROOT, 'index.html'));
+  } catch {
+    return sendText(res, 404, 'Not Found');
+  }
+  res.writeHead(200, {
+    'Content-Type': MIME['.html'],
     'Content-Length': data.length,
     'Cache-Control': 'no-store',
   });
@@ -399,6 +498,11 @@ const server = createServer(async (req, res) => {
       }
       if (pathname === '/__editor/hook' && method === 'POST') {
         return await handleHook(req, res);
+      }
+      if (pathname === '/__editor/pond') {
+        if (method === 'GET') return await handleGetPond(res);
+        if (method === 'POST') return await handlePostPond(req, res);
+        return sendJson(res, 405, { ok: false, error: 'method not allowed' });
       }
       const sceneMatch = pathname.match(/^\/__editor\/scene\/([^/]+)$/);
       if (sceneMatch) {
