@@ -1,39 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Why Memory Bandwidth is Often the Bottleneck - Michael Kleyn</title>
-  <link rel="stylesheet" href="../css/style.css">
-  <link rel="stylesheet" href="../css/blog.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-</head>
-<body class="blog-page">
-  <div class="blog-container">
-    <header class="blog-header">
-      <a href="index.html" class="back-link">&lt;</a>
-      <span class="breadcrumb">
-        <span class="chapter-name">EXPLORATIONS</span> /
-        <span class="post-name">WHY MEMORY BANDWIDTH IS OFTEN THE BOTTLENECK</span>
-      </span>
-    </header>
-
-    <div class="blog-layout">
-      <nav class="left-nav">
-  <div class="chapter">
-    <h3>1. EXPLORATIONS</h3>
-    <ul>
-      <li class="active"><a href="memory-bandwidth.html">Why Memory Bandwidth is Often the Bottleneck</a></li>
-    </ul>
-  </div>
-</nav>
-
-      <main class="blog-content">
-        <article>
-          <h1>Why Memory Bandwidth is Often the Bottleneck</h1>
+<article class="post" data-slug="memory-bandwidth">
+  <header class="post-head">
+    <h1>Why Memory Bandwidth is Often the Bottleneck</h1>
+    <p class="post-date">January 20, 2026</p>
+  </header>
+  <div class="post-body">
+<h1>Why Memory Bandwidth is Often the Bottleneck</h1>
 <p>When I first started learning about GPU programming, I assumed that &quot;more compute = faster.&quot; More CUDA cores, more tensor cores, more floating point operations per second. But the reality is more nuanced — and understanding why has changed how I think about ML performance.</p>
 <hr>
 <h2 id="the-intuition">The Intuition</h2>
@@ -99,23 +70,5 @@ Time at 2 TB/s: 12 GB / 2000 GB/s = 6 ms
 <hr>
 <p><em>This is the start of my exploration into ML engineering. More questions than answers for now.</em></p>
 
-        </article>
-      </main>
-
-      <nav class="right-nav">
-  <a href="#the-intuition">THE INTUITION ──</a>
-  <a href="#the-numbers">THE NUMBERS ──</a>
-  <a href="#arithmetic-intensity">ARITHMETIC INTENSITY ──</a>
-  <a href="#why-this-matters-for-ml">WHY THIS MATTERS FOR ML ──</a>
-  <a href="#what-can-you-do">WHAT CAN YOU DO? ──</a>
-  <a href="#the-deeper-rabbit-hole">THE DEEPER RABBIT HOLE ──</a>
-  <a href="#questions-im-still-exploring">QUESTIONS I'M STILL EXPLORING ──</a>
-</nav>
-    </div>
   </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-  <script>hljs.highlightAll();</script>
-  <script src="../js/blog.js"></script>
-</body>
-</html>
+</article>

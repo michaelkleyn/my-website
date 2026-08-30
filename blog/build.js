@@ -12,10 +12,8 @@ const POSTS_DIR = path.join(__dirname, 'posts');
 const DIST_DIR = path.join(__dirname, 'dist');
 const CHAPTERS_FILE = path.join(__dirname, 'chapters.json');
 
-// Ensure dist directory exists
-if (!fs.existsSync(DIST_DIR)) {
-  fs.mkdirSync(DIST_DIR, { recursive: true });
-}
+// dist (the old standalone layout) is only written with --dist
+if (process.argv.includes('--dist') && !fs.existsSync(DIST_DIR)) fs.mkdirSync(DIST_DIR, { recursive: true });
 
 /**
  * Extract headings from markdown content for right-nav
@@ -338,27 +336,69 @@ function generateIndexPage(groupedPosts) {
 /**
  * Main build function
  */
+const CONTENT_DIR = path.join(__dirname, '..', 'content');
+const escapeHtml = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const niceDate = (d) => { const t = new Date(d); return isNaN(t) ? String(d) : t.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }); };
+
+/** A post as a fragment for the journal site's reading card (content/blog/<slug>.html) */
+function generatePostFragment(post) {
+  return `<article class="post" data-slug="${post.slug}">
+  <header class="post-head">
+    <h1>${escapeHtml(post.frontmatter.title)}</h1>
+    <p class="post-date">${escapeHtml(niceDate(post.frontmatter.date))}</p>
+  </header>
+  <div class="post-body">
+${post.html}
+  </div>
+</article>
+`;
+}
+
+/** The /blog spread (content/pages/blog.html): the list of posts, newest first, grouped by chapter when there are chapters */
+function generateBlogSpread(groupedPosts, posts) {
+  const items = posts.map((p) => `  <li><a href="/blog/${p.slug}">${escapeHtml(p.frontmatter.title)}</a> <span class="small">· ${escapeHtml(niceDate(p.frontmatter.date))}</span></li>`).join('\n');
+  return `<section data-node="body" class="blog-page">
+<h1>Blog</h1>
+<p class="lede">Notes from the workbench.</p>
+<ul class="posts">
+${items}
+</ul>
+</section>
+`;
+}
+
 function build() {
   console.log('Building blog...');
 
   const posts = getAllPosts();
   const chapters = getChapters();
   const groupedPosts = groupPostsByChapter(posts, chapters);
+  const wantDist = process.argv.includes('--dist');   // the old standalone reading layout; the site reads fragments
 
   console.log(`Found ${posts.length} posts`);
 
-  // Generate individual post pages
-  posts.forEach(post => {
-    const html = generatePostPage(post, groupedPosts);
-    const outputPath = path.join(DIST_DIR, `${post.slug}.html`);
-    fs.writeFileSync(outputPath, html);
-    console.log(`  Generated: ${post.slug}.html`);
+  // Fragments for the journal site
+  fs.mkdirSync(path.join(CONTENT_DIR, 'blog'), { recursive: true });
+  fs.mkdirSync(path.join(CONTENT_DIR, 'pages'), { recursive: true });
+  posts.forEach((post) => {
+    fs.writeFileSync(path.join(CONTENT_DIR, 'blog', `${post.slug}.html`), generatePostFragment(post));
+    console.log(`  Fragment: content/blog/${post.slug}.html`);
   });
+  fs.writeFileSync(path.join(CONTENT_DIR, 'blog', 'index.json'), JSON.stringify(posts.map((p) => ({ slug: p.slug, title: p.frontmatter.title, date: p.frontmatter.date, chapter: p.frontmatter.chapter, headings: p.headings })), null, 2) + '\n');
+  fs.writeFileSync(path.join(CONTENT_DIR, 'pages', 'blog.html'), generateBlogSpread(groupedPosts, posts));
+  console.log('  Spread: content/pages/blog.html');
 
-  // Generate index page
-  const indexHtml = generateIndexPage(groupedPosts);
-  fs.writeFileSync(path.join(DIST_DIR, 'index.html'), indexHtml);
-  console.log('  Generated: index.html');
+  if (wantDist) {
+    posts.forEach(post => {
+      const html = generatePostPage(post, groupedPosts);
+      const outputPath = path.join(DIST_DIR, `${post.slug}.html`);
+      fs.writeFileSync(outputPath, html);
+      console.log(`  Generated: ${post.slug}.html`);
+    });
+    const indexHtml = generateIndexPage(groupedPosts);
+    fs.writeFileSync(path.join(DIST_DIR, 'index.html'), indexHtml);
+    console.log('  Generated: index.html');
+  }
 
   console.log('Build complete!');
 }

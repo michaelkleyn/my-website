@@ -37,8 +37,8 @@ async function start() {
   });
   const bookSpace = createBookSpace($('#book-space'), pond);
   const camera = createCamera(pond);
-  const modal = createModal(document.body);
-  const navigator = createNavigator({ pond, camera, spreadEl: $('#spread'), renderer, onPage: () => bookSpace.apply() });
+  const modal = createModal(document.body, { onClose: () => { const cur = router.current(); if (cur && cur.route.open === 'post') router.go('/blog', { replace: true }); } });
+  const navigator = createNavigator({ pond, camera, spreadEl: $('#spread'), renderer, onPage: () => bookSpace.apply(), openPost: (slug) => modal.open('blog/' + slug, null, { reading: true }) });
   const router = createRouter({ onNavigate: (nav, meta) => navigator.navigate(nav, meta) });
 
   applyMode(mode);

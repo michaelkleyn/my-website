@@ -1,0 +1,45 @@
+[
+  {
+    "slug": "memory-bandwidth",
+    "title": "Why Memory Bandwidth is Often the Bottleneck",
+    "date": "2026-01-21T00:00:00.000Z",
+    "chapter": null,
+    "headings": [
+      {
+        "id": "the-intuition",
+        "text": "The Intuition",
+        "level": 2
+      },
+      {
+        "id": "the-numbers",
+        "text": "The Numbers",
+        "level": 2
+      },
+      {
+        "id": "arithmetic-intensity",
+        "text": "Arithmetic Intensity",
+        "level": 2
+      },
+      {
+        "id": "why-this-matters-for-ml",
+        "text": "Why This Matters for ML",
+        "level": 2
+      },
+      {
+        "id": "what-can-you-do",
+        "text": "What Can You Do?",
+        "level": 2
+      },
+      {
+        "id": "the-deeper-rabbit-hole",
+        "text": "The Deeper Rabbit Hole",
+        "level": 2
+      },
+      {
+        "id": "questions-im-still-exploring",
+        "text": "Questions I'm Still Exploring",
+        "level": 2
+      }
+    ]
+  }
+]

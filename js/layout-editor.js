@@ -1390,15 +1390,17 @@ class LayoutEditor {
     }
     const page = this.r.pageKey();
     try {
-      const res = await fetch(`/__editor/scene/${page}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(this.scene, null, 2) + '\n',
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json().catch(() => ({}));
+      // nodes that came from _global.json go back there; the rest to the page — never shadow a global with a page copy
+      const strip = (n) => { const c = Object.assign({}, n); delete c.scope; return c; };
+      const globals = this.scene.nodes.filter((n) => n.scope === 'global').map(strip);
+      const own = this.scene.nodes.filter((n) => n.scope !== 'global').map(strip);
+      const pageScene = Object.assign({}, this.scene, { nodes: own });
+      const post = (key, body) => fetch(`/__editor/scene/${key}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body, null, 2) + '\n' })
+        .then(async (res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json().catch(() => ({})); });
+      const data = await post(page, pageScene);
+      if (globals.length) await post('_global', { page: '_global', version: this.scene.version || 1, nodes: globals });
       this.dirty = false;
-      this.statusEl.textContent = data.bytes ? `saved (${data.bytes} b)` : 'saved';
+      this.statusEl.textContent = (data.bytes ? `saved (${data.bytes} b)` : 'saved') + (globals.length ? ` + ${globals.length} global` : '');
       this.statusEl.className = 'le-status le-status-clean';
     } catch (err) {
       this.statusEl.textContent = `save failed: ${err.message}`;

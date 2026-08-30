@@ -1,8 +1,8 @@
 // A paper card over the journal for things you click on the page. [data-modal="<id>"] loads content/<id>.html;
 // the pond keeps running underneath. Escape / backdrop / the close button close it; focus returns to the trigger.
 
-export function createModal(root) {
-  root = root || document.body;
+export function createModal(root, opts) {
+  root = root || document.body; opts = opts || {};
   let el = null, opener = null, lastFocus = null;
   const base = document.documentElement.dataset.contentBase ? document.documentElement.dataset.contentBase.replace(/pages\/$/, '') : '/content/';
 
@@ -16,8 +16,8 @@ export function createModal(root) {
     root.appendChild(el);
     return el;
   }
-  async function open(id, trigger) {
-    ensure(); opener = trigger || null; lastFocus = document.activeElement;
+  async function open(id, trigger, o) {
+    ensure(); opener = trigger || null; lastFocus = document.activeElement; el.classList.toggle('reading', !!(o && o.reading));
     const body = el.querySelector('.modal-body');
     body.innerHTML = '<p class="modal-loading">…</p>';
     el.hidden = false; document.body.classList.add('has-modal');
@@ -34,8 +34,9 @@ export function createModal(root) {
   function close() {
     if (!el || el.hidden) return;
     el.hidden = true; document.body.classList.remove('has-modal');
-    el.querySelector('.modal-body').innerHTML = '';
+    el.querySelector('.modal-body').innerHTML = ''; el.classList.remove('reading');
     if (lastFocus && lastFocus.focus) lastFocus.focus({ preventScroll: true });
+    if (opts.onClose) opts.onClose();
   }
   document.addEventListener('click', (e) => {
     const t = e.target.closest && e.target.closest('[data-modal]');
