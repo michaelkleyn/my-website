@@ -316,10 +316,10 @@ export function mountPanel(pond, opts) {
     if (/^https?:/.test(location.protocol)) btn.hidden = false;   // the POST itself reports whether a dev server is there
     btn.addEventListener('click', function () {
       btn.disabled = true;
-      fetch('/__editor/pond', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(P, null, 2) })
-        .then(function (r) { return r.json().then(function (j) { return r.ok && j.ok ? j : Promise.reject(new Error(j.error || ('HTTP ' + r.status))); }); })
-        .then(function (j) { statusEl.textContent = 'Saved to assets/pond/pond.config.json (' + j.bytes + ' bytes).'; }, function (e) { statusEl.textContent = 'Save failed: ' + e.message; })
-        .then(function () { btn.disabled = false; });
+      var ed = window.__layoutEditor;
+      var job = ed && ed.__pondSave ? Promise.resolve(ed.save()).then(function () { statusEl.textContent = 'Saved: layout + pond config.'; })
+        : savePondConfig().then(function (j) { statusEl.textContent = 'Saved to assets/pond/pond.config.json (' + j.bytes + ' bytes).'; });
+      job.catch(function (e) { statusEl.textContent = 'Save failed: ' + e.message; }).then(function () { btn.disabled = false; });
     });
   })();
 
@@ -417,6 +417,24 @@ export function mountPanel(pond, opts) {
     var mo = new MutationObserver(function () { pond.resize(); });
     mo.observe(leRoot, { attributes: true, attributeFilter: ['class'] });
     pond.resize();
+    // one Save: the compositor's save (button, Cmd-S) also writes the pond config, and pond edits mark the layout dirty
+    var tries = 0, wait = setInterval(function () {
+      var ed = window.__layoutEditor; if (!ed && ++tries < 60) return; clearInterval(wait); if (!ed || ed.__pondSave) return;
+      ed.__pondSave = true; unifiedEditor = ed;
+      var orig = ed.save.bind(ed);
+      ed.save = function () {
+        return Promise.resolve(orig()).then(function () {
+          if (!ed.serverOnline) return;
+          return savePondConfig().then(function (j) { if (j && j.ok && ed.statusEl) ed.statusEl.textContent += ' · pond'; }, function (e) { if (ed.statusEl) ed.statusEl.textContent = 'layout saved; pond config failed: ' + e.message; });
+        });
+      };
+      pond.on('config', function () { if (typeof ed.markDirty === 'function') ed.markDirty(); });
+    }, 100);
+  }
+  var unifiedEditor = null;
+  function savePondConfig() {
+    return fetch('/__editor/pond', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(P, null, 2) })
+      .then(function (r) { return r.json().then(function (j) { return r.ok && j.ok ? j : Promise.reject(new Error(j.error || ('HTTP ' + r.status))); }); });
   }
   attachEditor(document.getElementById('le-root'));
   if (!document.getElementById('le-root')) {
