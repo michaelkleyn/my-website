@@ -96,8 +96,15 @@ html.site-failed::after { content: "The pond could not start — see the console
   #spread, html.site-ready #book-space, .scene-node--reveal { transition: none; }
 }
 
-/* design mode: the pond panel sits below the layout editor's toolbar */
-body:has(#le-root) #panel { top: 40px; }
+/* ---------- design mode: the layout editor (compositor) and the pond panel share the screen ---------- */
+body:has(#le-root) #panel { top: 40px; z-index: 2000001; }                     /* above the editor's hit overlay, below nothing */
+body:has(#le-root) #toggle-panel { top: 52px; right: 12px; z-index: 2000001; }
+body:has(#le-root) #visitor-ui { z-index: 2000001; }
+body:has(#le-root) #designer { z-index: 2000002; }
+body:has(#panel:not(.hidden)) .le-right { right: 360px; }                       /* the inspector steps left of the pond panel */
+body:has(#le-root.le-clean) #panel, body:has(#le-root.le-clean) #toggle-panel, body:has(#le-root.le-clean) #visitor-ui { display: none; }   /* Tab preview: nothing but the page */
+body.pond-tool .le-overlay { pointer-events: none; }                            /* mask brush / arrange: the pond gets the pointer */
+body.pond-tool #tank { cursor: crosshair; }
 
 /* ---------- reading card: a blog post ---------- */
 #site-modal.reading .modal-card { width: min(760px, 100%); padding: 36px 44px 44px; }

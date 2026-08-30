@@ -33,7 +33,7 @@ async function start() {
   const pond = await bootPond({
     canvas: $('#tank'), journalRoot: $('#journal-root'), root: document.body,
     assetsBase: '/assets/pond/', visitors: true, edit,
-    panel: { root: document.body, setInsets: true },
+    panel: { root: document.body, setInsets: true, hotkeys: false },
   });
   const bookSpace = createBookSpace($('#book-space'), pond);
   const camera = createCamera(pond);

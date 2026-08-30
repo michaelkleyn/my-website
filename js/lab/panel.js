@@ -337,7 +337,7 @@ export function mountPanel(pond, opts) {
   $('#toggle-panel').addEventListener('click', function () { hidePanel(false); });
   setPaused(pond.paused);
 
-  document.addEventListener('keydown', function (e) {
+  if (opts.hotkeys !== false) document.addEventListener('keydown', function (e) {
     if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
     if (e.code === 'Space') { e.preventDefault(); setPaused(!pond.paused); }
     else if (e.key === 'r') $('#btn-repaint').click();
@@ -386,13 +386,13 @@ export function mountPanel(pond, opts) {
   refreshInputs();
 
   (function () { var pick = $('#jr-pick'); pick.innerHTML = ''; ['journal'].concat(Journal.props.map(function (p) { return p.name; })).forEach(function (n) { var o = document.createElement('option'); o.value = n; o.textContent = n; pick.appendChild(o); }); })();
-  Journal.on('arrange', function (on) { $('#jr-arrange').classList.toggle('on', on); $('#jr-kv').style.display = on ? '' : 'none'; });
+  Journal.on('arrange', function (on) { $('#jr-arrange').classList.toggle('on', on); $('#jr-kv').style.display = on ? '' : 'none'; document.body.classList.toggle('pond-tool', on || Book.editing); });
   Journal.on('select', function (sel) {
     $('#jr-pick').value = sel === 'journal' ? 'journal' : sel.name;
     if (sel === 'journal') { $('#jr-x').value = Math.round(P.journalX * school.fullW); $('#jr-y').value = Math.round(P.journalY * school.H); $('#jr-s').value = P.journalScale; $('#jr-r').value = 0; $('#jr-r').disabled = true; }
     else { $('#jr-x').value = sel.x; $('#jr-y').value = sel.y; $('#jr-s').value = sel.s; $('#jr-r').value = sel.r; $('#jr-r').disabled = false; }
   });
-  Book.on('editing', function (on) { $('#bk-edit').classList.toggle('on', on); });
+  Book.on('editing', function (on) { $('#bk-edit').classList.toggle('on', on); document.body.classList.toggle('pond-tool', on || Journal.arranging); });
   Book.setTool($('#bk-tool').value); $('#bk-tool').addEventListener('change', function () { Book.setTool(this.value); });
   $('#vs-demo').addEventListener('click', function () { Visitors.demo(); });
   $('#vs-clear').addEventListener('click', function () { if (PondStore.mode === 'local') PondStore.clearLocal(); Residents.clear(); Visitors.refresh(); });
@@ -403,5 +403,25 @@ export function mountPanel(pond, opts) {
   }
 
   if (opts.setInsets !== false) pond.setInsets(panelInsets);
+
+  // ---- living next to the layout compositor (the site's design mode): a "pond" button in its toolbar, and the
+  //      world re-fits when its Tab preview hides the panel or the editor appears later than the pond
+  function attachEditor(leRoot) {
+    if (!leRoot || leRoot.__pondAttached) return; leRoot.__pondAttached = true;
+    var bar = leRoot.querySelector('.le-toolbar');
+    if (bar && !bar.querySelector('.le-pond')) {
+      var b = document.createElement('button'); b.type = 'button'; b.className = 'le-btn le-pond'; b.textContent = 'pond'; b.title = 'show / hide the pond panel';
+      b.addEventListener('click', function () { hidePanel(!$('#panel').classList.contains('hidden')); });
+      bar.appendChild(b);
+    }
+    var mo = new MutationObserver(function () { pond.resize(); });
+    mo.observe(leRoot, { attributes: true, attributeFilter: ['class'] });
+    pond.resize();
+  }
+  attachEditor(document.getElementById('le-root'));
+  if (!document.getElementById('le-root')) {
+    var watch = new MutationObserver(function () { var le = document.getElementById('le-root'); if (le) { attachEditor(le); watch.disconnect(); } });
+    watch.observe(document.body, { childList: true });
+  }
   return { refreshInputs: refreshInputs, refreshJSON: refreshJSON, setPaused: setPaused, hidePanel: hidePanel, statusEl: statusEl, panelInsets: panelInsets };
 }
