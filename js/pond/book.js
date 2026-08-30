@@ -103,6 +103,7 @@ export var Book = {
       td[o] = 255; td[o + 1] = 87; td[o + 2] = 34; td[o + 3] = near ? Math.round((1 - v) * 255) : 0;
     }
     mctx.putImageData(mi, 0, 0); tctx.putImageData(ti, 0, 0);
+    this.emit('mask');   // every rebuild — brush strokes included — so DOM copies of the mask can follow live
   },
 
   worldCtx: function (W, H, dpr) {

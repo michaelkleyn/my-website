@@ -140,6 +140,7 @@ export function createPond(opts) {
   Book.init(assets.book || null, { canvas: canvas });
   unsubs.push(Book.on('ready', function () { school.resize(); Journal.layout(); syncJournalView(); applyJournalMask(); emit('resize'); }));
   unsubs.push(Book.on('edits', function () { scheduleJournalMask(); emit('config', { keys: ['bookMask'] }); }));
+  unsubs.push(Book.on('mask', function () { scheduleJournalMask(); }));   // live: the compose rebuilds the mask per stroke
   listen(document, 'pointermove', function (e) { Drawings.setPointer(e.clientX, e.clientY); });
 
   // ---- visitors
