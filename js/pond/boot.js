@@ -27,7 +27,7 @@ export async function bootPond(opts) {
     canvas: opts.canvas, journalRoot: opts.journalRoot, root: root,
     config: config, presetId: opts.presetId === undefined ? null : opts.presetId,
     assets: { journal: r[0], book: r[1], atlas: r[2] },
-    insets: opts.insets, remote: opts.remote, visitors: opts.visitors !== false, visitorRoot: opts.visitorRoot,
+    insets: opts.insets, visitors: opts.visitors !== false, visitorRoot: opts.visitorRoot,
     paintOnClient: opts.paintOnClient, respectReducedMotion: opts.respectReducedMotion,
   });
   if (opts.edit) {

@@ -4,8 +4,6 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/dev-server.mjs",
-    "fetch-tiles": "node scripts/fetch-tiles.mjs",
-    "inspect-tiles": "node scripts/inspect-tiles.mjs",
     "build:lab": "node scripts/build-lab.mjs",
     "shot": "node scripts/pond/shot.mjs",
     "preview": "node scripts/dev-server.mjs --root . --port 5174",
@@ -15,8 +13,6 @@
     "build:archive": "node scripts/build-archive.mjs"
   },
   "devDependencies": {
-    "@mapbox/vector-tile": "^2.0.3",
-    "esbuild": "^0.24.2",
-    "pbf": "^4.0.1"
+    "esbuild": "^0.24.2"
   }
 }

@@ -1,13 +1,12 @@
 /**
  * Scene renderer — the runtime for the local-only Layout Compositor.
  *
- * Classic <script> (NOT a module). It MAY use dynamic import() for the editor
- * and for component modules. Builds a `.scene-layer` container, renders every
+ * Classic <script> (NOT a module). It MAY use dynamic import() for the editor.
+ * Builds a `.scene-layer` container, renders every
  * node from assets/scene/_global.json + assets/scene/<page>.json into it, and
  * emits ONE <style id="scene-style"> block with three breakpoint tiers aligned
  * to 576 / 768. Content nodes are not drawn as art — instead the renderer emits
- * position/size overrides for an existing DOM element. Component nodes are
- * mounted via the component host contract (dynamic import + registry).
+ * position/size overrides for an existing DOM element.
  *
  * Exposes window.sceneRenderer per the SHARED CONTRACT.
  *
@@ -35,13 +34,7 @@
   var bookLayer = null;             // the .scene-layer--book container inside #book-space (book space)
   var currentKey = null;            // page key set by the router (loadPage) — else derived from the URL
   var styleEl = null;               // the <style id="scene-style"> element
-  var componentInstances = {};      // nodeId -> { def, instance, container, node }
-  var frameCallbacks = [];          // shared rAF subscribers: cb(timeMs, dtMs)
-  var rafId = null;
-  var lastFrameTime = 0;
-  var lastPointer = { x: 0, y: 0 };
   var resizeObserver = null;        // observes element-anchored targets
-  var renderGen = 0;                // bumped each render() to drop stale async mounts
   var readyResolve = null;
   var readyPromise = new Promise(function (res) { readyResolve = res; });
 
@@ -389,9 +382,6 @@
     } else if (kind === 'gradient') {
       el = document.createElement('div');
       el.style.background = node.css || '';
-    } else if (kind === 'component') {
-      el = document.createElement('div');
-      el.setAttribute('data-component', node.component || '');
     } else {
       // unknown kind — render an empty box so positioning still applies
       el = document.createElement('div');
@@ -404,138 +394,6 @@
     el.setAttribute('data-node-id', node.id);
     if (typeof node.z === 'number') el.style.zIndex = String(node.z);
     return el;
-  }
-
-  // Build the transform/effect ctx for a component from its effective placement.
-  function componentTransform(node) {
-    var p = effectivePlacement(node) || {};
-    var w = typeof p.w === 'number' ? p.w : 0;
-    var h = typeof p.h === 'number' ? p.h : 0;
-    return {
-      x: typeof p.x === 'number' ? p.x : 0,
-      y: typeof p.y === 'number' ? p.y : 0,
-      w: w,
-      h: h,
-      scale: p.flipX ? -1 : 1,
-      rot: typeof p.rot === 'number' ? p.rot : 0,
-      orientation: window.innerWidth >= window.innerHeight ? 'landscape' : 'portrait'
-    };
-  }
-
-  function componentCtx(node) {
-    var bucket = activeBreakpoint();
-    return {
-      config: node.config || {},
-      transform: componentTransform(node),
-      breakpoint: bucket,
-      reducedMotion: prefersReducedMotion(),
-      helpers: helpers
-    };
-  }
-
-  function prefersReducedMotion() {
-    try {
-      return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    } catch (e) { return false; }
-  }
-
-  // helpers object passed to components (and exposed via ctx)
-  // Host-owned cross-component channel (replaces window globals). A "sink" is
-  // { rect():{left,top,right,bottom} in PAGE coords, impact(pageX,pageY,strength) }.
-  // Lets one component (e.g. the butterfly) trigger an effect in another (e.g.
-  // ripple-text) — register() returns an unregister fn for clean teardown.
-  var rippleSinks = [];
-  var bus = {
-    register: function (sink) {
-      if (rippleSinks.indexOf(sink) === -1) rippleSinks.push(sink);
-      return function () {
-        var i = rippleSinks.indexOf(sink);
-        if (i !== -1) rippleSinks.splice(i, 1);
-      };
-    },
-    hitTest: function (x, y) {
-      for (var i = 0; i < rippleSinks.length; i++) {
-        var r = rippleSinks[i].rect && rippleSinks[i].rect();
-        if (r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) return true;
-      }
-      return false;
-    },
-    impact: function (x, y, s) {
-      for (var i = 0; i < rippleSinks.length; i++) {
-        var sink = rippleSinks[i];
-        var r = sink.rect && sink.rect();
-        if (r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom && sink.impact) {
-          sink.impact(x, y, s);
-        }
-      }
-    },
-  };
-
-  var helpers = {
-    resolveAnchor: resolveAnchor,
-    pointer: function () { return { x: lastPointer.x, y: lastPointer.y }; },
-    onFrame: onFrame,
-    bus: bus,
-    reducedMotion: prefersReducedMotion()
-  };
-
-  function mountComponent(node, container) {
-    var url = node.module;
-    if (!url) {
-      console.warn('[scene] component node "' + node.id + '" has no module url');
-      return;
-    }
-    // Capture the render generation so a newer render() (e.g. editor live
-    // preview) can drop this stale async chain instead of overwriting the fresh
-    // instance and leaking its onFrame callback.
-    var gen = renderGen;
-    import(/* @vite-ignore */ url).then(function () {
-      if (gen !== renderGen) return; // a newer render fired; abort
-      var registry = window.sceneComponents;
-      var def = registry && registry.get && registry.get(node.component);
-      if (!def || typeof def.mount !== 'function') {
-        console.warn('[scene] component "' + node.component + '" not registered after import of ' + url);
-        return;
-      }
-      var ctx = componentCtx(node);
-      Promise.resolve(def.mount(container, ctx)).then(function (instance) {
-        if (gen !== renderGen) {
-          // Stale: a newer render replaced the DOM/instances. Destroy this
-          // orphan so its onFrame callback is unregistered (no leak).
-          if (typeof def.destroy === 'function') {
-            try { def.destroy(instance); } catch (e) { /* noop */ }
-          }
-          return;
-        }
-        componentInstances[node.id] = { def: def, instance: instance, container: container, node: node };
-        if (typeof def.update === 'function') {
-          try { def.update(instance, componentCtx(node)); } catch (e) { /* noop */ }
-        }
-      }).catch(function (err) {
-        console.warn('[scene] component "' + node.component + '" mount failed', err);
-      });
-    }).catch(function (err) {
-      console.warn('[scene] failed to import component module ' + url, err);
-    });
-  }
-
-  function destroyComponents() {
-    Object.keys(componentInstances).forEach(function (id) {
-      var rec = componentInstances[id];
-      if (rec && rec.def && typeof rec.def.destroy === 'function') {
-        try { rec.def.destroy(rec.instance); } catch (e) { /* noop */ }
-      }
-    });
-    componentInstances = {};
-  }
-
-  function updateComponents() {
-    Object.keys(componentInstances).forEach(function (id) {
-      var rec = componentInstances[id];
-      if (rec && rec.def && typeof rec.def.update === 'function') {
-        try { rec.def.update(rec.instance, componentCtx(rec.node)); } catch (e) { /* noop */ }
-      }
-    });
   }
 
   // ---- ASCII creatures ---------------------------------------------------
@@ -787,7 +645,6 @@
     }
     // observe anchored targets so we relayout when they reflow
     if (hasAnchored) ensureResizeObserver();
-    updateComponents();
   }
 
   function anchorPoint(rect, align) {
@@ -935,14 +792,9 @@
 
   function render() {
     if (!scene) return;
-    // Bump the generation so any in-flight component mounts from a prior render
-    // resolve as stale and are discarded rather than overwriting fresh state.
-    renderGen++;
     ensureSceneLayer();
     ensureStyleEl();
 
-    // Tear down existing component instances and DOM before rebuilding.
-    destroyComponents();
     sceneLayer.innerHTML = '';
     if (bookLayer) bookLayer.innerHTML = '';
 
@@ -954,14 +806,6 @@
 
       var el = makeNodeElement(node);
       layerFor(node).appendChild(el);
-
-      if (node.kind === 'component') {
-        // size/position the mount host from the effective placement, then mount.
-        var p = effectivePlacement(node), u = units(node);
-        if (p && typeof p.w === 'number') el.style.width = p.w + u.x;
-        if (p && typeof p.h === 'number') el.style.height = p.h + u.y;
-        mountComponent(node, el);
-      }
     }
 
     styleEl.textContent = buildStyleBlock();
@@ -973,40 +817,13 @@
     // rebuilt) so frame timers survive editor live-preview re-renders.
     reconcileAscii();
 
-    ensureRaf();
-  }
-
-  // ---- shared rAF loop ---------------------------------------------------
-
-  function onFrame(cb) {
-    frameCallbacks.push(cb);
-    ensureRaf();
-    return function unregister() {
-      var idx = frameCallbacks.indexOf(cb);
-      if (idx !== -1) frameCallbacks.splice(idx, 1);
-    };
-  }
-
-  function ensureRaf() {
-    if (rafId != null) return;
-    lastFrameTime = (typeof performance !== 'undefined' ? performance.now() : Date.now());
-    rafId = requestAnimationFrame(tick);
-  }
-
-  function tick(now) {
-    var dt = now - lastFrameTime;
-    lastFrameTime = now;
-    for (var i = 0; i < frameCallbacks.length; i++) {
-      try { frameCallbacks[i](now, dt); } catch (e) { /* keep loop alive */ }
-    }
-    rafId = requestAnimationFrame(tick);
   }
 
   // ---- public API --------------------------------------------------------
 
   function getScene() { return scene; }
 
-  // Signature of the scene's STRUCTURE (node identity/kind/component/module).
+  // Signature of the scene's STRUCTURE (node identity/kind/source).
   // Unchanged signature => an edit is config/placement-only and can be applied
   // in place instead of a full destroy+remount render().
   function sceneSignature(s) {
@@ -1016,49 +833,23 @@
       // Include the content/source/z fields render() bakes into the DOM but
       // fastUpdate() does NOT re-derive — changing any of them must force a full
       // rebuild rather than silently no-op on the fast path.
-      return [n.id, n.kind, n.component || '', n.module || '', n.z,
+      return [n.id, n.kind, n.z,
         n.src || '', n.srcset || '', n.objectFit || '', n.svg || '', n.css || '',
         n.poster || '', n.target || ''].join('|');
     }).join(';');
   }
 
-  // Re-apply per-component mount-host sizing from current placement (mirrors the
-  // sizing render() does at mount) without rebuilding the DOM.
-  function applyComponentHostSizes() {
-    if (!sceneLayer || !scene) return;
-    for (var i = 0; i < scene.nodes.length; i++) {
-      var node = scene.nodes[i];
-      if (!node || node.kind !== 'component') continue;
-      var rec = componentInstances[node.id];
-      var el = (rec && rec.container) || nodeEl(node.id);
-      if (!el) continue;
-      var p = effectivePlacement(node), u = units(node);
-      if (p && typeof p.w === 'number') el.style.width = p.w + u.x;
-      if (p && typeof p.h === 'number') el.style.height = p.h + u.y;
-    }
-  }
-
-  // Fast in-place update for non-structural scene changes (config / placement /
-  // flightPath edits from the editor). Refreshes generated CSS + live component
-  // ctx WITHOUT destroying + remounting components — so GL contexts, loaded
-  // .ply frames, and animation phase all survive (no flicker / reload storm).
+  // Fast in-place update for non-structural scene changes (config / placement
+  // edits from the editor): refresh the generated CSS without rebuilding the DOM.
   function fastUpdate(next) {
     scene = next;
-    for (var i = 0; i < scene.nodes.length; i++) {
-      var node = scene.nodes[i];
-      if (!node || !node.id) continue;
-      var rec = componentInstances[node.id];
-      if (rec) rec.node = node; // so update() sees the new config
-    }
     if (styleEl) styleEl.textContent = buildStyleBlock();
-    applyComponentHostSizes();
     reconcileAscii();
-    relayout(); // re-resolves anchored nodes AND calls updateComponents() in place
+    relayout(); // re-resolves anchored nodes in place
   }
 
   function setScene(next) {
     next = next || emptyScene(pageKey());
-    helpers.reducedMotion = prefersReducedMotion();
     if (sceneLayer && scene && sceneSignature(next) === sceneSignature(scene)) {
       fastUpdate(next); // config/placement-only -> in-place, no remount
     } else {
@@ -1068,11 +859,6 @@
   }
 
   // ---- wiring ------------------------------------------------------------
-
-  function onPointerMove(e) {
-    lastPointer.x = e.clientX;
-    lastPointer.y = e.clientY;
-  }
 
   var resizeRaf = null;
   function onResize() {
@@ -1089,7 +875,6 @@
   }
 
   function boot() {
-    window.addEventListener('pointermove', onPointerMove, { passive: true });
     window.addEventListener('resize', onResize, { passive: true });
 
     loadScene().then(function (loaded) {
@@ -1125,9 +910,7 @@
     pxToPct: pxToPct,
     pctToPx: pctToPx,
     isEditEnvironment: isEditEnvironment,
-    // extras used by the editor / components (not part of the minimal contract
-    // surface but harmless and convenient):
-    onFrame: onFrame,
+    // extras used by the editor (not part of the minimal contract):
     pinNode: pinNode,       // editor: force an ASCII creature visible while editing
     unpinNode: unpinNode
   };

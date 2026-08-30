@@ -9,7 +9,6 @@ Turns a photo of the traveler's journal into paintable objects for `lab/journal-
    and whether it is `flat` (rectified through a 4-corner homography) / `rect` (straight outline)); per-object tuning lives in `overrides.json`
    (`k` colours, `lines` density, `erode`, `flatten` lighting, `ms` mean-shift, edge thresholds, `smooth`, `paint` overrides passed to the lab). Then
    `python extract2.py data/journal-ref.jpg seg sam_vit_b_01ec64.pth data overrides.json` — writes `data/objects.json` (center/rot/outline/colour layers/edge lines per object), `data/crops/`, `data/masks-overlay.png`.
-   (`extract.py` is the first, un-rectified version.)
 5. `python gen-lab.py` — embeds `data/objects.json` + `data/ref-720.jpg` into `../journal-trace.html`
 6. Review loop: `node sprites.mjs "http://127.0.0.1:8765/lab/journal-trace.html?objects=a,b" out/` paints headlessly and exports each sprite;
    `python review.py data/crops out/ review.png` makes a source-vs-painted contact sheet. Adjust `overrides.json`, repeat.

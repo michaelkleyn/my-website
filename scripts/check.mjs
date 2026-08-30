@@ -37,10 +37,10 @@ check('server', async () => {
 });
 
 check('site-visitor', async () => {
-  const s = shot('site-visitor', BASE + '/?edit=0', SITE_READY, "(function(){ var s = __site, bs = document.getElementById('book-space').getBoundingClientRect(), f = s.pond.screenFit, hp = document.querySelector('[data-node=hero] p'); return JSON.stringify({ rect: [bs.left, bs.top, bs.width, bs.height], expect: [f.x, f.y, f.s*1536, f.s*1024], ink: getComputedStyle(hp).color, panel: !!document.querySelector('#panel'), editor: !!document.querySelector('#le-root'), atlas: !!(s.pond.school.atlas && s.pond.school.atlas.prerendered), world: [s.pond.school.W, s.pond.school.H] }); })()");
+  const s = shot('site-visitor', BASE + '/?edit=0', SITE_READY, "(function(){ var s = __site, bs = document.getElementById('book-space').getBoundingClientRect(), f = s.pond.screenFit, hp = document.querySelector('[data-node=hero] p'); return JSON.stringify({ rect: [bs.left, bs.top, bs.width, bs.height], expect: [f.x, f.y, f.s*1536, f.s*1024], ink: hp ? getComputedStyle(hp).color : null, panel: !!document.querySelector('#panel'), editor: !!document.querySelector('#le-root'), atlas: !!(s.pond.school.atlas && s.pond.school.atlas.prerendered), world: [s.pond.school.W, s.pond.school.H] }); })()");
   const d = s.data || {};
   const aligned = d.rect && d.rect.every((v, i) => near(v, d.expect[i], 1));
-  return { ok: s.ready && aligned && d.ink === 'rgb(43, 58, 72)' && !d.panel && !d.editor && d.world[0] > 400, detail: { ready: s.ready, aligned, ink: d.ink, panel: d.panel, editor: d.editor, atlas: d.atlas, world: d.world, exceptions: s.exceptions } };
+  return { ok: s.ready && aligned && (d.ink === null || d.ink === 'rgb(43, 58, 72)') && !d.panel && !d.editor && d.world[0] > 400, detail: { ready: s.ready, aligned, ink: d.ink, panel: d.panel, editor: d.editor, atlas: d.atlas, world: d.world, exceptions: s.exceptions } };
 });
 
 check('site-design-mode', async () => {

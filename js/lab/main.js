@@ -1,6 +1,6 @@
 // Painted Boids Lab — the design-mode entry: the pond plus the control panel, presets, JSON and arrange/mask tools.
 import { clone, rand, wrapAngle, clamp, mulberry, quad, mixHex, cleanName, hslToHex } from '../pond/util.js';
-import { PLAIN6, DEFAULTS, PATTERN_NAMES, PRESETS, BRUSHES, migrate, normalize, merge } from '../pond/presets.js';
+import { PLAIN6, DEFAULTS, PATTERN_NAMES, PRESETS, BRUSHES, normalize, merge } from '../pond/presets.js';
 import { SCHEMA, FLAGS } from '../pond/schema.js';
 import { P, activePreset, replace as replaceConfig, patch as patchConfig, setActivePreset, on as onConfig } from '../pond/config.js';
 import { Shapes } from '../pond/shapes.js';
@@ -37,7 +37,7 @@ function boot(ASSETS) {
     canvas: tank, journalRoot: $('#journal-root'), root: document.body,
     config: PRESETS[0].params, presetId: 'koi',
     assets: ASSETS,
-    insets: panelInsets, remote: window.POND_REMOTE, visitors: true,
+    insets: panelInsets, visitors: true,
   });
   var school = pond.school;
   var panel = mountPanel(pond, { root: document.body, setInsets: false });

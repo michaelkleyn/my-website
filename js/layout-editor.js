@@ -20,7 +20,6 @@
  * node's placement for the ACTIVE breakpoint, then call setScene() for preview.
  */
 
-import * as THREE from 'three'; // only for sampling the flight-path curve (WYSIWYG preview)
 
 const CSS_HREF = '/css/layout-editor.css';
 const PING_URL = '/__editor/ping';
@@ -172,12 +171,6 @@ class LayoutEditor {
   // ----- selection ---------------------------------------------------------
 
   select(id) {
-    // Leaving the path-edit node? tear down path-edit (and its window listener)
-    // so it can't keep editing a node that's no longer selected.
-    if (this.pathEdit && this.pathEdit.nodeId !== id) {
-      if (this._pathClick) { window.removeEventListener('mousedown', this._pathClick); this._pathClick = null; }
-      this.pathEdit = null;
-    }
     this.selectedId = id;
     // Pin ASCII creatures visible while selected so they can be placed even when
     // their cycle would otherwise have them off-screen; unpin for other kinds.
@@ -188,10 +181,6 @@ class LayoutEditor {
   }
 
   clearSelection() {
-    if (this.pathEdit) {
-      if (this._pathClick) { window.removeEventListener('mousedown', this._pathClick); this._pathClick = null; }
-      this.pathEdit = null;
-    }
     this.selectedId = null;
     if (this.r.unpinNode) this.r.unpinNode();
     this.refreshAll();
@@ -330,7 +319,6 @@ class LayoutEditor {
 
   onOverlayDown(e) {
     if (this.cleanPreview) return;
-    if (this.pathEdit) return; // path-edit owns clicks (add/move points), not node selection
     // Handles sit on top and handle their own mousedown (stopPropagation).
     // If a node is already selected and the press lands inside its box, move it.
     // This is what lets content nodes (selected via the layer list) be dragged,
@@ -392,9 +380,6 @@ class LayoutEditor {
       rectW: rect ? rect.width : 0,
       rectH: rect ? rect.height : 0,
       natRatio: node.natW && node.natH ? node.natH / node.natW : null,
-      // splat-butterfly renders full-viewport, so the box doesn't size it —
-      // resizing maps to config.scale instead (see applyResize).
-      startScale: (node.config && node.config.scale != null) ? node.config.scale : 1,
       moved: false,
     };
     this.attachGestureListeners();
@@ -510,19 +495,6 @@ class LayoutEditor {
     if (typeof h === 'number') p.h = round2(h);
     p.x = round2(x);
     p.y = round2(y);
-
-    // splat-butterfly is full-viewport: the box w/h doesn't drive its render
-    // size, config.scale does. Map the resize into config.scale so dragging the
-    // handles grows/shrinks the butterfly live. (config.scale stays out of the
-    // writePathPoints box-fit, so a later path edit won't reset it.)
-    if (node && node.component === 'splat-butterfly') {
-      const fw = g.pw ? w / g.pw : 1;
-      const fh = (typeof g.ph === 'number' && g.ph) ? h / g.ph : fw;
-      const factor = Math.sqrt(Math.max(0.01, fw) * Math.max(0.01, fh));
-      const base = g.startScale != null ? g.startScale : 1;
-      node.config = node.config || {};
-      node.config.scale = clamp(round2(base * factor), 0.05, 20);
-    }
   }
 
   onGestureUp() {
@@ -681,7 +653,6 @@ class LayoutEditor {
     this.inspector.appendChild(toggles);
 
     if (isAscii) this.renderAsciiConfig(node);
-    if (node.kind === 'component') this.renderComponentConfig(node);
   }
 
   // Node-level controls for ASCII creatures: color + cycle/always mode.
@@ -768,498 +739,12 @@ class LayoutEditor {
     this.refreshAll();
   }
 
-  // ----- component config + flight-path drawing tool ----------------------
-
-  // Render the selected component's configSchema as editable fields, plus the
-  // "draw flight path" entry for splat-butterfly.
-  renderComponentConfig(node) {
-    const reg = window.sceneComponents;
-    const def = reg && typeof reg.get === 'function' ? reg.get(node.component) : null;
-    const schema = def && def.configSchema;
-    node.config = node.config || {};
-
-    const wrap = el('div', { class: 'le-fields' });
-    wrap.appendChild(el('div', { class: 'le-field-label', text: `config · ${node.component}` }));
-    if (Array.isArray(schema)) {
-      for (const f of schema) {
-        if (f.key === 'flightPath') continue; // authored via the draw tool below
-        wrap.appendChild(this.configField(node, f));
-      }
-    }
-    this.inspector.appendChild(wrap);
-
-    if (node.component === 'splat-butterfly') {
-      const editing = !!this.pathEdit && this.pathEdit.nodeId === node.id;
-      const btn = el('button', {
-        class: 'le-btn',
-        text: editing ? 'finish paths' : 'edit flight paths…',
-        onClick: () => (editing ? this.endPathEdit() : this.startPathEdit(node)),
-      });
-      btn.style.marginTop = '8px';
-      this.inspector.appendChild(btn);
-      if ((node.config.routes || node.config.flightPath || '').length) {
-        const clr = el('button', { class: 'le-btn', text: 'clear', onClick: () => this.clearPath(node) });
-        clr.style.marginLeft = '6px';
-        this.inspector.appendChild(clr);
-      }
-    }
-  }
-
-  configField(node, f) {
-    const cur = node.config[f.key] != null ? node.config[f.key] : f.default;
-    let input;
-    if (f.type === 'boolean') {
-      input = el('input', { type: 'checkbox', ...(cur ? { checked: 'checked' } : {}),
-        onChange: (e) => this.onConfigInput(node, f, e.target.checked) });
-    } else if (f.type === 'enum') {
-      input = el('select', { class: 'le-num', onChange: (e) => this.onConfigInput(node, f, e.target.value) });
-      for (const opt of (f.options || [])) {
-        const o = el('option', { value: opt, text: opt });
-        if (opt === cur) o.selected = true;
-        input.appendChild(o);
-      }
-    } else if (f.type === 'number') {
-      input = el('input', { class: 'le-num', type: 'number', value: cur,
-        ...(f.step != null ? { step: String(f.step) } : {}),
-        ...(f.min != null ? { min: String(f.min) } : {}),
-        ...(f.max != null ? { max: String(f.max) } : {}),
-        onInput: (e) => this.onConfigInput(node, f, e.target.value) });
-    } else {
-      input = el('input', { class: 'le-num', type: 'text', value: cur == null ? '' : cur,
-        onInput: (e) => this.onConfigInput(node, f, e.target.value) });
-    }
-    return el('label', { class: 'le-field' }, [
-      el('span', { class: 'le-field-label', text: f.label || f.key }),
-      input,
-    ]);
-  }
-
-  onConfigInput(node, f, raw) {
-    let v = raw;
-    if (f.type === 'number') { v = parseFloat(raw); if (Number.isNaN(v)) return; }
-    else if (f.type === 'boolean') { v = !!raw; }
-    this.snapshot();
-    node.config = node.config || {};
-    node.config[f.key] = v;
-    this.preview();
-  }
-
-  parsePathPoints(raw) {
-    if (!raw) return [];
-    try {
-      const a = JSON.parse(raw);
-      if (!Array.isArray(a)) return [];
-      return a.map((p) => ({
-        u: +p.u || 0, v: +p.v || 0, depth: +p.depth || 0,
-        rot: p.rot ? { x: +p.rot.x || 0, y: +p.rot.y || 0, z: +p.rot.z || 0 } : { x: 0, y: 0, z: 0 },
-        scale: p.scale != null ? +p.scale : 1,
-      }));
-    } catch (e) { return []; }
-  }
-
-  startPathEdit(node) {
-    const routes = this.parseRoutes(node.config);
-    if (!routes.length) routes.push({ kind: 'path', points: [], duration: 1.5 });
-    // routes: [{kind:'path'|'rest', points:[...], duration}]; `active` = the
-    // route being edited; `sel` = selected point within it. The butterfly
-    // wanders between routes at random and flaps in place at rest points.
-    this.pathEdit = { nodeId: node.id, routes, active: 0, sel: null };
-    // Add points by clicking anywhere on the page (viewport-space). Handles /
-    // panels / the route list stopPropagation; chrome is skipped by class.
-    this._pathClick = (e) => this.onPathCanvasDown(e);
-    window.addEventListener('mousedown', this._pathClick);
-    this.refreshAll();
-  }
-
-  endPathEdit() {
-    if (this._pathClick) { window.removeEventListener('mousedown', this._pathClick); this._pathClick = null; }
-    this.pathEdit = null;
-    this.refreshAll();
-  }
-
-  // Parse config.routes (or migrate a single legacy flightPath) into editable
-  // routes: [{ kind:'path'|'rest', points:[{u,v,depth,rot,scale}], duration }].
-  parseRoutes(config) {
-    const cfg = config || {};
-    let arr = null;
-    if (cfg.routes) { try { arr = JSON.parse(cfg.routes); } catch (e) { arr = null; } }
-    if (!Array.isArray(arr)) {
-      const pts = this.parsePathPoints(cfg.flightPath); // migrate old single path
-      arr = pts.length ? [{ kind: 'path', points: pts }] : [];
-    }
-    return arr.map((seg) => {
-      let pts = seg && seg.points;
-      if (typeof pts === 'string') { try { pts = JSON.parse(pts); } catch (e) { pts = []; } }
-      pts = Array.isArray(pts) ? pts : [];
-      const points = pts.map((p) => ({
-        u: +p.u || 0, v: +p.v || 0, depth: +p.depth || 0,
-        rot: p.rot ? { x: +p.rot.x || 0, y: +p.rot.y || 0, z: +p.rot.z || 0 } : { x: 0, y: 0, z: 0 },
-        scale: p.scale != null ? +p.scale : 1,
-      }));
-      return { kind: seg && seg.kind === 'rest' ? 'rest' : 'path', points, duration: seg && seg.duration != null ? +seg.duration : 1.5 };
-    });
-  }
-
-  addRoute(kind) {
-    const pe = this.pathEdit;
-    pe.routes.push({ kind, points: [], duration: 1.5 });
-    pe.active = pe.routes.length - 1;
-    pe.sel = null;
-    this.writePathPoints(true);
-    this.positionChrome();
-  }
-
-  selectRoute(idx) {
-    this.pathEdit.active = idx;
-    this.pathEdit.sel = null;
-    this.positionChrome();
-  }
-
-  removeRoute(idx) {
-    const pe = this.pathEdit;
-    pe.routes.splice(idx, 1);
-    if (!pe.routes.length) pe.routes.push({ kind: 'path', points: [], duration: 1.5 });
-    if (pe.active >= pe.routes.length) pe.active = pe.routes.length - 1;
-    pe.sel = null;
-    this.writePathPoints(true);
-    this.positionChrome();
-  }
-
-  clearPath(node) {
-    this.snapshot();
-    node.config = node.config || {};
-    delete node.config.flightPath;
-    delete node.config.routes;
-    if (this.pathEdit && this.pathEdit.nodeId === node.id) {
-      this.pathEdit.routes = [{ kind: 'path', points: [], duration: 1.5 }];
-      this.pathEdit.active = 0; this.pathEdit.sel = null;
-    }
-    this.preview();
-    this.refreshAll();
-  }
-
-  // Serialize ALL routes (paths + rests) into config.routes and preview; fit the
-  // node box to every point so it stays centered on the whole choreography.
-  // (Name kept for caller compatibility — it writes routes, not a single path.)
-  writePathPoints(commit) {
-    const pe = this.pathEdit;
-    if (!pe) return;
-    const node = this.nodeById(pe.nodeId);
-    if (!node) return;
-    if (commit) this.snapshot();
-    node.config = node.config || {};
-    delete node.config.flightPath; // superseded by routes
-    node.config.routes = JSON.stringify(pe.routes.map((seg) => {
-      const out = {
-        kind: seg.kind,
-        points: seg.points.map((p) => {
-          const r = p.rot || {};
-          return {
-            u: +p.u.toFixed(4), v: +p.v.toFixed(4), depth: +p.depth.toFixed(3),
-            rot: { x: +(r.x || 0).toFixed(1), y: +(r.y || 0).toFixed(1), z: +(r.z || 0).toFixed(1) },
-            scale: +(p.scale != null ? p.scale : 1).toFixed(3),
-          };
-        }),
-      };
-      if (seg.kind === 'rest') out.duration = +(+seg.duration || 1.5).toFixed(2);
-      return out;
-    }));
-    // The canvas is full-viewport, so the node box doesn't cage the flight — fit
-    // it (with a small margin) to ALL route points so it centers on the whole set.
-    if (commit) {
-      let minU = 1, maxU = 0, minV = 1, maxV = 0, any = false;
-      for (const seg of pe.routes) {
-        for (const p of seg.points) {
-          any = true;
-          if (p.u < minU) minU = p.u;
-          if (p.u > maxU) maxU = p.u;
-          if (p.v < minV) minV = p.v;
-          if (p.v > maxV) maxV = p.v;
-        }
-      }
-      if (any) {
-        const mx = 0.03, my = 0.03;
-        const pl = this.placementFor(node);
-        pl.x = +(Math.max(0, minU - mx) * 100).toFixed(2);
-        pl.y = +(Math.max(0, minV - my) * 100).toFixed(2);
-        pl.w = +(Math.max(0.05, maxU - minU + 2 * mx) * 100).toFixed(2);
-        pl.h = +(Math.max(0.05, maxV - minV + 2 * my) * 100).toFixed(2);
-        this.renderInspectorValues();
-      }
-    }
-    this.preview();
-  }
-
-  // window mousedown while path-editing: add a point unless the click landed on
-  // editor chrome, a handle, or the per-point panel.
-  onPathCanvasDown(e) {
-    if (!this.pathEdit || e.button !== 0) return;
-    if (this.pathEdit.nodeId !== this.selectedId) return; // selection moved on; ignore
-    const t = e.target;
-    if (t && t.closest && t.closest('.le-panel, .le-toolbar, .le-pathctl, .le-pathhandle, .le-routelist, #le-root .le-btn')) return;
-    this.addPathPoint(e);
-  }
-
-  addPathPoint(e) {
-    const pe = this.pathEdit, seg = pe.routes[pe.active];
-    const u = clamp(e.clientX / window.innerWidth, 0, 1);
-    const v = clamp(e.clientY / window.innerHeight, 0, 1);
-    if (seg.kind === 'rest') { // a rest is a single landing spot — set/move it
-      if (seg.points.length) { seg.points[0].u = u; seg.points[0].v = v; }
-      else seg.points.push({ u, v, depth: 0, rot: { x: 0, y: 0, z: 0 }, scale: 1 });
-      pe.sel = 0;
-    } else {
-      seg.points.push({ u, v, depth: 0, rot: { x: 0, y: 0, z: 0 }, scale: 1 });
-      pe.sel = seg.points.length - 1;
-    }
-    this.writePathPoints(true);
-    this.positionChrome();
-  }
-
-  removePathPoint(i) {
-    const seg = this.pathEdit.routes[this.pathEdit.active];
-    seg.points.splice(i, 1);
-    if (this.pathEdit.sel === i) this.pathEdit.sel = null;
-    else if (this.pathEdit.sel > i) this.pathEdit.sel -= 1;
-    this.writePathPoints(true);
-    this.positionChrome();
-  }
-
-  beginPathDrag(e, i) {
-    e.preventDefault();
-    e.stopPropagation();
-    const pe = this.pathEdit;
-    const pt = pe.routes[pe.active].points[i];
-    pe.sel = i;
-    const depthMode = e.shiftKey;
-    const startY = e.clientY;
-    const startDepth = pt.depth || 0;
-    const move = (ev) => {
-      if (depthMode) {
-        pt.depth = clamp(startDepth + (startY - ev.clientY) / 120, -1, 1); // drag up = toward viewer
-      } else {
-        pt.u = clamp(ev.clientX / window.innerWidth, 0, 1);
-        pt.v = clamp(ev.clientY / window.innerHeight, 0, 1);
-      }
-      this.writePathPoints(false);
-      this.positionChrome();
-    };
-    const up = () => {
-      window.removeEventListener('mousemove', move);
-      window.removeEventListener('mouseup', up);
-      this.writePathPoints(true);
-      this.positionChrome();
-    };
-    window.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', up);
-  }
-
-  // Draw the flight-path editor chrome (spline + draggable points + per-point
-  // rotation/scale panel) over the WHOLE VIEWPORT. Called from positionChrome().
-  drawPathEditor() {
-    const pe = this.pathEdit;
-    const node = this.nodeById(pe.nodeId);
-    if (!node) { this.pathEdit = null; return; }
-    const W = window.innerWidth, H = window.innerHeight;
-    const SVGNS = 'http://www.w3.org/2000/svg';
-
-    // Draw EVERY route: paths as their actual open centripetal curve (WYSIWYG),
-    // rests as a ring. The active route is bright; the others dimmed.
-    const svg = document.createElementNS(SVGNS, 'svg');
-    Object.assign(svg.style, { position: 'fixed', left: '0', top: '0', pointerEvents: 'none', zIndex: '5', overflow: 'visible' });
-    svg.setAttribute('width', W);
-    svg.setAttribute('height', H);
-    pe.routes.forEach((seg, ri) => {
-      const active = ri === pe.active;
-      if (seg.kind === 'rest') {
-        const p = seg.points[0];
-        if (!p) return;
-        const c = document.createElementNS(SVGNS, 'circle');
-        c.setAttribute('cx', p.u * W); c.setAttribute('cy', p.v * H); c.setAttribute('r', active ? 13 : 10);
-        c.setAttribute('fill', 'rgba(224,138,30,0.12)');
-        c.setAttribute('stroke', active ? '#e08a1e' : '#c9a96a');
-        c.setAttribute('stroke-width', active ? 3 : 2);
-        c.setAttribute('opacity', active ? 0.95 : 0.5);
-        svg.appendChild(c);
-      } else if (seg.points.length > 1) {
-        const vecs = seg.points.map((p) => new THREE.Vector3(p.u * W, p.v * H, 0));
-        const curve = new THREE.CatmullRomCurve3(vecs, false, 'centripetal'); // OPEN route
-        const sampled = curve.getPoints(Math.max(48, seg.points.length * 20));
-        const poly = document.createElementNS(SVGNS, 'polyline');
-        poly.setAttribute('points', sampled.map((q) => `${q.x.toFixed(1)},${q.y.toFixed(1)}`).join(' '));
-        poly.setAttribute('fill', 'none');
-        poly.setAttribute('stroke', active ? '#23448d' : '#9aa6c4');
-        poly.setAttribute('stroke-width', active ? 2 : 1.5);
-        poly.setAttribute('stroke-dasharray', '5 4');
-        poly.setAttribute('opacity', active ? 0.9 : 0.4);
-        svg.appendChild(poly);
-      }
-    });
-    this.overlay.appendChild(svg);
-
-    // draggable handles for the ACTIVE route only
-    const seg = pe.routes[pe.active];
-    seg.points.forEach((p, i) => {
-      const cx = p.u * W, cy = p.v * H, d = p.depth || 0;
-      const col = seg.kind === 'rest' ? '#e08a1e' : (d > 0.02 ? '#3a6df0' : d < -0.02 ? '#e74e4d' : '#23448d');
-      const sel = pe.sel === i;
-      const sz = sel ? 18 : 14;
-      const h = document.createElement('div');
-      h.className = 'le-pathhandle';
-      Object.assign(h.style, {
-        position: 'fixed', left: `${cx - sz / 2}px`, top: `${cy - sz / 2}px`,
-        width: `${sz}px`, height: `${sz}px`, borderRadius: '50%', background: col,
-        border: sel ? '3px solid #ffcc00' : '2px solid #fff', boxShadow: '0 1px 4px rgba(0,0,0,.35)',
-        pointerEvents: 'auto', cursor: 'grab', zIndex: '6',
-      });
-      h.title = `${seg.kind} point ${i + 1} · drag move · shift-drag depth · dbl-click delete`;
-      h.addEventListener('mousedown', (e) => this.beginPathDrag(e, i));
-      h.addEventListener('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); this.removePathPoint(i); });
-      this.overlay.appendChild(h);
-      const lbl = document.createElement('div');
-      Object.assign(lbl.style, { position: 'fixed', left: `${cx + 10}px`, top: `${cy - 9}px`, font: '10px ui-monospace, monospace', color: col, pointerEvents: 'none', zIndex: '6' });
-      lbl.textContent = String(i + 1);
-      this.overlay.appendChild(lbl);
-    });
-
-    // hint label (top-center, clear of the panels)
-    const hint = document.createElement('div');
-    Object.assign(hint.style, {
-      position: 'fixed', left: '50%', top: '8px', transform: 'translateX(-50%)',
-      font: '11px ui-monospace, monospace', color: '#23448d',
-      background: 'rgba(243,239,226,0.92)', padding: '3px 9px', borderRadius: '4px',
-      pointerEvents: 'none', zIndex: '7', whiteSpace: 'nowrap',
-    });
-    hint.textContent = seg.kind === 'rest'
-      ? 'REST · click the page to place the spot · set its seconds in the list →'
-      : 'PATH · click page to add points · drag move · shift-drag depth · click a point for rotation/scale';
-    this.overlay.appendChild(hint);
-
-    this.drawRouteListPanel();
-    // per-point rotation + scale panel (paths only; rests use the duration field)
-    if (seg.kind === 'path' && pe.sel != null && seg.points[pe.sel]) {
-      this.drawPathPointPanel(seg.points[pe.sel], pe.sel);
-    }
-  }
-
-  // The list of routes (bottom-left): select / delete each, set a rest's
-  // seconds, and add new paths/rests. Wander order is random at runtime.
-  drawRouteListPanel() {
-    const pe = this.pathEdit;
-    const panel = document.createElement('div');
-    panel.className = 'le-routelist';
-    Object.assign(panel.style, {
-      position: 'fixed', left: '14px', bottom: '14px', width: '210px',
-      background: 'rgba(243,239,226,0.97)', border: '1px solid rgba(35,68,141,0.4)',
-      borderRadius: '6px', padding: '8px 10px', font: '11px ui-monospace, monospace',
-      color: '#23448d', pointerEvents: 'auto', zIndex: '8', boxShadow: '0 2px 12px rgba(0,0,0,.22)',
-    });
-    panel.addEventListener('mousedown', (e) => e.stopPropagation());
-    const title = document.createElement('div');
-    title.textContent = `paths & rests · ${pe.routes.length}`;
-    Object.assign(title.style, { fontWeight: '600', marginBottom: '6px' });
-    panel.appendChild(title);
-
-    pe.routes.forEach((seg, ri) => {
-      const active = ri === pe.active;
-      const row = document.createElement('div');
-      Object.assign(row.style, {
-        display: 'flex', alignItems: 'center', gap: '6px', margin: '2px 0',
-        padding: '3px 5px', borderRadius: '4px', cursor: 'pointer',
-        background: active ? 'rgba(35,68,141,0.14)' : 'transparent',
-      });
-      row.addEventListener('click', () => this.selectRoute(ri));
-      const label = document.createElement('span');
-      label.style.flex = '1';
-      label.textContent = seg.kind === 'rest' ? `⏸ rest ${ri + 1}` : `⇝ path ${ri + 1} (${seg.points.length})`;
-      row.appendChild(label);
-      if (seg.kind === 'rest') {
-        const dur = document.createElement('input');
-        dur.type = 'number'; dur.step = '0.5'; dur.min = '0';
-        dur.value = seg.duration != null ? seg.duration : 1.5;
-        Object.assign(dur.style, { width: '44px', font: '11px ui-monospace, monospace', padding: '0 3px' });
-        dur.title = 'rest seconds';
-        dur.addEventListener('click', (e) => e.stopPropagation());
-        dur.addEventListener('input', () => { const v = parseFloat(dur.value); if (!Number.isNaN(v)) { seg.duration = v; this.writePathPoints(false); } });
-        dur.addEventListener('change', () => this.writePathPoints(true));
-        row.appendChild(dur);
-        const s = document.createElement('span'); s.textContent = 's'; row.appendChild(s);
-      }
-      const del = document.createElement('button');
-      del.textContent = '×';
-      Object.assign(del.style, { border: 'none', background: 'transparent', color: '#a33', cursor: 'pointer', fontSize: '13px', lineHeight: '1', padding: '0 2px' });
-      del.title = 'delete';
-      del.addEventListener('click', (e) => { e.stopPropagation(); this.removeRoute(ri); });
-      row.appendChild(del);
-      panel.appendChild(row);
-    });
-
-    const btns = document.createElement('div');
-    Object.assign(btns.style, { display: 'flex', gap: '6px', marginTop: '6px' });
-    const mk = (txt, fn) => {
-      const b = document.createElement('button');
-      b.className = 'le-btn'; b.textContent = txt; b.style.flex = '1';
-      b.addEventListener('click', (e) => { e.stopPropagation(); fn(); });
-      return b;
-    };
-    btns.appendChild(mk('+ path', () => this.addRoute('path')));
-    btns.appendChild(mk('+ rest', () => this.addRoute('rest')));
-    panel.appendChild(btns);
-    const finish = mk('finish', () => this.endPathEdit());
-    Object.assign(finish.style, { marginTop: '6px', width: '100%', flex: 'none' });
-    panel.appendChild(finish);
-    this.overlay.appendChild(panel);
-  }
-
-  drawPathPointPanel(pt, i) {
-    pt.rot = pt.rot || { x: 0, y: 0, z: 0 };
-    const panel = document.createElement('div');
-    panel.className = 'le-pathctl';
-    Object.assign(panel.style, {
-      position: 'fixed', right: '14px', bottom: '14px', width: '188px',
-      background: 'rgba(243,239,226,0.97)', border: '1px solid rgba(35,68,141,0.4)',
-      borderRadius: '6px', padding: '8px 10px', font: '11px ui-monospace, monospace',
-      color: '#23448d', pointerEvents: 'auto', zIndex: '8', boxShadow: '0 2px 12px rgba(0,0,0,.22)',
-    });
-    panel.addEventListener('mousedown', (e) => e.stopPropagation()); // don't add a point
-    const title = document.createElement('div');
-    title.textContent = `point ${i + 1} · rotation / scale`;
-    Object.assign(title.style, { fontWeight: '600', marginBottom: '6px' });
-    panel.appendChild(title);
-
-    const row = (label, get, set, step) => {
-      const r = document.createElement('label');
-      Object.assign(r.style, { display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '3px 0', gap: '8px' });
-      const sp = document.createElement('span'); sp.textContent = label;
-      const inp = document.createElement('input');
-      inp.type = 'number'; inp.step = String(step); inp.value = get();
-      Object.assign(inp.style, { width: '76px', font: '11px ui-monospace, monospace', padding: '1px 4px' });
-      inp.addEventListener('input', () => { const v = parseFloat(inp.value); if (!Number.isNaN(v)) { set(v); this.writePathPoints(false); } });
-      inp.addEventListener('change', () => this.writePathPoints(true));
-      r.append(sp, inp);
-      return r;
-    };
-    panel.appendChild(row('rot X°', () => pt.rot.x || 0, (v) => { pt.rot.x = v; }, 5));
-    panel.appendChild(row('rot Y°', () => pt.rot.y || 0, (v) => { pt.rot.y = v; }, 5));
-    panel.appendChild(row('rot Z°', () => pt.rot.z || 0, (v) => { pt.rot.z = v; }, 5));
-    panel.appendChild(row('scale', () => (pt.scale != null ? pt.scale : 1), (v) => { pt.scale = v; }, 0.05));
-    const del = document.createElement('button');
-    del.className = 'le-btn'; del.textContent = 'delete point';
-    del.style.marginTop = '6px';
-    del.addEventListener('click', (e) => { e.stopPropagation(); this.removePathPoint(i); });
-    panel.appendChild(del);
-    this.overlay.appendChild(panel);
-  }
-
   // ----- selection chrome positioning -------------------------------------
 
   positionChrome() {
     // Clear handles
     this.overlay.innerHTML = '';
     if (this.cleanPreview) return;
-    // While path-editing, show ONLY the path chrome — no selection box or resize/
-    // rotate handles, so add-point clicks can't collide with a resize handle.
-    if (this.pathEdit) { this.drawPathEditor(); return; }
     const node = this.selectedId ? this.nodeById(this.selectedId) : null;
     if (!node) return;
     const dom = this.domFor(node.id);

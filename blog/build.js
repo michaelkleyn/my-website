@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import matter from 'gray-matter';
 import { marked } from 'marked';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -9,11 +8,24 @@ const __dirname = path.dirname(__filename);
 
 // Directories
 const POSTS_DIR = path.join(__dirname, 'posts');
-const DIST_DIR = path.join(__dirname, 'dist');
 const CHAPTERS_FILE = path.join(__dirname, 'chapters.json');
 
-// dist (the old standalone layout) is only written with --dist
-if (process.argv.includes('--dist') && !fs.existsSync(DIST_DIR)) fs.mkdirSync(DIST_DIR, { recursive: true });
+/** Front matter: a `---` block of `key: value` lines (quotes optional; bare numbers become numbers). */
+function matter(src) {
+  const m = /^---\r?\n([\s\S]*?)\r?\n---\r?\n/.exec(src);
+  if (!m) return { data: {}, content: src };
+  const data = {};
+  for (const line of m[1].split(/\r?\n/)) {
+    const i = line.indexOf(':');
+    if (i < 0) continue;
+    const k = line.slice(0, i).trim();
+    let v = line.slice(i + 1).trim();
+    if (/^(['"]).*\1$/.test(v)) v = v.slice(1, -1);
+    else if (v !== '' && !Number.isNaN(Number(v))) v = Number(v);
+    data[k] = v;
+  }
+  return { data, content: src.slice(m[0].length) };
+}
 
 /**
  * Extract headings from markdown content for right-nav
@@ -141,199 +153,6 @@ function groupPostsByChapter(posts, chapters) {
 }
 
 /**
- * Generate left navigation HTML
- */
-function generateLeftNav(groupedPosts, currentSlug = null) {
-  let html = '<nav class="left-nav">\n';
-
-  // Chapters with posts
-  groupedPosts.chapters.forEach((chapter, idx) => {
-    html += `  <div class="chapter">\n`;
-    html += `    <h3>${idx + 1}. ${chapter.title.toUpperCase()}</h3>\n`;
-    html += `    <ul>\n`;
-    chapter.posts.forEach(post => {
-      const active = post.slug === currentSlug ? ' class="active"' : '';
-      html += `      <li${active}><a href="${post.slug}.html">${post.frontmatter.title}</a></li>\n`;
-    });
-    html += `    </ul>\n`;
-    html += `  </div>\n`;
-  });
-
-  // Uncategorized posts
-  if (groupedPosts.uncategorized.length > 0) {
-    const idx = groupedPosts.chapters.length + 1;
-    html += `  <div class="chapter">\n`;
-    html += `    <h3>${idx}. EXPLORATIONS</h3>\n`;
-    html += `    <ul>\n`;
-    groupedPosts.uncategorized.forEach(post => {
-      const active = post.slug === currentSlug ? ' class="active"' : '';
-      html += `      <li${active}><a href="${post.slug}.html">${post.frontmatter.title}</a></li>\n`;
-    });
-    html += `    </ul>\n`;
-    html += `  </div>\n`;
-  }
-
-  html += '</nav>';
-  return html;
-}
-
-/**
- * Generate right navigation (sections) HTML
- */
-function generateRightNav(headings) {
-  if (headings.length === 0) {
-    return '<nav class="right-nav"></nav>';
-  }
-
-  let html = '<nav class="right-nav">\n';
-  headings.forEach(heading => {
-    const indent = heading.level > 2 ? ' class="indent"' : '';
-    html += `  <a href="#${heading.id}"${indent}>${heading.text.toUpperCase()} ──</a>\n`;
-  });
-  html += '</nav>';
-  return html;
-}
-
-/**
- * Generate full post HTML page
- */
-function generatePostPage(post, groupedPosts) {
-  const leftNav = generateLeftNav(groupedPosts, post.slug);
-  const rightNav = generateRightNav(post.headings);
-  const chapterTitle = post.frontmatter.chapter
-    ? groupedPosts.chapters.find(c => c.id === post.frontmatter.chapter)?.title || 'Explorations'
-    : 'Explorations';
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${post.frontmatter.title} - Michael Kleyn</title>
-  <link rel="stylesheet" href="../css/style.css">
-  <link rel="stylesheet" href="../css/blog.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-</head>
-<body class="blog-page">
-  <div class="blog-container">
-    <header class="blog-header">
-      <a href="index.html" class="back-link">&lt;</a>
-      <span class="breadcrumb">
-        <span class="chapter-name">${chapterTitle.toUpperCase()}</span> /
-        <span class="post-name">${post.frontmatter.title.toUpperCase()}</span>
-      </span>
-    </header>
-
-    <div class="blog-layout">
-      ${leftNav}
-
-      <main class="blog-content">
-        <article>
-          ${post.html}
-        </article>
-      </main>
-
-      ${rightNav}
-    </div>
-  </div>
-
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-  <script>hljs.highlightAll();</script>
-  <script src="../js/blog.js"></script>
-</body>
-</html>`;
-}
-
-/**
- * Generate index page HTML
- */
-function generateIndexPage(groupedPosts) {
-  const leftNav = generateLeftNav(groupedPosts);
-
-  let mainContent = '<h1>ML Engineering Explorations</h1>\n<div class="divider">-----</div>\n';
-
-  // Chapters
-  groupedPosts.chapters.forEach(chapter => {
-    mainContent += `<section class="chapter-section">\n`;
-    mainContent += `  <h2>${chapter.title.toUpperCase()}</h2>\n`;
-    mainContent += `  <ul class="post-list">\n`;
-    chapter.posts.forEach(post => {
-      mainContent += `    <li>\n`;
-      mainContent += `      <a href="${post.slug}.html">${post.frontmatter.title}</a>\n`;
-      mainContent += `      <span class="date">${post.frontmatter.date}</span>\n`;
-      mainContent += `    </li>\n`;
-    });
-    mainContent += `  </ul>\n`;
-    mainContent += `</section>\n`;
-    mainContent += `<div class="divider">-----</div>\n`;
-  });
-
-  // Uncategorized
-  if (groupedPosts.uncategorized.length > 0) {
-    mainContent += `<section class="chapter-section">\n`;
-    mainContent += `  <h2>EXPLORATIONS</h2>\n`;
-    mainContent += `  <ul class="post-list">\n`;
-    groupedPosts.uncategorized.forEach(post => {
-      mainContent += `    <li>\n`;
-      mainContent += `      <a href="${post.slug}.html">${post.frontmatter.title}</a>\n`;
-      mainContent += `      <span class="date">${post.frontmatter.date}</span>\n`;
-      mainContent += `    </li>\n`;
-    });
-    mainContent += `  </ul>\n`;
-    mainContent += `</section>\n`;
-  }
-
-  // Right nav for index = jump to chapters
-  let rightNavHtml = '<nav class="right-nav">\n';
-  groupedPosts.chapters.forEach(chapter => {
-    rightNavHtml += `  <a href="#${slugify(chapter.title)}">${chapter.title.toUpperCase()} ──</a>\n`;
-  });
-  if (groupedPosts.uncategorized.length > 0) {
-    rightNavHtml += `  <a href="#explorations">EXPLORATIONS ──</a>\n`;
-  }
-  rightNavHtml += '</nav>';
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Explorations - Michael Kleyn</title>
-  <link rel="stylesheet" href="../css/style.css">
-  <link rel="stylesheet" href="../css/blog.css">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-</head>
-<body class="blog-page">
-  <div class="blog-container">
-    <header class="blog-header">
-      <a href="../index.html" class="back-link">&lt;</a>
-      <span class="breadcrumb">
-        <span class="post-name">MKLEYN.COM / EXPLORATIONS</span>
-      </span>
-    </header>
-
-    <div class="blog-layout">
-      ${leftNav}
-
-      <main class="blog-content">
-        ${mainContent}
-      </main>
-
-      ${rightNavHtml}
-    </div>
-  </div>
-
-  <script src="../js/blog.js"></script>
-</body>
-</html>`;
-}
-
-/**
  * Main build function
  */
 const CONTENT_DIR = path.join(__dirname, '..', 'content');
@@ -373,7 +192,6 @@ function build() {
   const posts = getAllPosts();
   const chapters = getChapters();
   const groupedPosts = groupPostsByChapter(posts, chapters);
-  const wantDist = process.argv.includes('--dist');   // the old standalone reading layout; the site reads fragments
 
   console.log(`Found ${posts.length} posts`);
 
@@ -387,18 +205,6 @@ function build() {
   fs.writeFileSync(path.join(CONTENT_DIR, 'blog', 'index.json'), JSON.stringify(posts.map((p) => ({ slug: p.slug, title: p.frontmatter.title, date: p.frontmatter.date, chapter: p.frontmatter.chapter, headings: p.headings })), null, 2) + '\n');
   fs.writeFileSync(path.join(CONTENT_DIR, 'pages', 'blog.html'), generateBlogSpread(groupedPosts, posts));
   console.log('  Spread: content/pages/blog.html');
-
-  if (wantDist) {
-    posts.forEach(post => {
-      const html = generatePostPage(post, groupedPosts);
-      const outputPath = path.join(DIST_DIR, `${post.slug}.html`);
-      fs.writeFileSync(outputPath, html);
-      console.log(`  Generated: ${post.slug}.html`);
-    });
-    const indexHtml = generateIndexPage(groupedPosts);
-    fs.writeFileSync(path.join(DIST_DIR, 'index.html'), indexHtml);
-    console.log('  Generated: index.html');
-  }
 
   console.log('Build complete!');
 }

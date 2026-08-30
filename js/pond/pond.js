@@ -1,7 +1,7 @@
 // createPond — the composition root: wires the modules together, runs the frame loop, dispatches config changes to
 // the side effects they need, and exposes one object the site and the lab panel both talk to.
 //
-//   const pond = createPond({ canvas, journalRoot, root, config, presetId, assets: { journal, book }, insets, remote, visitors });
+//   const pond = createPond({ canvas, journalRoot, root, config, presetId, assets: { journal, book }, insets, visitors });
 //   pond.on('status', text => …); pond.setConfig({ count: 40 }); pond.book.fit; pond.journal.turn(1); pond.destroy();
 //
 import { P, activePreset, replace as replaceConfig, patch as patchConfig, set as setConfigKey, snapshot, on as onConfig, off as offConfig } from './config.js';
@@ -120,7 +120,6 @@ export function createPond(opts) {
   listen(document, 'pointermove', function (e) { Drawings.setPointer(e.clientX, e.clientY); });
 
   // ---- visitors
-  PondStore.init({ remote: opts.remote });
   Residents.init({ school: school });
   var visitorsOn = opts.visitors !== false;
   if (visitorsOn) {

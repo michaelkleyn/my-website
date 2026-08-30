@@ -39,10 +39,6 @@
   height: 100%;
 }
 
-.scene-node--component {
-  /* component mount host — components manage their own internal sizing. */
-}
-
 /* ASCII creatures reuse the existing .ascii-art look (font/color/fade) from
    style.css; these just neutralize <pre> defaults and let the inline color win. */
 .scene-node--ascii {

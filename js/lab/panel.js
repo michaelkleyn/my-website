@@ -1,7 +1,7 @@
 // The lab's control panel over a pond: sliders from SCHEMA, presets, palette, style mix, JSON, arrange, mask brush,
 // visitors group, status line, keys. mountPanel(pond, { root, setInsets }) works on the lab page and in the site's design mode.
 import { clone, rand, wrapAngle, clamp, mulberry, quad, mixHex, cleanName, hslToHex } from '../pond/util.js';
-import { PLAIN6, DEFAULTS, PATTERN_NAMES, PRESETS, BRUSHES, migrate, normalize, merge } from '../pond/presets.js';
+import { PLAIN6, DEFAULTS, PATTERN_NAMES, PRESETS, BRUSHES, normalize, merge } from '../pond/presets.js';
 import { SCHEMA, FLAGS } from '../pond/schema.js';
 import { P, activePreset, replace as replaceConfig, patch as patchConfig, setActivePreset, on as onConfig } from '../pond/config.js';
 import { Shapes } from '../pond/shapes.js';
@@ -395,7 +395,7 @@ export function mountPanel(pond, opts) {
   Book.on('editing', function (on) { $('#bk-edit').classList.toggle('on', on); document.body.classList.toggle('pond-tool', on || Journal.arranging); });
   Book.setTool($('#bk-tool').value); $('#bk-tool').addEventListener('change', function () { Book.setTool(this.value); });
   $('#vs-demo').addEventListener('click', function () { Visitors.demo(); });
-  $('#vs-clear').addEventListener('click', function () { if (PondStore.mode === 'local') PondStore.clearLocal(); Residents.clear(); Visitors.refresh(); });
+  $('#vs-clear').addEventListener('click', function () { PondStore.clearLocal(); Residents.clear(); Visitors.refresh(); });
   $('#vs-find').addEventListener('click', function () { var m = PondStore.mine(); if (!m || !school.spotlight(m.id)) statusEl.textContent = 'No fish of yours in the pond.'; });
   if (!pond.ok) {
     $('#unsupported').style.display = 'block';

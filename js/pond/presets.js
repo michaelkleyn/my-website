@@ -127,23 +127,8 @@ export var BRUSHES = ['2B', 'HB', '2H', 'cpencil', 'pen', 'rotring', 'spray', 'm
 
 // Each control: key, label, kind, and whether changing it requires a repaint.
 
-/** Fill in anything a (possibly older) config is missing: 5-colour palette rows, 6 patterns, new keys. */
-export var OLD_KEYS = { wakeFishPct: 'rippleFishPct', waterFish: 'rippleBeat', waterTouch: 'rippleTouch', surfaceChance: 'rippleSurfacing', waterCell: 'rippleDetail',
-  waterInk: 'inkColor', waterBrush: 'inkBrush', waterWeight: 'inkWeight', waterOpacity: 'inkOpacity', waterStrokes: 'inkStrokes', waterDrawSpeed: 'inkPenSpeed', waterPaintEvery: 'inkEvery',
-  pondWarp: 'pondSwirl', pondWarpScale: 'pondSwirlSize' };
-export var DEAD_KEYS = ['waterStyle', 'waterLen', 'waterThreshold', 'waterDamping', 'waterHold', 'waterFade', 'pondDrift', 'pondDriftAngle', 'pondWarpSpeed',
-  'surfaceTime', 'wakeStrength', 'wakeBrush', 'wakeInk', 'wakeWidth', 'wakeAngle', 'wakeLen', 'wakeSpread', 'wakeOpacity', 'wakeFade'];
-export function migrate(P) {
-  Object.keys(OLD_KEYS).forEach(function (o) { if (P[o] !== undefined && P[OLD_KEYS[o]] === undefined) P[OLD_KEYS[o]] = P[o]; });
-  if (P.waterDamping !== undefined && P.rippleLife === undefined) P.rippleLife = clamp((P.waterDamping - 0.97) / 0.029, 0, 1);
-  if (P.waterThreshold !== undefined && P.inkDetail === undefined) P.inkDetail = clamp(1 - P.waterThreshold / 0.5, 0, 1);
-  if ((P.waterHold !== undefined || P.waterFade !== undefined) && P.inkLife === undefined) P.inkLife = ((P.waterHold || 700) + (P.waterFade || 900)) / 1000;
-  if ((P.pondDrift !== undefined || P.pondWarpSpeed !== undefined) && P.pondFlow === undefined) P.pondFlow = clamp(Math.max((P.pondDrift || 0) / 16, P.pondWarpSpeed || 0), 0, 1);
-  Object.keys(OLD_KEYS).concat(DEAD_KEYS).forEach(function (o) { delete P[o]; });
-  return P;
-}
+/** Fill in anything a config is missing: 5-colour palette rows, 6 patterns, new keys. */
 export function normalize(P) {
-  migrate(P);
   Object.keys(DEFAULTS).forEach(function (k) { if (P[k] === undefined) P[k] = clone(DEFAULTS[k]); });
   if (!Array.isArray(P.palette) || !P.palette.length) P.palette = clone(DEFAULTS.palette);
   while (P.palette.length < 6) P.palette.push(clone(P.palette[P.palette.length - 1]));

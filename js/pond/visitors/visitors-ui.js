@@ -27,14 +27,14 @@ export var Visitors = {
       note.appendChild(b2); note.appendChild(document.createTextNode(' has swum on — the pond keeps only the newest ' + P.visitorCap + '.'));
     } else note.hidden = true;
     $('#btn-leave').textContent = mine && here ? 'Leave a different fish' : 'Leave a fish';
-    var vsNote = $('#vs-note'); if (vsNote) vsNote.textContent = 'Store: ' + (PondStore.mode === 'remote' ? 'remote' : 'this browser') + (PondStore.error ? ' (remote failed: ' + PondStore.error + ')' : '') + ' · ' + n + '/' + P.visitorCap + ' resident fish.';
+    var vsNote = $('#vs-note'); if (vsNote) vsNote.textContent = 'Store: this browser · ' + n + '/' + P.visitorCap + ' resident fish.';
   },
   /** Lab: fill the pond to capacity with random fish, to see (and measure) a full pond. */
   demo: function () {
     var pick = function (a) { return a[Math.floor(Math.random() * a.length)]; }, i = 0;
     while (Residents.count() < P.visitorCap && i++ < 80) {
       var d = Designer.random(true), name = pick(DEMO_NAMES);
-      var rec = PondStore.mode === 'local' ? PondStore.addLocal(name, d) : PondStore.fromRow({ id: 'demo-' + PondStore.uid(), name: name, params: d, created_at: new Date().toISOString() });
+      var rec = PondStore.addLocal(name, d);
       Residents.add(rec);
     }
     Residents.trim(); Visitors.refresh();
