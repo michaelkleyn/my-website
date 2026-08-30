@@ -25,6 +25,7 @@ import { mountPanel } from './panel.js';
 
 function boot(ASSETS) {
   'use strict';
+  document.body.classList.add('lab');
   var $ = function (sel) { return document.querySelector(sel); };
   // ---- parity hooks (lab only): ?det=N seeds Math.random, ?freeze=N steps the school N times once the atlas is up, then pauses
   var Q = new URLSearchParams(location.search), FREEZE = parseInt(Q.get('freeze') || '0', 10) || 0;

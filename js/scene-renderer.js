@@ -48,6 +48,7 @@
   // ---- environment / page helpers ---------------------------------------
 
   function isEditEnvironment() {
+    if (/[?&]edit=0(&|$)/.test(location.search)) return false;   // the visitor view, on a dev host
     try {
       var host = location.hostname || '';
       if (host === 'localhost' || host === '127.0.0.1' || host === '[::1]') return true;

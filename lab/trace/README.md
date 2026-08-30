@@ -76,3 +76,21 @@ to `<key>`).
 - `npm run build:lab` → `dist/lab.html`, one self-contained file (esbuild bundle + inlined assets) for the claude.ai artifact.
 - `node scripts/pond/render-atlas.mjs` (dev server running) → `assets/pond/atlas/<key>.*`.
 - `node scripts/pond/shot.mjs <url> <out> [--ready expr] [--post expr]` — the headless Chrome driver used for every check.
+
+
+## The site (redesign branch)
+
+`index.html` is the shell: the pond canvas, `#journal-root`, and `#book-space` — a 1536×1024 (photo px) element that
+`js/site/book-space.js` transforms to sit exactly on the journal photo, camera included. Everything on the pages (the nav, each
+spread's content, drawings) lives inside it, placed by the layout compositor in **book space** (`space: "book"` nodes:
+`% of the photo`, edited with the same drag/resize tools; `assets/scene/_global.json` for the nav, one JSON per page).
+Routes (`js/site/routes.js`) map to spreads; a navigation (`js/site/navigate.js`) pulls the camera back over the spine, swaps the
+fragment from `content/pages/<page>.html`, applies the page's scene and settles on the page's own camera (`scene.camera`, authored
+in photo space as `{ zoom, cx, cy }`). The camera is a runtime screen-space transform in the pond (`pond.setCamera`), never part
+of the config, so the simulation is untouched by moves.
+
+Design mode = `?edit` (or any localhost): the layout editor (page placement, Cmd-S → `assets/scene/*.json`) and the pond panel
+(`Save to site` → `assets/pond/pond.config.json`) over the real site; `?edit=0` shows the visitor view on a dev host.
+
+Time capsule: `node scripts/build-archive.mjs` materialises tag `design/v2` into `v2/` (committed) with the iteration switcher
+(`archive/switcher.js`); `/iterations` links to it.

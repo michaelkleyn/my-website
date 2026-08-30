@@ -1,58 +1,5 @@
-/* The pond: paper, tank canvas, the journal object layer, the visitor card, book-mode editing states. */
-:root {
-  --paper: #f4f4f4;
-  --panel: #f6f8fa;
-  --panel-2: #eaeef2;
-  --panel-3: #dfe5eb;
-  --ink: #1b2631;
-  --ink-2: #5a6b79;
-  --line: #d3dae1;
-  --accent: #ff7f5c;
-  --accent-ink: #1b2631;
-  --accent-2: #78c0e0;
-  --shadow: 0 10px 30px rgba(27, 38, 49, 0.12);
-  color-scheme: light;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --panel: #161b20;
-    --panel-2: #1f262d;
-    --panel-3: #29323b;
-    --ink: #e6ecf1;
-    --ink-2: #94a3b0;
-    --line: #2c3640;
-    --accent: #ff8f6e;
-    --accent-ink: #161b20;
-    --accent-2: #78c0e0;
-    --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --panel: #161b20;
-  --panel-2: #1f262d;
-  --panel-3: #29323b;
-  --ink: #e6ecf1;
-  --ink-2: #94a3b0;
-  --line: #2c3640;
-  --accent: #ff8f6e;
-  --accent-ink: #161b20;
-  --accent-2: #78c0e0;
-  --shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
-  color-scheme: dark;
-}
-
+/* The pond: tank canvas, the journal object layer, the visitor card, book-mode editing states. */
 * { box-sizing: border-box; }
-html, body { height: 100%; }
-body {
-  margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif;
-  font-size: 13px;
-  line-height: 1.45;
-  overflow: hidden;
-}
 
 #journal-root { position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
 #journal-root .journal-anim { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
