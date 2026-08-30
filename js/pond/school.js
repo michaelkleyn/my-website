@@ -34,9 +34,9 @@ School.prototype.resize = function () {
   var oldW = this.W, oldH = this.H;
   this.cw = window.innerWidth; this.ch = window.innerHeight;
   this.root.classList.toggle('book', Book.active());
-  if (Book.active()) {   // the world is the page spread of the journal
+  if (Book.active()) {   // the world IS the page spread, in PHOTO px — constant across window sizes (the fit scales it on screen)
     Book.layout(this.cw - panelW, this.ch);
-    var wr = Book.world; this.ox = wr.x; this.oy = wr.y; this.W = Math.max(64, Math.round(wr.w)); this.H = Math.max(64, Math.round(wr.h)); this.fullW = this.W;
+    var b = Book.bbox; this.ox = b[0]; this.oy = b[1]; this.W = Math.max(64, Math.round(b[2] - b[0])); this.H = Math.max(64, Math.round(b[3] - b[1])); this.fullW = this.W;
   } else { this.ox = 0; this.oy = 0; this.W = this.cw - panelW; this.H = this.ch; this.fullW = this.cw; }
   this.canvas.width = Math.round(this.cw * this.dpr);
   this.canvas.height = Math.round(this.ch * this.dpr);
@@ -46,8 +46,13 @@ School.prototype.resize = function () {
   }
   Water.resize(this.fullW, this.H); Journal.obstacleDirty = true;
 };
-/** screen px → world px */
-School.prototype.toWorld = function (x, y) { var c = Book.camera || { zoom: 1, x: 0, y: 0 }; return [(x - c.x) / c.zoom - this.ox, (y - c.y) / c.zoom - this.oy]; };
+/** screen px → world px (book mode: world = photo px, so undo the camera, then the fit) */
+School.prototype.toWorld = function (x, y) {
+  var c = Book.camera || { zoom: 1, x: 0, y: 0 };
+  x = (x - c.x) / c.zoom; y = (y - c.y) / c.zoom;
+  if (Book.active()) { var f = Book.fit; x = (x - f.x) / f.s; y = (y - f.y) / f.s; }
+  return [x - this.ox, y - this.oy];
+};
 
 School.prototype.spawn = function (i) {
   var f = this.fish[Math.floor(Math.random() * this.fish.length)];

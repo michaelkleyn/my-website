@@ -4,6 +4,7 @@ import { brush } from './brush.js';
 import { P } from './config.js';
 import { Painter } from './painter.js';
 import { Journal } from './journal.js';
+import { Book } from './book.js';
 import { clamp } from './util.js';
 
 export var DrawShader = {
@@ -135,7 +136,7 @@ export var Drawings = {
       if (!p.hatch) return;
       var el = Journal.propEls[p.name], img = el && el.querySelector('img'); if (!img) return;
       self.items.push(new Drawing({ name: p.name, el: el, img: img, recipe: p.hatch, enabled: p.layer === 'under' ? function () { return P.rockOn; } : function () { return P.rockOnArrows; },
-        displayScale: function () { return P.journalScale * p.s; } }));
+        displayScale: function () { return P.journalScale * p.s * (Book.active() ? Book.fit.s : 1); } }));
     });
     if (D.journalHatch) {
       var jh = D.journalHatch, el = document.createElement('div'); el.className = 'jlayer jhatch'; el.style.zIndex = '6';
@@ -150,7 +151,7 @@ export var Drawings = {
         var pim = document.createElement('img'); pim.alt = 'page'; pim.draggable = false; pel.appendChild(pim);
         self.pool.push(new Drawing({ name: 'pose' + k, el: pel, img: pim, recipe: null, enabled: function () { return P.rockOnJournal; } }));
       }
-      var jd = new Drawing({ name: 'journal', el: el, img: im, recipe: jh.recipe, enabled: function () { return P.rockOnJournal; }, displayScale: function () { return P.journalScale; },
+      var jd = new Drawing({ name: 'journal', el: el, img: im, recipe: jh.recipe, enabled: function () { return P.rockOnJournal; }, displayScale: function () { return P.journalScale * (Book.active() ? Book.fit.s : 1); },
         onActive: function (on) { realLayers.forEach(function (l) { l.style.visibility = on ? 'hidden' : ''; }); el.style.display = on ? '' : 'none'; } });
       jd.shadowRecipe = jh.shadow || null; self.items.push(jd);
       el.style.display = 'none';
@@ -164,7 +165,7 @@ export var Drawings = {
       var names = Object.keys(Journal.D.items);
       for (var j = 0; j < names.length; j++) {
         var it = Journal.D.items[names[j]];
-        if (it.hatch && !this.poseSprites[names[j]]) { this.poseSprites[names[j]] = paintRecipe(it.hatch, P.journalScale * 1.2); return true; }
+        if (it.hatch && !this.poseSprites[names[j]]) { this.poseSprites[names[j]] = paintRecipe(it.hatch, P.journalScale * 1.2 * (Book.active() ? Book.fit.s : 1)); return true; }
       }
     }
     return false;

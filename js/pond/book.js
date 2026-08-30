@@ -54,6 +54,8 @@ export var Book = {
   toPhoto: function (x, y) { var f = this.fit, c = this.camera; x = (x - c.x) / c.zoom; y = (y - c.y) / c.zoom; return [(x - f.x) / f.s, (y - f.y) / f.s]; },
   /** the photo's on-screen fit with the camera applied: what #book-space should be transformed to */
   screenFit: function () { var f = this.fit, c = this.camera; return { s: f.s * c.zoom, x: f.x * c.zoom + c.x, y: f.y * c.zoom + c.y }; },
+  /** The composed page mask as a CSS mask-image data URL (alpha = where the pond shows), in photo space. */
+  maskUrl: function () { if (this.maskDirty) this.rebuildMask(); return this.maskC ? this.maskC.toDataURL() : ''; },
 
   /** Two-pass chamfer distance, inside and outside, → signed distance in mask px. */
   signedDistance: function (inside) {
@@ -124,7 +126,7 @@ export var Book = {
     ctx.setTransform(dpr * cz, 0, 0, dpr * cz, dpr * cam.x, dpr * cam.y);   // the camera: photo, pond and overlays move as one
     ctx.drawImage(this.img, f.x, f.y, D.W * f.s, D.H * f.s);
     ctx.globalCompositeOperation = 'multiply';
-    ctx.drawImage(wc, 0, 0, wc.width, wc.height, sc.ox, sc.oy, sc.W, sc.H);
+    ctx.drawImage(wc, 0, 0, wc.width, wc.height, f.x + sc.ox * f.s, f.y + sc.oy * f.s, sc.W * f.s, sc.H * f.s);   // world = photo px: same transform as the photo
     ctx.globalCompositeOperation = 'source-over';
     if (P.bookShowMask || this.editing) { ctx.globalAlpha = 0.38; ctx.drawImage(this.tintC, f.x, f.y, D.W * f.s, D.H * f.s); ctx.globalAlpha = 1; }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);

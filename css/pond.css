@@ -1,7 +1,7 @@
 /* The pond: tank canvas, the journal object layer, the visitor card, book-mode editing states. */
 * { box-sizing: border-box; }
 
-#journal-root { position: fixed; inset: 0; pointer-events: none; z-index: 5; overflow: hidden; }
+#journal-root { position: fixed; inset: 0; pointer-events: none; z-index: 5; }   /* no overflow clip: the element is camera-transformed, so a clip box would drift off the viewport; the page mask does the clipping */
 #journal-root .journal-anim { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
 #journal-root .journal-anim .jlayer, #journal-root .journal-anim .jpage, #journal-root .journal-anim .jprop { position: absolute; left: 0; top: 0; }
 #journal-root .journal-anim .jlayer.multiply { mix-blend-mode: multiply; }
@@ -13,6 +13,7 @@
 #journal-root .journal-anim .jprop.button:hover img { transform: translateY(-3px); filter: drop-shadow(0 10px 10px rgba(60,40,20,0.35)) brightness(1.04); }
 #journal-root .journal-anim .jprop.pressed img { transform: translateY(1px) scale(0.97); }
 #journal-root.arrange { pointer-events: auto; }
+#journal-root.arrange { -webkit-mask-image: none !important; mask-image: none !important; }   /* see the whole object while arranging */
 #journal-root.arrange .journal-anim .jprop { pointer-events: auto; cursor: grab; outline: 2px dashed rgba(255,127,92,0.85); outline-offset: 2px; }
 #journal-root.arrange .journal-anim .jprop img { transform: none !important; }
 #journal-root.arrange .journal-anim .jnb { outline: 2px dashed rgba(120,192,224,0.9); cursor: move; pointer-events: auto; }

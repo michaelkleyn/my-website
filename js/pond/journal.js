@@ -3,6 +3,7 @@
 import { P } from './config.js';
 import { createEmitter } from './emitter.js';
 import { Water } from './water.js';
+import { Book } from './book.js';
 import { clamp } from './util.js';
 
 var school = null;      // injected by init({ school })
@@ -35,12 +36,12 @@ export var Journal = {
       el.addEventListener('click', function () { if (self.arranging) return; if (p.action === 'forward') self.turn(1); else if (p.action === 'back') self.turn(-1); });
       var lx, ly;
       el.addEventListener('pointerdown', function (e) { if (!self.arranging || e.button !== 0) return; e.preventDefault(); e.stopPropagation(); self.arrSel = p; el.setPointerCapture(e.pointerId); lx = e.clientX; ly = e.clientY; self.fillArr(); });
-      el.addEventListener('pointermove', function (e) { if (!self.arranging || self.arrSel !== p || !el.hasPointerCapture(e.pointerId)) return; var k = P.journalScale; p.x = Math.round(p.x + (e.clientX - lx) / k); p.y = Math.round(p.y + (e.clientY - ly) / k); lx = e.clientX; ly = e.clientY; self.propsChanged(); });
+      el.addEventListener('pointermove', function (e) { if (!self.arranging || self.arrSel !== p || !el.hasPointerCapture(e.pointerId)) return; var k = P.journalScale * self.viewScale(); p.x = Math.round(p.x + (e.clientX - lx) / k); p.y = Math.round(p.y + (e.clientY - ly) / k); lx = e.clientX; ly = e.clientY; self.propsChanged(); });
     });
     // drag the notebook to move the whole object
     var nx, ny;
     this.nb.addEventListener('pointerdown', function (e) { if (!self.arranging || e.button !== 0 || e.target.closest('.jprop')) return; e.preventDefault(); self.arrSel = 'journal'; self.nb.setPointerCapture(e.pointerId); nx = e.clientX; ny = e.clientY; self.fillArr(); });
-    this.nb.addEventListener('pointermove', function (e) { if (!self.arranging || self.arrSel !== 'journal' || !self.nb.hasPointerCapture(e.pointerId)) return; P.journalX += (e.clientX - nx) / school.fullW; P.journalY += (e.clientY - ny) / school.H; nx = e.clientX; ny = e.clientY; self.layout(); refreshInputs(); });
+    this.nb.addEventListener('pointermove', function (e) { if (!self.arranging || self.arrSel !== 'journal' || !self.nb.hasPointerCapture(e.pointerId)) return; var vs = self.viewScale(); P.journalX += (e.clientX - nx) / vs / school.fullW; P.journalY += (e.clientY - ny) / vs / school.H; nx = e.clientX; ny = e.clientY; self.layout(); refreshInputs(); });
     this.seq = D.sequences[0];
     this.ready = true;
     this.refit(); this.layout(); this.showIdle();
@@ -63,7 +64,9 @@ export var Journal = {
     var self = this;
     this.props.forEach(function (p) { var el = self.propEls[p.name]; if (!el) return; var w = p.w * p.s, h = p.h * p.s; el.style.width = w + 'px'; el.style.height = h + 'px'; el.style.transform = 'translate(' + (p.x - w / 2) + 'px,' + (p.y - h / 2) + 'px) rotate(' + p.r + 'deg)'; });
   },
-  /** top-left of the object in tank px */
+  /** screen px per photo px right now (fit × camera) — for converting pointer deltas while arranging */
+  viewScale: function () { var c = Book.camera || { zoom: 1 }; return (Book.active() ? Book.fit.s : 1) * (c.zoom || 1); },
+  /** top-left of the object in the world (photo px) */
   origin: function () { var k = P.journalScale; return [school.ox + P.journalX * school.fullW - this.FW * k / 2, school.oy + P.journalY * school.H - this.FH * k / 2]; },
   layout: function () {
     if (!this.ready) return;

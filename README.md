@@ -39,7 +39,10 @@ scripts/                dev-server.mjs (static + /__editor API + SPA fallback), 
 
 - **Book space.** `#book-space` is a 1536×1024 (photo px) element that `js/site/book-space.js` transforms to sit on the
   journal photo, camera included. Nodes with `space: "book"` are placed in % of it by the compositor and edited with the
-  same tools, so everything on the pages moves with the book.
+  same tools, so everything on the pages moves with the book. The pond lives in the same space: the fish world is the
+  page spread in photo px (composited through the fit like the photo), the journal object rides the fit-and-camera
+  transform, and the page mask doubles as a CSS mask over its drawings — fish, drawings and content all scale with the
+  book at any window size, and px-ish config values (sizes, speed, ripple cells) read as photo px.
 - **Navigation.** `js/site/routes.js` maps paths to spreads; `navigate.js` pulls the camera back over the spine, swaps the
   fragment, applies the page's scene (`sceneRenderer.loadPage`) and settles on the page's camera (`scene.camera`, in photo
   space: `{ zoom, cx, cy }`). The camera is a runtime transform in the pond (`pond.setCamera`) — never part of the config.

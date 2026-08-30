@@ -93,8 +93,8 @@ export function createPond(opts) {
       if (f.journal) { Journal.layout(); if (k === 'journalScale') Drawings.markDirty(); }
       if (f.rock) Drawings.markDirty();
       if (f.visitors) { Residents.trim(); Visitors.refresh(); }
-      if (f.book === 'layout') { school.resize(); Journal.layout(); Book.maskDirty = true; emit('resize'); }
-      if (f.book === 'mask') Book.maskDirty = true;
+      if (f.book === 'layout') { school.resize(); Journal.layout(); Book.maskDirty = true; syncJournalView(); scheduleJournalMask(); emit('resize'); }
+      if (f.book === 'mask') { Book.maskDirty = true; scheduleJournalMask(); }
     });
     if (opts2 && opts2.silent) return;
     if (paint) scheduleRepaint(); else school.sync();
@@ -102,12 +102,35 @@ export function createPond(opts) {
   }
   function applyReplace() {
     if (Journal.ready) { Journal.applyProps(P.journalProps); Journal.refit(); }
-    Book.syncFromP(); if (Book.ready) { school.resize(); Journal.layout(); }
+    Book.syncFromP(); if (Book.ready) { school.resize(); Journal.layout(); syncJournalView(); scheduleJournalMask(); }
     school.sync();
     emit('config', { keys: null });
   }
   unsubs.push(onConfig('change', function (e) { if (e.source === 'pond') return; applyChange(e.keys, e); }));
   unsubs.push(onConfig('replace', function () { applyReplace(); }));
+
+  // ---- the journal DOM rides the same transform as the photo (fit × camera), so it scales with the book,
+  // and wears the page mask as a CSS mask so drawings on the pages are cut off like the fish.
+  var lastFitS = 0, maskCssTimer = 0;
+  function placeJournalRoot() {
+    if (!journalRoot) return;
+    var sf = Book.screenFit();
+    journalRoot.style.transformOrigin = '0 0';
+    journalRoot.style.transform = 'translate(' + sf.x + 'px,' + sf.y + 'px) scale(' + sf.s + ')';
+  }
+  function applyJournalMask() {
+    if (!journalRoot) return;
+    if (!Book.active()) { journalRoot.style.webkitMaskImage = journalRoot.style.maskImage = 'none'; return; }
+    var url = 'url(' + Book.maskUrl() + ')', size = Book.D.W + 'px ' + Book.D.H + 'px';
+    journalRoot.style.webkitMaskImage = url; journalRoot.style.maskImage = url;
+    journalRoot.style.webkitMaskSize = size; journalRoot.style.maskSize = size;
+    journalRoot.style.webkitMaskRepeat = 'no-repeat'; journalRoot.style.maskRepeat = 'no-repeat';
+  }
+  function scheduleJournalMask() { clearTimeout(maskCssTimer); maskCssTimer = setTimeout(applyJournalMask, 250); }
+  function syncJournalView() {
+    placeJournalRoot();
+    if (Book.ready && Math.abs(Book.fit.s - lastFitS) > 0.02) { lastFitS = Book.fit.s; Drawings.markDirty(); }
+  }
 
   // ---- the journal, the drawings, the book
   var assets = opts.assets || {};
@@ -115,8 +138,8 @@ export function createPond(opts) {
   unsubs.push(Journal.on('props', function () { emit('config', { keys: ['journalProps'] }); }));
   Drawings.init(); Journal.setDrawings(Drawings);
   Book.init(assets.book || null, { canvas: canvas });
-  unsubs.push(Book.on('ready', function () { school.resize(); Journal.layout(); emit('resize'); }));
-  unsubs.push(Book.on('edits', function () { emit('config', { keys: ['bookMask'] }); }));
+  unsubs.push(Book.on('ready', function () { school.resize(); Journal.layout(); syncJournalView(); applyJournalMask(); emit('resize'); }));
+  unsubs.push(Book.on('edits', function () { scheduleJournalMask(); emit('config', { keys: ['bookMask'] }); }));
   listen(document, 'pointermove', function (e) { Drawings.setPointer(e.clientX, e.clientY); });
 
   // ---- visitors
@@ -145,7 +168,7 @@ export function createPond(opts) {
   listen(canvas, 'pointerup', function (e) { if (Book.editing) Book.pointer(e, 'up'); });
   listen(canvas, 'pointercancel', function (e) { if (Book.editing) Book.pointer(e, 'up'); });
   listen(canvas, 'pointerleave', function () { school.pointer.on = false; if (!Book.stroke) Book.brushPos = null; });
-  listen(window, 'resize', function () { school.resize(); Journal.layout(); emit('resize'); });
+  listen(window, 'resize', function () { school.resize(); Journal.layout(); syncJournalView(); emit('resize'); });
   listen(document, 'visibilitychange', function () {
     if (document.hidden) { cancelAnimationFrame(raf); raf = 0; }
     else if (!raf && !destroyed) { last = performance.now(); raf = requestAnimationFrame(frame); }
@@ -196,13 +219,13 @@ export function createPond(opts) {
     pause: function () { paused = true; emit('paused', true); },
     resume: function () { paused = false; emit('paused', false); },
     setPaused: function (v) { paused = !!v; emit('paused', paused); },
-    resize: function () { school.resize(); Journal.layout(); emit('resize'); },
-    setInsets: function (ins) { school.insets = ins || { right: 0 }; school.resize(); Journal.layout(); emit('resize'); },
+    resize: function () { school.resize(); Journal.layout(); syncJournalView(); emit('resize'); },
+    setInsets: function (ins) { school.insets = ins || { right: 0 }; school.resize(); Journal.layout(); syncJournalView(); emit('resize'); },
     /** The runtime camera (navigation): a screen-space translate+scale over photo, pond and journal object. */
     get camera() { return Book.camera; },
     setCamera: function (c) {
       var cam = Book.camera; if (c) { if (c.zoom != null) cam.zoom = Math.max(0.05, c.zoom); if (c.x != null) cam.x = c.x; if (c.y != null) cam.y = c.y; }
-      if (journalRoot) { journalRoot.style.transformOrigin = '0 0'; journalRoot.style.transform = 'translate(' + cam.x + 'px,' + cam.y + 'px) scale(' + cam.zoom + ')'; }
+      placeJournalRoot();
       emit('camera', cam);
       return cam;
     },
