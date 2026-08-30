@@ -1,85 +1,42 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html lang="en" data-scene-base="/assets/scene/" data-content-base="/content/pages/">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Michael Kleyn - Home</title>
-  <link rel="stylesheet" href="css/style.css" />
-  <link rel="stylesheet" href="css/scene.css" />
-  <link rel="stylesheet" href="css/blog.css" />
-  <link rel="stylesheet" href="css/latent-popup.css" />
-  <link rel="stylesheet" href="css/map-panel.css" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
-    rel="stylesheet" />
-  <!-- Module resolution for scene components (three.js + Spark gaussian-splat renderer) -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Michael Kleyn</title>
+  <meta name="description" content="Michael Kleyn — software engineer, artist, machine learning enthusiast. A journal, with a pond.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="/css/pond.css">
+  <link rel="stylesheet" href="/css/scene.css">
+  <link rel="stylesheet" href="/css/site.css">
   <script type="importmap">
-    {
-      "imports": {
-        "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
-        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/",
-        "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/2.1.0/spark.module.js"
-      }
-    }
+  { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/", "@sparkjsdev/spark": "https://sparkjs.dev/releases/spark/2.1.0/spark.module.js" } }
+  </script>
+  <script>
+    // The scene renderer reads the page key from the URL; SPA routes like /blog/<slug> map to their first segment.
+    (function () { var seg = (location.pathname.split('/').filter(Boolean)[0] || 'index').toLowerCase().replace(/\.html?$/, ''); document.documentElement.dataset.scenePage = seg || 'index'; })();
   </script>
 </head>
-
 <body>
-  <!-- ASCII Animation Layer -->
-  <div class="ascii-layer"></div>
+  <canvas id="tank" aria-label="A painted pond on the pages of a journal"></canvas>
+  <div id="journal-root" aria-hidden="true"></div>
 
-  <div class="gradient-sidebar"></div>
-  <div class="container">
-    <header>
-      <nav>
-        <a class="a-margin" href="#"><b>mkleyn.com</b></a>
-        <div class="toggle-wrapper">
-          <pre id="mode-toggle" class="toggle-icon-display"></pre>
-        </div>
-        <a href="projects.html" data-work="projects.html" data-life="https://michaelkleyn.notion.site/music"
-          class="nav-link">projects</a>
-        <a href="blog/dist/index.html" data-work="blog/dist/index.html"
-          data-life="https://michaelkleyn.notion.site/Books-8605bc70ef3348f5ac26414c75a3cd43" class="nav-link">blog</a>
-        <a href="contact.html" data-work="contact.html" data-life="https://www.instagram.com/michaelkleyn/"
-          class="nav-link">contact</a>
-      </nav>
-    </header>
-
-    <main>
-      <h1 class=""><em>Hi,</em> </h1>
-      <p class="fade-in-1">
-        I'm a software engineer, artist, and machine learning enthusiast.
-        I currently live in <a href="#" data-map="assets/tiles/sf/manifest.json">San Francisco</a>, and come from the
-        small, rural town of <a href="#" data-map="assets/tiles/south-bend/manifest.json">South Bend, WA</a>.
-      </p>
-      <p class="fade-in-2">
-        I moved to the city in 2010 at the age 18 to live/work in an art collective.
-        At 26 I started to code, as part of my interest in the intersection of digital synthesizers and machine learning
-        models. Deciding
-        at 28 to go to college to pursue a degree in Mathematics.
-      </p>
-      <p class="fade-in-2">
-        After graduating, I dove into contract work and found I loved the variety. My software has helped manage
-        large-scale tours for artists like The Weeknd and improve cancer diagnostics at UCSF. Mori is my current
-        obsession—an orchestration layer for AI agents, with the goal of making it feel like real-time strategy.
-      </p>
-      <p class="fade-in-2">
-        I enjoy spending my free time investigating different modalities of human-computer interaction.
-        Whether it's working on novel audio synthesizers or fine tuning ML models, I'm excited about the potential to
-        extend and expand human possibilities as far as possible.
-      </p>
-    </main>
-
+  <div id="book-space">
+    <nav data-node="nav" aria-label="Site">
+      <a class="brand" href="/" data-route="index">mkleyn.com</a>
+      <a href="/projects" data-route="projects" data-work="/projects" data-life="https://michaelkleyn.notion.site/music" data-work-label="projects" data-life-label="music">projects</a>
+      <a href="/blog" data-route="blog" data-work="/blog" data-life="https://michaelkleyn.notion.site/Books-9e5fc0f1a41e4f0f8c1f2c0b6f7a2f1a" data-work-label="blog" data-life-label="books">blog</a>
+      <a href="/contact" data-route="contact" data-work="/contact" data-life="https://www.instagram.com/michaelkleyn/" data-work-label="contact" data-life-label="photos">contact</a>
+      <button id="mode-toggle" type="button" aria-pressed="false" title="work / life">work</button>
+    </nav>
+    <div id="spread" aria-live="polite"></div>
   </div>
-  <script src="https://cdn.jsdelivr.net/npm/animejs@4.2.0/dist/bundles/anime.umd.min.js"></script>
-  <script src="./js/scene-renderer.js"></script>
-  <script src="./js/script.js"></script>
-  <script src="./js/latent-popup.js"></script>
-  <script src="./js/sidebar-latent.js"></script>
-  <script type="module" src="./js/map-panel.js"></script>
-</body>
 
+  <script src="/js/vendor/p5.brush-2.2.2.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/animejs@4.2.0/dist/bundles/anime.umd.min.js"></script>
+  <script src="/js/scene-renderer.js"></script>
+  <script type="module" src="/js/site/main.js"></script>
+</body>
 </html>

@@ -1,0 +1,28 @@
+{
+  "page": "iterations",
+  "version": 1,
+  "space": "book",
+  "camera": {
+    "desktop": {
+      "zoom": 1.3,
+      "cx": 1000,
+      "cy": 420
+    }
+  },
+  "nodes": [
+    {
+      "id": "body",
+      "kind": "content",
+      "target": "[data-node=\"body\"]",
+      "space": "book",
+      "z": 10,
+      "placements": {
+        "desktop": {
+          "x": 53.5,
+          "y": 12,
+          "w": 36
+        }
+      }
+    }
+  ]
+}

@@ -5,6 +5,7 @@ import { createEmitter } from './emitter.js';
 
 export var Book = {
   D: null, ready: false, img: null, imgReady: false,
+  camera: { zoom: 1, x: 0, y: 0 },   // runtime screen-space transform (navigation), never part of the config
   MW: 0, MH: 0, R: 0.5,       // mask working resolution: R × the photo
   dist: null,                 // signed distance to the SAM page edge, in mask px (positive inside)
   edits: null,                // brush layer, −1..1 (added to the geometric mask)
@@ -50,7 +51,9 @@ export var Book = {
     this.world = { x: x + b[0] * s, y: y + b[1] * s, w: (b[2] - b[0]) * s, h: (b[3] - b[1]) * s };
     this.spineX = D.spine + P.bookSpineShift;
   },
-  toPhoto: function (x, y) { var f = this.fit; return [(x - f.x) / f.s, (y - f.y) / f.s]; },
+  toPhoto: function (x, y) { var f = this.fit, c = this.camera; x = (x - c.x) / c.zoom; y = (y - c.y) / c.zoom; return [(x - f.x) / f.s, (y - f.y) / f.s]; },
+  /** the photo's on-screen fit with the camera applied: what #book-space should be transformed to */
+  screenFit: function () { var f = this.fit, c = this.camera; return { s: f.s * c.zoom, x: f.x * c.zoom + c.x, y: f.y * c.zoom + c.y }; },
 
   /** Two-pass chamfer distance, inside and outside, → signed distance in mask px. */
   signedDistance: function (inside) {
@@ -115,15 +118,18 @@ export var Book = {
     wctx.setTransform(dpr, 0, 0, dpr, 0, 0); wctx.globalAlpha = 1; wctx.globalCompositeOperation = 'destination-in';
     wctx.drawImage(this.maskC, b[0] * R, b[1] * R, (b[2] - b[0]) * R, (b[3] - b[1]) * R, 0, 0, sc.W, sc.H);
     wctx.globalCompositeOperation = 'source-over';
+    var cam = this.camera, cz = cam.zoom || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
     ctx.fillStyle = P.paper; ctx.fillRect(0, 0, sc.cw, sc.ch);   // the journal is a cut-out: it sits on the tank's paper
+    ctx.setTransform(dpr * cz, 0, 0, dpr * cz, dpr * cam.x, dpr * cam.y);   // the camera: photo, pond and overlays move as one
     ctx.drawImage(this.img, f.x, f.y, D.W * f.s, D.H * f.s);
     ctx.globalCompositeOperation = 'multiply';
     ctx.drawImage(wc, 0, 0, wc.width, wc.height, sc.ox, sc.oy, sc.W, sc.H);
     ctx.globalCompositeOperation = 'source-over';
     if (P.bookShowMask || this.editing) { ctx.globalAlpha = 0.38; ctx.drawImage(this.tintC, f.x, f.y, D.W * f.s, D.H * f.s); ctx.globalAlpha = 1; }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (this.editing && this.brushPos) {
-      var r = P.bookBrushSize * f.s / 2, erase = this.tool() === 'erase';
+      var r = P.bookBrushSize * f.s * cz / 2, erase = this.tool() === 'erase';
       ctx.beginPath(); ctx.arc(this.brushPos[0], this.brushPos[1], r, 0, Math.PI * 2);
       ctx.strokeStyle = erase ? '#ff5722' : '#2b3a48'; ctx.lineWidth = 1.5; ctx.setLineDash(erase ? [4, 4] : []); ctx.stroke(); ctx.setLineDash([]);
       ctx.beginPath(); ctx.arc(this.brushPos[0], this.brushPos[1], Math.max(1, r * (1 - P.bookBrushSoft)), 0, Math.PI * 2); ctx.strokeStyle = 'rgba(43,58,72,0.35)'; ctx.lineWidth = 1; ctx.stroke();

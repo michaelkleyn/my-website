@@ -23,7 +23,7 @@ assets/scene/_raw/
 .conductor/
 
 # Build outputs (single-file lab for the artifact)
-dist/
+/dist/
 
 # Never-shipped originals and large media (kept locally, backed up outside git)
 assets/_unshipped/

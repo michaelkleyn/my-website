@@ -1,0 +1,4 @@
+/lab/*
+  X-Robots-Tag: noindex
+/out/*
+  X-Robots-Tag: noindex

@@ -1,0 +1,385 @@
+/* ===========================================================================
+   Layout Compositor — editor chrome (LOCAL-ONLY; never loaded in prod).
+   Palette mirrors css/map-panel.css: #f5f3ee panel, #1c3144 ink, mono labels.
+   Everything lives under #le-root so it never reflows the underlying page.
+   =========================================================================== */
+
+:root {
+  --le-paper: #f5f3ee;
+  --le-ink: #1c3144;
+  --le-ink-60: rgba(28, 49, 68, 0.6);
+  --le-ink-30: rgba(28, 49, 68, 0.3);
+  --le-accent: #c8553d;
+  --le-ok: #3d8c5a;
+  --le-warn: #b4541f;
+  --le-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --le-serif: "Cormorant Garamond", serif;
+}
+
+#le-root {
+  position: fixed;
+  inset: 0;
+  z-index: 2000000;
+  /* The root container itself never eats events; only its children do. */
+  pointer-events: none;
+  font-family: var(--le-mono);
+  color: var(--le-ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Clean-preview mode (Tab): hide all chrome, pass every click through to page. */
+#le-root.le-clean .le-toolbar,
+#le-root.le-clean .le-panel,
+#le-root.le-clean .le-overlay {
+  opacity: 0;
+  pointer-events: none !important;
+  visibility: hidden;
+}
+
+/* --------------------------------------------------------------------------
+   Toolbar
+   -------------------------------------------------------------------------- */
+.le-toolbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  background: var(--le-paper);
+  border-bottom: 1px solid var(--le-ink);
+  box-shadow: 0 6px 18px rgba(28, 49, 68, 0.12);
+  z-index: 3;
+  pointer-events: auto;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  overflow-x: auto;
+  transition: opacity 0.2s ease;
+}
+
+.le-brand {
+  font-family: var(--le-serif);
+  font-size: 1.15rem;
+  letter-spacing: 0.02em;
+}
+
+.le-page {
+  color: var(--le-ink-60);
+  text-transform: lowercase;
+}
+
+.le-tlabel {
+  color: var(--le-ink-60);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.le-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--le-ink-30);
+}
+
+.le-spacer { flex: 1; }
+
+.le-hint {
+  color: var(--le-ink-30);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+/* Buttons */
+.le-btn,
+.le-bucket {
+  font-family: var(--le-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  background: transparent;
+  border: 1px solid var(--le-ink);
+  color: var(--le-ink);
+  cursor: pointer;
+  text-transform: lowercase;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+
+.le-btn:hover,
+.le-bucket:hover {
+  background: var(--le-ink);
+  color: var(--le-paper);
+}
+
+.le-bucket.active {
+  background: var(--le-ink);
+  color: var(--le-paper);
+}
+
+/* Smooth (fluid) toggle — filled when active */
+.le-smooth.active {
+  background: var(--le-ink);
+  color: var(--le-paper);
+}
+
+.le-save {
+  border-color: var(--le-accent);
+  color: var(--le-accent);
+  font-weight: 600;
+}
+.le-save:hover {
+  background: var(--le-accent);
+  color: var(--le-paper);
+}
+
+.le-status {
+  font-size: 11px;
+  white-space: nowrap;
+}
+.le-status-clean { color: var(--le-ok); }
+.le-status-dirty { color: var(--le-accent); }
+.le-status-warn { color: var(--le-warn); }
+
+/* Offline: dim Save affordance hint */
+#le-root.le-offline .le-save {
+  border-color: var(--le-warn);
+  color: var(--le-warn);
+}
+
+/* --------------------------------------------------------------------------
+   Side panels (layer list + inspector) — map-panel feathered look
+   -------------------------------------------------------------------------- */
+.le-panel {
+  position: absolute;
+  top: 52px;
+  width: 230px;
+  max-height: calc(100vh - 72px);
+  background: var(--le-paper);
+  border: 1px solid var(--le-ink);
+  z-index: 2;
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  filter: drop-shadow(0 12px 28px rgba(28, 49, 68, 0.14));
+  transition: opacity 0.2s ease;
+  /* feathered edges, matching map-panel */
+  mask-image:
+    linear-gradient(to right, transparent, #000 1.5px, #000 calc(100% - 1.5px), transparent),
+    linear-gradient(to bottom, transparent, #000 1.5px, #000 calc(100% - 1.5px), transparent);
+  mask-composite: intersect;
+  -webkit-mask-image:
+    linear-gradient(to right, transparent, #000 1.5px, #000 calc(100% - 1.5px), transparent),
+    linear-gradient(to bottom, transparent, #000 1.5px, #000 calc(100% - 1.5px), transparent);
+  -webkit-mask-composite: source-in;
+}
+
+.le-left { left: 12px; }
+.le-right { right: 12px; }
+
+.le-panel-title {
+  padding: 8px 12px;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--le-ink-60);
+  border-bottom: 1px solid var(--le-ink-30);
+  flex-shrink: 0;
+}
+
+/* --- layer list --- */
+.le-list {
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.le-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.1s ease;
+}
+.le-row:hover { background: rgba(28, 49, 68, 0.06); }
+.le-row.selected {
+  background: var(--le-ink);
+  color: var(--le-paper);
+}
+.le-row.selected .le-row-kind { color: rgba(245, 243, 238, 0.6); }
+
+.le-row-name {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.le-row-kind {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--le-ink-30);
+}
+
+.le-eye {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+  padding: 0;
+}
+.le-eye.off { opacity: 0.4; }
+
+.le-empty {
+  padding: 14px 12px;
+  font-size: 11px;
+  color: var(--le-ink-30);
+  font-style: italic;
+}
+
+/* --- inspector --- */
+.le-inspect-body {
+  overflow-y: auto;
+  padding: 10px 12px 14px;
+}
+
+.le-insp-head { margin-bottom: 10px; }
+.le-insp-name {
+  font-family: var(--le-serif);
+  font-size: 1.15rem;
+  line-height: 1.1;
+}
+.le-insp-meta {
+  font-size: 10px;
+  color: var(--le-ink-60);
+  text-transform: lowercase;
+  letter-spacing: 0.04em;
+  margin-top: 2px;
+}
+
+.le-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.le-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.le-field-label {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--le-ink-60);
+}
+.le-num {
+  font-family: var(--le-mono);
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid var(--le-ink-30);
+  background: #fff;
+  color: var(--le-ink);
+  width: 100%;
+  box-sizing: border-box;
+}
+.le-num:focus {
+  outline: none;
+  border-color: var(--le-ink);
+}
+
+.le-toggles {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+}
+.le-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.le-toggle input { cursor: pointer; }
+
+/* --------------------------------------------------------------------------
+   Selection overlay + handles
+   -------------------------------------------------------------------------- */
+.le-overlay {
+  position: absolute;
+  inset: 0;
+  /* The overlay catches pointer events for selecting/moving; handles sit on top.
+     hitTest() momentarily disables this to read what's under the cursor.
+     z-index keeps it BELOW the toolbar/panels so those stay clickable. */
+  z-index: 1;
+  pointer-events: auto;
+  transition: opacity 0.15s ease;
+}
+
+.le-selbox {
+  position: absolute;
+  border: 1px solid var(--le-accent);
+  box-shadow: 0 0 0 1px rgba(245, 243, 238, 0.7);
+  pointer-events: none; /* the box itself is informational; handles re-enable */
+}
+
+.le-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  background: var(--le-paper);
+  border: 1px solid var(--le-accent);
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+.le-nw { left: 0;    top: 0;    cursor: nwse-resize; }
+.le-n  { left: 50%;  top: 0;    cursor: ns-resize; }
+.le-ne { left: 100%; top: 0;    cursor: nesw-resize; }
+.le-e  { left: 100%; top: 50%;  cursor: ew-resize; }
+.le-se { left: 100%; top: 100%; cursor: nwse-resize; }
+.le-s  { left: 50%;  top: 100%; cursor: ns-resize; }
+.le-sw { left: 0;    top: 100%; cursor: nesw-resize; }
+.le-w  { left: 0;    top: 50%;  cursor: ew-resize; }
+
+.le-rotate {
+  position: absolute;
+  left: 50%;
+  top: -24px;
+  width: 12px;
+  height: 12px;
+  margin-left: -6px;
+  border-radius: 50%;
+  background: var(--le-paper);
+  border: 1px solid var(--le-accent);
+  pointer-events: auto;
+  cursor: grab;
+  box-sizing: border-box;
+}
+.le-rotate:active { cursor: grabbing; }
+
+.le-rotate-stem {
+  position: absolute;
+  left: 50%;
+  top: -18px;
+  width: 1px;
+  height: 18px;
+  margin-left: -0.5px;
+  background: var(--le-accent);
+  pointer-events: none;
+}
+
+/* When clean-preview is active, also let the page underneath receive events. */
+#le-root.le-clean { pointer-events: none; }

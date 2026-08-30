@@ -22,7 +22,7 @@
 
 import * as THREE from 'three'; // only for sampling the flight-path curve (WYSIWYG preview)
 
-const CSS_HREF = 'css/layout-editor.css';
+const CSS_HREF = '/css/layout-editor.css';
 const PING_URL = '/__editor/ping';
 const MAX_HISTORY = 100;
 const BUCKETS = ['mobile', 'tablet', 'desktop'];
@@ -449,8 +449,8 @@ class LayoutEditor {
     g.moved = true;
 
     if (g.type === 'move') {
-      const dxPct = this.r.pxToPct(e.clientX - g.startX, 'x');
-      const dyPct = this.r.pxToPct(e.clientY - g.startY, 'y');
+      const dxPct = this.r.pxToPct(e.clientX - g.startX, 'x', node);
+      const dyPct = this.r.pxToPct(e.clientY - g.startY, 'y', node);
       p.x = round2(g.px + dxPct);
       p.y = round2(g.py + dyPct);
     } else if (g.type === 'resize') {
@@ -467,11 +467,12 @@ class LayoutEditor {
   }
 
   applyResize(g, p, e) {
-    const dxPct = this.r.pxToPct(e.clientX - g.startX, 'w');
-    // y/h deltas are vh-relative; x/w are vw-relative (per contract pxToPct axes)
-    const dyPctH = this.r.pxToPct(e.clientY - g.startY, 'h');
-    const dxPctX = this.r.pxToPct(e.clientX - g.startX, 'x');
-    const dyPctY = this.r.pxToPct(e.clientY - g.startY, 'y');
+    const node = this.nodeById(this.selectedId);
+    const dxPct = this.r.pxToPct(e.clientX - g.startX, 'w', node);
+    // y/h deltas are relative to the node's space (viewport, or the book host)
+    const dyPctH = this.r.pxToPct(e.clientY - g.startY, 'h', node);
+    const dxPctX = this.r.pxToPct(e.clientX - g.startX, 'x', node);
+    const dyPctY = this.r.pxToPct(e.clientY - g.startY, 'y', node);
     const dir = g.dir;
     const lockAspect = e.shiftKey;
 
@@ -493,9 +494,9 @@ class LayoutEditor {
     if (lockAspect && g.natRatio != null) {
       // Width drives height via natural ratio, expressed in vh.
       // h(vh) derived from w(vw): pixel height = pixelWidth * ratio.
-      const pxW = (w / 100) * window.innerWidth;
+      const pxW = this.r.pctToPx(w, 'w', node);
       const pxH = pxW * g.natRatio;
-      h = round2((pxH / window.innerHeight) * 100);
+      h = round2(this.r.pxToPct(pxH, 'h', node));
     } else if (hadH) {
       if (dir.includes('s')) {
         h = Math.max(0.5, g.ph + dyPctH);
@@ -514,7 +515,6 @@ class LayoutEditor {
     // size, config.scale does. Map the resize into config.scale so dragging the
     // handles grows/shrinks the butterfly live. (config.scale stays out of the
     // writePathPoints box-fit, so a later path edit won't reset it.)
-    const node = this.nodeById(this.selectedId);
     if (node && node.component === 'splat-butterfly') {
       const fw = g.pw ? w / g.pw : 1;
       const fh = (typeof g.ph === 'number' && g.ph) ? h / g.ph : fw;
@@ -545,6 +545,15 @@ class LayoutEditor {
   }
 
   // ----- chrome rendering --------------------------------------------------
+
+  /** The renderer switched pages (SPA navigation): edit what is on screen now, with a clean history. */
+  reloadFromRenderer() {
+    if (this.dirty && !window.confirm('Discard unsaved layout changes on the previous page?')) { /* keep editing the stale copy */ }
+    this.scene = clone(this.r.getScene());
+    this.undoStack = []; this.redoStack = []; this.selectedId = null; this.dirty = false;
+    const label = document.querySelector('.le-page'); if (label) label.textContent = this.r.pageKey();
+    this.refreshAll();
+  }
 
   refreshAll() {
     this.renderBucketButtons();
@@ -1325,10 +1334,10 @@ class LayoutEditor {
       const stepPx = e.shiftKey ? 10 : 1;
       const p = this.placementFor(node);
       this.snapshot();
-      if (e.key === 'ArrowLeft') p.x = round2(p.x - this.r.pxToPct(stepPx, 'x'));
-      if (e.key === 'ArrowRight') p.x = round2(p.x + this.r.pxToPct(stepPx, 'x'));
-      if (e.key === 'ArrowUp') p.y = round2(p.y - this.r.pxToPct(stepPx, 'y'));
-      if (e.key === 'ArrowDown') p.y = round2(p.y + this.r.pxToPct(stepPx, 'y'));
+      if (e.key === 'ArrowLeft') p.x = round2(p.x - this.r.pxToPct(stepPx, 'x', node));
+      if (e.key === 'ArrowRight') p.x = round2(p.x + this.r.pxToPct(stepPx, 'x', node));
+      if (e.key === 'ArrowUp') p.y = round2(p.y - this.r.pxToPct(stepPx, 'y', node));
+      if (e.key === 'ArrowDown') p.y = round2(p.y + this.r.pxToPct(stepPx, 'y', node));
       this.preview();
       this.renderInspectorValues();
       this.renderStatus();
@@ -1359,6 +1368,11 @@ class LayoutEditor {
     };
     window.addEventListener('resize', onResize);
     this._onResize = onResize;
+    // the site's camera moves #book-space: keep the chrome glued; a page swap replaces the scene under us
+    this._onTransform = () => this.positionChrome();
+    window.addEventListener('scene:transform', this._onTransform);
+    this._onPage = () => this.reloadFromRenderer();
+    window.addEventListener('scene:page', this._onPage);
 
     // Keep chrome glued to nodes if the renderer reflows element-anchored art.
     if ('ResizeObserver' in window) {

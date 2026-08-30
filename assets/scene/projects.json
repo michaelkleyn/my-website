@@ -1,0 +1,28 @@
+{
+  "page": "projects",
+  "version": 1,
+  "space": "book",
+  "camera": {
+    "desktop": {
+      "zoom": 1.45,
+      "cx": 1080,
+      "cy": 430
+    }
+  },
+  "nodes": [
+    {
+      "id": "body",
+      "kind": "content",
+      "target": "[data-node=\"body\"]",
+      "space": "book",
+      "z": 10,
+      "placements": {
+        "desktop": {
+          "x": 53.5,
+          "y": 6,
+          "w": 36
+        }
+      }
+    }
+  ]
+}

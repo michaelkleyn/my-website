@@ -30,7 +30,7 @@ export function School(canvas, opts) {
 
 School.prototype.resize = function () {
   this.dpr = Math.min(window.devicePixelRatio || 1, 2);
-  var panelW = (this.insets && this.insets.right) || 0;
+  var panelW = Math.min((this.insets && this.insets.right) || 0, Math.max(0, window.innerWidth - 320));   // a panel can never leave the pond no room
   var oldW = this.W, oldH = this.H;
   this.cw = window.innerWidth; this.ch = window.innerHeight;
   this.root.classList.toggle('book', Book.active());
@@ -47,7 +47,7 @@ School.prototype.resize = function () {
   Water.resize(this.fullW, this.H); Journal.obstacleDirty = true;
 };
 /** screen px → world px */
-School.prototype.toWorld = function (x, y) { return [x - this.ox, y - this.oy]; };
+School.prototype.toWorld = function (x, y) { var c = Book.camera || { zoom: 1, x: 0, y: 0 }; return [(x - c.x) / c.zoom - this.ox, (y - c.y) / c.zoom - this.oy]; };
 
 School.prototype.spawn = function (i) {
   var f = this.fish[Math.floor(Math.random() * this.fish.length)];

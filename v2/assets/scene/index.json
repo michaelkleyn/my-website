@@ -1,0 +1,271 @@
+{
+  "page": "index",
+  "version": 1,
+  "breakpoints": {
+    "mobile": 576,
+    "tablet": 768,
+    "desktop": 99999
+  },
+  "nodes": [
+    {
+      "id": "chatgpt-image-jun-5-2026-03-03-35-pm",
+      "kind": "image",
+      "name": "ChatGPT Image Jun 5, 2026, 03_03_35 PM.png",
+      "src": "assets/scene/ChatGPT_Image_Jun_5__2026__03_03_35_PM.png",
+      "natW": 1536,
+      "natH": 1024,
+      "z": 0,
+      "anchor": "viewport",
+      "placements": {
+        "mobile": {
+          "x": -7.72,
+          "y": 71.11,
+          "w": 117.87,
+          "rot": 0,
+          "opacity": 1,
+          "flipX": true,
+          "hidden": false
+        },
+        "tablet": {
+          "x": 10.02,
+          "y": 61.39,
+          "w": 107.01,
+          "rot": 0,
+          "opacity": 1,
+          "flipX": true,
+          "hidden": false
+        },
+        "desktop": {
+          "x": 25.42,
+          "y": 36.35,
+          "w": 89.15,
+          "rot": 0,
+          "opacity": 1,
+          "flipX": true,
+          "hidden": false
+        }
+      }
+    },
+    {
+      "id": "content-main",
+      "kind": "content",
+      "name": "Main content column",
+      "target": ".container",
+      "z": 2,
+      "anchor": "viewport",
+      "placements": {
+        "mobile": {
+          "x": 3.7221729854204426,
+          "y": 7.9284220109903245,
+          "w": 92.56410256410257,
+          "rot": 0,
+          "opacity": 1,
+          "flipX": false,
+          "hidden": false
+        },
+        "desktop": {
+          "x": 10.01,
+          "y": 0.79,
+          "w": 45.4,
+          "rot": 0,
+          "opacity": 1,
+          "flipX": false,
+          "hidden": false,
+          "h": 0
+        },
+        "tablet": {
+          "x": 7.214624480249483,
+          "y": 3,
+          "w": 33,
+          "rot": 0,
+          "opacity": 1,
+          "flipX": false,
+          "hidden": false
+        }
+      }
+    },
+    {
+      "id": "ripple-text-1",
+      "kind": "component",
+      "component": "ripple-text",
+      "module": "./components/ripple-text.js",
+      "z": 2,
+      "anchor": "viewport",
+      "config": {
+        "text": "the space between\nwingbeats",
+        "color": "#23448d",
+        "fontSize": 40
+      },
+      "placements": {
+        "mobile": {
+          "x": 6,
+          "y": 60,
+          "w": 88,
+          "h": 16,
+          "rot": 0,
+          "opacity": 1,
+          "flipX": false,
+          "hidden": false
+        },
+        "tablet": {
+          "x": 28,
+          "y": 56,
+          "w": 60,
+          "h": 16,
+          "rot": 0,
+          "opacity": 1,
+          "flipX": false,
+          "hidden": false
+        },
+        "desktop": {
+          "x": 50,
+          "y": 44,
+          "w": 42,
+          "h": 16,
+          "rot": 0,
+          "opacity": 1,
+          "flipX": false,
+          "hidden": true
+        }
+      }
+    },
+    {
+      "id": "ascii-jellyfish",
+      "kind": "ascii",
+      "name": "Jellyfish",
+      "animation": "jellyfish",
+      "mode": "cycle",
+      "color": "#9dd1e3",
+      "frameSpeed": 200,
+      "duration": 10000,
+      "gap": 2000,
+      "z": 0,
+      "placements": {
+        "desktop": {
+          "x": 60,
+          "y": 3,
+          "scale": 1,
+          "rot": 0,
+          "opacity": 1,
+          "flipX": false,
+          "hidden": false
+        }
+      }
+    },
+    {
+      "id": "ascii-butterfly",
+      "kind": "ascii",
+      "name": "Butterfly (ascii)",
+      "animation": "butterfly",
+      "mode": "cycle",
+      "color": "#9dd1e3",
+      "frameSpeed": 200,
+      "duration": 12000,
+      "gap": 2000,
+      "z": 0,
+      "placements": {
+        "desktop": {
+          "x": 60,
+          "y": 20,
+          "scale": 1.4,
+          "rot": 0,
+          "opacity": 1,
+          "flipX": false,
+          "hidden": false
+        }
+      }
+    },
+    {
+      "id": "ascii-deer",
+      "kind": "ascii",
+      "name": "Deer",
+      "animation": "deer",
+      "mode": "cycle",
+      "color": "#9dd1e3",
+      "frameSpeed": 200,
+      "duration": 8000,
+      "gap": 2000,
+      "z": 0,
+      "placements": {
+        "desktop": {
+          "x": 66.07,
+          "y": 52,
+          "scale": 1,
+          "rot": 0,
+          "opacity": 1,
+          "flipX": false,
+          "hidden": false
+        }
+      }
+    },
+    {
+      "id": "ascii-moonwalk",
+      "kind": "ascii",
+      "name": "Moonwalk",
+      "animation": "moonwalk",
+      "mode": "cycle",
+      "color": "#9dd1e3",
+      "frameSpeed": 200,
+      "duration": 10000,
+      "gap": 2000,
+      "z": 0,
+      "placements": {
+        "desktop": {
+          "x": 62,
+          "y": 10,
+          "scale": 1,
+          "rot": 0,
+          "opacity": 1,
+          "flipX": false,
+          "hidden": true
+        }
+      }
+    },
+    {
+      "id": "ascii-horse",
+      "kind": "ascii",
+      "name": "Horse",
+      "animation": "horse",
+      "mode": "cycle",
+      "color": "#9dd1e3",
+      "frameSpeed": 200,
+      "duration": 8000,
+      "gap": 2000,
+      "z": 0,
+      "placements": {
+        "desktop": {
+          "x": 66,
+          "y": 2,
+          "scale": 1,
+          "rot": 0,
+          "opacity": 1,
+          "flipX": false,
+          "hidden": true
+        }
+      }
+    },
+    {
+      "id": "ascii-whale",
+      "kind": "ascii",
+      "name": "Whale",
+      "animation": "whale",
+      "mode": "cycle",
+      "color": "#9dd1e3",
+      "frameSpeed": 200,
+      "duration": 10000,
+      "gap": 2000,
+      "z": 0,
+      "placements": {
+        "desktop": {
+          "x": 60,
+          "y": 35,
+          "scale": 1,
+          "rot": 0,
+          "opacity": 1,
+          "flipX": false,
+          "hidden": false
+        }
+      }
+    }
+  ]
+}

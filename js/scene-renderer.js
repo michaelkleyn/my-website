@@ -20,7 +20,7 @@
 
   // ---- constants ---------------------------------------------------------
 
-  var SCENE_DIR = 'assets/scene/';
+  var SCENE_DIR = (document.documentElement && document.documentElement.dataset.sceneBase) || 'assets/scene/';
   var DEFAULT_BREAKPOINTS = { mobile: 576, tablet: 768, desktop: 99999 };
   var BUCKETS = ['mobile', 'tablet', 'desktop'];
   // Representative "design width" each breakpoint keyframe is exact at. Between
@@ -31,7 +31,9 @@
   // ---- internal state ----------------------------------------------------
 
   var scene = null;                 // merged in-memory scene for this page
-  var sceneLayer = null;            // the .scene-layer DOM container
+  var sceneLayer = null;            // the .scene-layer DOM container (viewport space)
+  var bookLayer = null;             // the .scene-layer--book container inside #book-space (book space)
+  var currentKey = null;            // page key set by the router (loadPage) — else derived from the URL
   var styleEl = null;               // the <style id="scene-style"> element
   var componentInstances = {};      // nodeId -> { def, instance, container, node }
   var frameCallbacks = [];          // shared rAF subscribers: cb(timeMs, dtMs)
@@ -56,6 +58,9 @@
   }
 
   function pageKey() {
+    if (currentKey) return currentKey;
+    var ds = document.documentElement && document.documentElement.dataset.scenePage;
+    if (ds) return ds;
     var path = (location.pathname || '/').toLowerCase();
     // strip trailing slash except root
     if (path.length > 1 && path.charAt(path.length - 1) === '/') {
@@ -83,14 +88,30 @@
 
   // ---- unit conversion ---------------------------------------------------
 
-  function pxToPct(px, axis) {
-    if (axis === 'x' || axis === 'w') return (px / window.innerWidth) * 100;
-    return (px / window.innerHeight) * 100; // 'y' | 'h'
+  // ---- spaces: a node lives in the viewport (default) or in "book" space — inside #book-space, an element the
+  // site transforms (translate + scale) to follow the journal photo. Book nodes use % of that host, so they ride
+  // the camera for free; the editor's drag math divides by the host's on-screen rect.
+  function spaceOf(node) {
+    var sp = (node && node.space) || (scene && scene.space) || 'viewport';
+    return sp === 'book' && spaceHost() ? 'book' : 'viewport';
+  }
+  function spaceHost() { return document.getElementById('book-space'); }
+  function spaceRect(node) {
+    if (spaceOf(node) === 'book') { var r = spaceHost().getBoundingClientRect(); if (r.width > 0 && r.height > 0) return r; }
+    return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
+  }
+  function units(node) { return spaceOf(node) === 'book' ? { x: '%', y: '%' } : { x: 'vw', y: 'vh' }; }
+
+  function pxToPct(px, axis, node) {
+    var r = spaceRect(node);
+    if (axis === 'x' || axis === 'w') return (px / r.width) * 100;
+    return (px / r.height) * 100; // 'y' | 'h'
   }
 
-  function pctToPx(pct, axis) {
-    if (axis === 'x' || axis === 'w') return (pct / 100) * window.innerWidth;
-    return (pct / 100) * window.innerHeight;
+  function pctToPx(pct, axis, node) {
+    var r = spaceRect(node);
+    if (axis === 'x' || axis === 'w') return (pct / 100) * r.width;
+    return (pct / 100) * r.height;
   }
 
   // ---- placement resolution ----------------------------------------------
@@ -226,30 +247,45 @@
     else if (globalScene && globalScene.fluid != null) merged.fluid = globalScene.fluid;
     var aw = base.anchorWidths || (globalScene && globalScene.anchorWidths);
     if (aw) merged.anchorWidths = aw;
+    // the journal site: which space nodes default to, and where the camera rests on this page (page wins, else global)
+    var sp = base.space || (globalScene && globalScene.space); if (sp) merged.space = sp;
+    var cam = base.camera || (globalScene && globalScene.camera); if (cam) merged.camera = cam;
     var byId = {};
     var order = [];
-    function add(list) {
+    function add(list, scope) {
       if (!list) return;
       for (var i = 0; i < list.length; i++) {
         var n = list[i];
         if (!n || !n.id) continue;
         if (!(n.id in byId)) order.push(n.id);
+        n.scope = scope;
         byId[n.id] = n; // page wins on id collision (added after global)
       }
     }
-    add(globalScene && globalScene.nodes);
-    add(base.nodes);
+    add(globalScene && globalScene.nodes, 'global');
+    add(base.nodes, 'page');
     for (var j = 0; j < order.length; j++) merged.nodes.push(byId[order[j]]);
     return merged;
   }
 
-  function loadScene() {
-    var key = pageKey();
+  /** Fetch + merge a page's scene without applying it (the router prefetches). */
+  function fetchPage(key) {
     return Promise.all([
       fetchJSON(SCENE_DIR + '_global.json'),
       fetchJSON(SCENE_DIR + key + '.json')
     ]).then(function (results) {
       return mergeScenes(results[0], results[1], key);
+    });
+  }
+  function loadScene() { return fetchPage(pageKey()); }
+  /** Switch to another page's scene in place (SPA): apply (a prefetched) scene, announce it. */
+  function loadPage(key, prefetched) {
+    currentKey = key;
+    var p = prefetched ? Promise.resolve(prefetched) : fetchPage(key);
+    return p.then(function (loaded) {
+      setScene(loaded);
+      try { window.dispatchEvent(new CustomEvent('scene:page', { detail: { key: key, scene: loaded } })); } catch (e) { /* old browsers */ }
+      return loaded;
     });
   }
 
@@ -268,6 +304,26 @@
       document.body.appendChild(sceneLayer);
     }
     return sceneLayer;
+  }
+
+  function ensureBookLayer() {
+    var host = spaceHost();
+    if (!host) return null;
+    if (bookLayer && host.contains(bookLayer)) return bookLayer;
+    bookLayer = host.querySelector('.scene-layer--book');
+    if (!bookLayer) {
+      bookLayer = document.createElement('div');
+      bookLayer.className = 'scene-layer scene-layer--book';
+      bookLayer.setAttribute('data-scene-layer', 'book');
+      bookLayer.setAttribute('aria-hidden', 'true');
+      host.appendChild(bookLayer);
+    }
+    return bookLayer;
+  }
+  function layerFor(node) { return (spaceOf(node) === 'book' && ensureBookLayer()) || sceneLayer; }
+  function nodeEl(id) {
+    var q = '[data-node-id="' + cssEscape(id) + '"]';
+    return (sceneLayer && sceneLayer.querySelector(q)) || (bookLayer && bookLayer.querySelector(q)) || null;
   }
 
   function ensureStyleEl() {
@@ -298,6 +354,14 @@
       el.loading = 'lazy';
       if (node.objectFit) el.style.objectFit = node.objectFit;
       el.draggable = false;
+      if (node.action && (node.action.href || node.action.modal)) {   // a drawing you can click: a link, or a modal the site opens
+        var wrap = document.createElement(node.action.href ? 'a' : 'button');
+        if (node.action.href) { wrap.href = node.action.href; if (node.action.newTab) wrap.target = '_blank'; }
+        else { wrap.type = 'button'; wrap.setAttribute('data-modal', node.action.modal); }
+        wrap.className = 'scene-node__action';
+        if (node.action.label) wrap.setAttribute('aria-label', node.action.label);
+        wrap.appendChild(el); el = wrap;
+      }
     } else if (kind === 'svg') {
       if (node.svg) {
         el = document.createElement('div');
@@ -334,6 +398,8 @@
 
     el.classList.add('scene-node');
     el.classList.add('scene-node--' + (kind || 'unknown'));
+    if (node.action && (node.action.href || node.action.modal)) el.classList.add('scene-node--interactive');
+    if (node.reveal && node.reveal.type && node.reveal.type !== 'none') { el.classList.add('scene-node--reveal'); el.setAttribute('data-reveal', node.reveal.type); if (node.reveal.delay) el.style.setProperty('--reveal-delay', node.reveal.delay + 'ms'); if (node.reveal.duration) el.style.setProperty('--reveal-duration', node.reveal.duration + 'ms'); }
     el.setAttribute('data-node-id', node.id);
     if (typeof node.z === 'number') el.style.zIndex = String(node.z);
     return el;
@@ -699,7 +765,7 @@
       if (!node.anchor || node.anchor === 'viewport') continue;
       hasAnchored = true;
       var rect = resolveAnchor(node.anchor);
-      var el = sceneLayer.querySelector('[data-node-id="' + cssEscape(node.id) + '"]');
+      var el = nodeEl(node.id);
       if (!el) continue;
       var p = effectivePlacement(node);
       if (!rect || !p) continue;
@@ -752,6 +818,7 @@
 
   function placementCss(p, kind, node) {
     if (!p) return '';
+    var u = units(node);
     var lines = [];
     if (p.hidden) {
       lines.push('display:none;');
@@ -766,11 +833,11 @@
       // Honor the node's z so the JSON field isn't silently ignored (content
       // nodes are not rendered into .scene-layer, so they need the z-index here).
       if (node && typeof node.z === 'number') lines.push('z-index:' + node.z + ';');
-      lines.push('left:' + (p.x || 0) + 'vw;');
-      lines.push('top:' + (p.y || 0) + 'vh;');
+      lines.push('left:' + (p.x || 0) + u.x + ';');
+      lines.push('top:' + (p.y || 0) + u.y + ';');
       if (typeof p.w === 'number') {
-        lines.push('width:' + p.w + 'vw;');
-        lines.push('max-width:' + p.w + 'vw;');
+        lines.push('width:' + p.w + u.x + ';');
+        lines.push('max-width:' + p.w + u.x + ';');
         lines.push('min-width:0;');
       }
       lines.push('margin:0;');
@@ -783,11 +850,11 @@
       // x,y are top-left position as % of the VIEWPORT — use left/top in
       // viewport units. CSS translate() percentages are element-relative, so
       // they would NOT mean "% of viewport"; keep only rotation/flip in transform.
-      lines.push('left:' + x + 'vw;');
-      lines.push('top:' + y + 'vh;');
+      lines.push('left:' + x + u.x + ';');
+      lines.push('top:' + y + u.y + ';');
       lines.push('transform:rotate(' + rot + 'deg) scaleX(' + sx + ');');
-      if (typeof p.w === 'number') lines.push('width:' + p.w + 'vw;');
-      if (typeof p.h === 'number') lines.push('height:' + p.h + 'vh;');
+      if (typeof p.w === 'number') lines.push('width:' + p.w + u.x + ';');
+      if (typeof p.h === 'number') lines.push('height:' + p.h + u.y + ';');
       lines.push('opacity:' + (typeof p.opacity === 'number' ? p.opacity : 1) + ';');
       lines.push('display:block;');
     }
@@ -798,7 +865,7 @@
     if (node.kind === 'content') {
       return node.target || '.container';
     }
-    return '.scene-layer [data-node-id="' + cssAttr(node.id) + '"]';
+    return '.scene-layer [data-node-id="' + cssAttr(node.id) + '"]';   // matches the viewport layer and .scene-layer--book
   }
 
   function cssAttr(s) {
@@ -876,6 +943,7 @@
     // Tear down existing component instances and DOM before rebuilding.
     destroyComponents();
     sceneLayer.innerHTML = '';
+    if (bookLayer) bookLayer.innerHTML = '';
 
     for (var i = 0; i < scene.nodes.length; i++) {
       var node = scene.nodes[i];
@@ -884,13 +952,13 @@
       if (node.kind === 'ascii') continue;   // handled by the ASCII controller
 
       var el = makeNodeElement(node);
-      sceneLayer.appendChild(el);
+      layerFor(node).appendChild(el);
 
       if (node.kind === 'component') {
         // size/position the mount host from the effective placement, then mount.
-        var p = effectivePlacement(node);
-        if (p && typeof p.w === 'number') el.style.width = p.w + 'vw';
-        if (p && typeof p.h === 'number') el.style.height = p.h + 'vh';
+        var p = effectivePlacement(node), u = units(node);
+        if (p && typeof p.w === 'number') el.style.width = p.w + u.x;
+        if (p && typeof p.h === 'number') el.style.height = p.h + u.y;
         mountComponent(node, el);
       }
     }
@@ -961,12 +1029,11 @@
       var node = scene.nodes[i];
       if (!node || node.kind !== 'component') continue;
       var rec = componentInstances[node.id];
-      var el = (rec && rec.container) ||
-        sceneLayer.querySelector('[data-node-id="' + cssEscape(node.id) + '"]');
+      var el = (rec && rec.container) || nodeEl(node.id);
       if (!el) continue;
-      var p = effectivePlacement(node);
-      if (p && typeof p.w === 'number') el.style.width = p.w + 'vw';
-      if (p && typeof p.h === 'number') el.style.height = p.h + 'vh';
+      var p = effectivePlacement(node), u = units(node);
+      if (p && typeof p.w === 'number') el.style.width = p.w + u.x;
+      if (p && typeof p.h === 'number') el.style.height = p.h + u.y;
     }
   }
 
@@ -1050,6 +1117,10 @@
     relayout: relayout,
     activeBreakpoint: activeBreakpoint,
     pageKey: pageKey,
+    fetchPage: fetchPage,
+    loadPage: loadPage,
+    spaceOf: spaceOf,
+    spaceRect: spaceRect,
     pxToPct: pxToPct,
     pctToPx: pctToPx,
     isEditEnvironment: isEditEnvironment,

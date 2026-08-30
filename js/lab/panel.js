@@ -26,6 +26,8 @@ export function mountPanel(pond, opts) {
   'use strict';
   opts = opts || {};
   var root = opts.root || document.body;
+  // the panel's stylesheet, when the page does not carry it (the site in design mode)
+  if (!document.querySelector('link[href*="lab.css"]')) { var link = document.createElement('link'); link.rel = 'stylesheet'; link.href = opts.cssHref || '/css/lab.css'; link.addEventListener('load', function () { pond.resize(); }); document.head.appendChild(link); }
   mountPanelDom(root);
   var school = pond.school;
   var panelInsets = { get right() { var panel = root.querySelector('#panel'); return panel && !panel.classList.contains('hidden') && window.innerWidth > 900 ? panel.offsetWidth : 0; } };

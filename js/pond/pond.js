@@ -93,7 +93,7 @@ export function createPond(opts) {
       if (f.journal) { Journal.layout(); if (k === 'journalScale') Drawings.markDirty(); }
       if (f.rock) Drawings.markDirty();
       if (f.visitors) { Residents.trim(); Visitors.refresh(); }
-      if (f.book === 'layout') { school.resize(); Journal.layout(); Book.maskDirty = true; }
+      if (f.book === 'layout') { school.resize(); Journal.layout(); Book.maskDirty = true; emit('resize'); }
       if (f.book === 'mask') Book.maskDirty = true;
     });
     if (opts2 && opts2.silent) return;
@@ -199,6 +199,16 @@ export function createPond(opts) {
     setPaused: function (v) { paused = !!v; emit('paused', paused); },
     resize: function () { school.resize(); Journal.layout(); emit('resize'); },
     setInsets: function (ins) { school.insets = ins || { right: 0 }; school.resize(); Journal.layout(); emit('resize'); },
+    /** The runtime camera (navigation): a screen-space translate+scale over photo, pond and journal object. */
+    get camera() { return Book.camera; },
+    setCamera: function (c) {
+      var cam = Book.camera; if (c) { if (c.zoom != null) cam.zoom = Math.max(0.05, c.zoom); if (c.x != null) cam.x = c.x; if (c.y != null) cam.y = c.y; }
+      if (journalRoot) { journalRoot.style.transformOrigin = '0 0'; journalRoot.style.transform = 'translate(' + cam.x + 'px,' + cam.y + 'px) scale(' + cam.zoom + ')'; }
+      emit('camera', cam);
+      return cam;
+    },
+    /** #book-space transform = the photo's on-screen fit with the camera applied */
+    get screenFit() { return Book.screenFit(); },
     step: function (n, dt) { for (var i = 0; i < (n || 1); i++) school.step(dt || 1 / 60); },
     destroy: function () {
       destroyed = true; cancelAnimationFrame(raf); raf = 0; clearTimeout(repaintTimer);
