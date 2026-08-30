@@ -1,0 +1,220 @@
+/* The lab's control panel — design mode only. */
+#panel:not(.hidden) ~ #journal-root, body:has(#panel:not(.hidden)) #journal-root { right: 348px; }
+.jkv { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; margin: 8px 0; }
+.jkv label { display: flex; align-items: center; justify-content: space-between; gap: 6px; font-size: 12px; }
+.jkv input[type="number"] { width: 74px; font: inherit; font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 5px; padding: 3px 5px; }
+#jr-pick { font: inherit; font-size: 12px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; flex: 1; }
+
+/* ---------- Panel ---------- */
+#panel {
+  z-index: 30;
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 348px;
+  background: var(--panel);
+  color: var(--ink);
+  border-left: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  transition: transform 240ms ease;
+}
+#panel.hidden { transform: translateX(100%); }
+@media (prefers-reduced-motion: reduce) { #panel { transition: none; } }
+
+#panel-head {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--line);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 6px 10px;
+}
+#panel-head h1 {
+  margin: 0;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 600;
+  font-style: italic;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+#status {
+  grid-column: 1 / -1;
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  font-size: 11px;
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  min-height: 16px;
+}
+#status .painting { color: var(--accent); }
+
+.head-actions { display: flex; gap: 6px; }
+
+#panel-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: 24px;
+}
+
+details.group { border-bottom: 1px solid var(--line); }
+details.group > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 11px 18px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  user-select: none;
+}
+details.group > summary::-webkit-details-marker { display: none; }
+details.group > summary .name {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+details.group > summary .hint {
+  font-size: 11px;
+  color: var(--ink-2);
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+details.group > summary::after {
+  content: "";
+  width: 7px; height: 7px;
+  border-right: 1.5px solid var(--ink-2);
+  border-bottom: 1.5px solid var(--ink-2);
+  transform: rotate(-45deg);
+  transition: transform 160ms ease;
+  flex: none;
+}
+details.group[open] > summary::after { transform: rotate(45deg); }
+details.group > .content { padding: 2px 18px 14px; }
+
+/* Presets */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font: inherit;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 7px 11px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.chip:hover { border-color: var(--ink-2); }
+.chip.active { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.chip .swatch {
+  width: 10px; height: 10px; border-radius: 50%;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.12) inset;
+}
+.chip .x {
+  font-family: "IBM Plex Sans", sans-serif;
+  font-size: 11px; opacity: 0.7; margin-left: 2px;
+}
+.preset-note {
+  margin: 10px 0 0;
+  color: var(--ink-2);
+  font-size: 12px;
+  max-width: 60ch;
+}
+
+/* Controls */
+.ctl { display: grid; grid-template-columns: 112px 1fr 44px; align-items: center; gap: 8px; padding: 5px 0; }
+.ctl label { color: var(--ink); font-size: 12px; }
+.ctl .val {
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  font-size: 11px; color: var(--ink-2); text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.ctl.wide { grid-template-columns: 112px 1fr; }
+#save-name { font: inherit; font-size: 12px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; flex: 1; min-width: 0; }
+.ctl select, .ctl input[type="text"], .ctl input[type="number"] {
+  font: inherit; font-size: 12px;
+  color: var(--ink); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 6px;
+  padding: 4px 6px; width: 100%;
+}
+.ctl input[type="checkbox"] { width: 16px; height: 16px; margin: 0; accent-color: var(--accent); justify-self: start; }
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 22px; background: transparent; margin: 0;
+}
+input[type="range"]::-webkit-slider-runnable-track { height: 3px; background: var(--panel-3); border-radius: 2px; }
+input[type="range"]::-moz-range-track { height: 3px; background: var(--panel-3); border-radius: 2px; }
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 14px; height: 14px; border-radius: 50%; margin-top: -5.5px;
+  background: var(--panel); border: 2px solid var(--accent);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--panel); border: 2px solid var(--accent);
+}
+input[type="range"]:disabled::-webkit-slider-thumb { border-color: var(--line); }
+:is(button, input, select, textarea, summary):focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
+
+.sub { margin: 10px 0 2px; font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); }
+
+/* Palette editor */
+.palette { display: grid; gap: 6px; }
+.prow { display: grid; grid-template-columns: 18px repeat(5, 1fr) 68px; align-items: center; gap: 5px; }
+.prow select { font: inherit; font-size: 11px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 3px 2px; width: 100%; }
+.prow .n { font-family: "IBM Plex Mono", monospace; font-size: 11px; color: var(--ink-2); }
+.prow.off { opacity: 0.38; }
+.prow input[type="color"] {
+  width: 100%; height: 26px; padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--panel-2);
+  cursor: pointer;
+}
+.prow input[type="color"]::-webkit-color-swatch-wrapper { padding: 2px; }
+.prow input[type="color"]::-webkit-color-swatch { border: none; border-radius: 4px; }
+.plegend { display: grid; grid-template-columns: 18px repeat(5, 1fr) 68px; gap: 5px; font-size: 10px; color: var(--ink-2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+
+/* Buttons */
+.btn {
+  font: inherit; font-size: 12px; font-weight: 500;
+  color: var(--ink); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 7px;
+  padding: 6px 10px; cursor: pointer;
+}
+.btn:hover { border-color: var(--ink-2); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.small { padding: 4px 8px; font-size: 11px; }
+.row { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+
+textarea#json {
+  width: 100%; height: 150px; resize: vertical;
+  font-family: "IBM Plex Mono", ui-monospace, Menlo, monospace; font-size: 10.5px; line-height: 1.4;
+  color: var(--ink); background: var(--panel-2);
+  border: 1px solid var(--line); border-radius: 6px; padding: 8px;
+}
+
+#toggle-panel {
+  position: fixed; top: 12px; right: 12px; z-index: 31;
+}
+#panel:not(.hidden) ~ #toggle-panel { display: none; }
+
+.kbd { font-family: "IBM Plex Mono", monospace; font-size: 10.5px; color: var(--ink-2); }
+.foot { padding: 12px 18px 0; color: var(--ink-2); font-size: 11px; }
+.foot p { margin: 4px 0; }
+#unsupported {
+  display: none; margin: 12px 18px; padding: 10px 12px;
+  background: var(--panel-2); border: 1px solid var(--accent); border-radius: 8px; font-size: 12px;
+}
+
+
+#bk-edit.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+#bk-tool { font: inherit; font-size: 12px; color: var(--ink); background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; flex: 1; }

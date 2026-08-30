@@ -1,6 +1,6 @@
 // Which style paints which variant, per-variant proportions, and the style cache.
 import { P, activePreset } from './config.js';
-import { PRESETS, normalize, merge } from './presets.js';
+import { PRESETS, PRESETS_VERSION, normalize, merge } from './presets.js';
 import { clone, clamp, mulberry } from './util.js';
 
 /** Per-variant proportions: the same base shape, jittered by `variety` from the seed. */
@@ -47,3 +47,12 @@ export function variantParams(P, v) {
 // =========================================================================
 
 export function clearStyleCache() { styleCache = {}; }
+
+/** Everything the painted atlas depends on, hashed: a pre-rendered atlas is used only when its key matches. */
+export var ATLAS_KEYS = STYLE_KEYS.concat(['kind', 'seed', 'variants', 'animMode', 'styleMix']);
+export function atlasKey(cfg, extra) {
+  var pick = {}; ATLAS_KEYS.forEach(function (k) { pick[k] = cfg[k]; });
+  var s = JSON.stringify(pick) + '|' + PRESETS_VERSION + '|' + (extra || ''), h = 5381;
+  for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}

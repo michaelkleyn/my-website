@@ -1,16 +1,16 @@
-"""Build the book data (photo + page masks) for the Boids Lab's book mode and inject it into ../boids-lab.html
-between the <script id="book-data"> markers. usage: gen-book.py"""
-import base64, json, os, re
-T = os.path.dirname(os.path.abspath(__file__)); W = os.path.dirname(T); B = os.path.join(T, 'data', 'book')
-def durl(path, mime): return 'data:' + mime + ';base64,' + base64.b64encode(open(path, 'rb').read()).decode()
-info = json.load(open(os.path.join(B, 'book.json')))
-info['src'] = durl(os.path.join(B, 'book.webp'), 'image/webp'); info['pages'] = durl(os.path.join(B, 'pages.png'), 'image/png')
-js = json.dumps(info)
-block = '<script id="book-data">window.BOOK = ' + js + ';</script>'
-lab = open(os.path.join(W, 'boids-lab.html')).read()
-if '<script id="book-data">' in lab:
-    lab = re.sub(r'<script id="book-data">.*?</script>', lambda m: block, lab, count=1, flags=re.S)
-else:
-    anchor = '<script src="https://cdn.jsdelivr.net/npm/p5.brush@2.2.2/dist/brush.js"></script>'
-    assert anchor in lab; lab = lab.replace(anchor, block + '\n' + anchor, 1)
-open(os.path.join(W, 'boids-lab.html'), 'w').write(lab); print('book data', len(js) // 1024, 'KB → boids lab', len(lab) // 1024, 'KB')
+"""Emit the book assets for the pond: assets/pond/book/{book.json, book.webp, pages.png}.
+usage: gen-book.py [--sources <dir with book.json/book.webp/pages.png>] [--out <assets/pond/book>]
+(The lab and the site load these through js/pond/assets.js; nothing is injected into HTML any more.)"""
+import json, os, shutil, sys
+T = os.path.dirname(os.path.abspath(__file__)); REPO = os.path.dirname(os.path.dirname(T))
+def arg(name, default):
+    return sys.argv[sys.argv.index(name) + 1] if name in sys.argv else default
+SRC = arg('--sources', os.path.join(T, 'data', 'book'))
+OUT = arg('--out', os.path.join(REPO, 'assets', 'pond', 'book'))
+os.makedirs(OUT, exist_ok=True)
+info = json.load(open(os.path.join(SRC, 'book.json')))
+for f in ('book.webp', 'pages.png'):
+    shutil.copyfile(os.path.join(SRC, f), os.path.join(OUT, f))
+info['src'] = 'book.webp'; info['pages'] = 'pages.png'
+json.dump(info, open(os.path.join(OUT, 'book.json'), 'w'), indent=1)
+print('book →', OUT, '(%d KB)' % (sum(os.path.getsize(os.path.join(OUT, f)) for f in os.listdir(OUT)) // 1024))

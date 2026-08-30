@@ -51,6 +51,17 @@ export async function loadConfig(url) {
   return getJSON(absolute(location.href, url));
 }
 
+/** A pre-rendered fish atlas for `key`, or null when there is none (never throws). */
+export async function loadAtlas(base, key) {
+  var inline = fromInline(); if (inline) return (inline.atlas && inline.atlas.key === key) ? inline.atlas : null;
+  try {
+    var url = absolute(location.href, base + 'atlas/' + key + '.json'), meta = await getJSON(url);
+    if (meta.key !== key) return null;
+    meta.src = absolute(url, meta.src);
+    return meta;
+  } catch (e) { return null; }
+}
+
 /** Everything the pond needs from assets/pond/<base>/: { journal, book, config }. */
 export async function loadPondAssets(base) {
   base = base || 'assets/pond/';

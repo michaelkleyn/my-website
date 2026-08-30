@@ -56,3 +56,23 @@ mask — the ink takes the paper's shading and grain, and stops at the page edge
 The mask is live-editable: spine band / inset / feather sliders over a distance field of the SAM pages, plus a soft brush (paint in /
 erase, undo, reset) whose strokes are a separate layer saved into the config as `bookMask`; "Copy final mask PNG" exports the
 composed mask at photo resolution for production.
+
+
+## Where things live now (redesign branch)
+
+The lab is no longer one file. `lab/boids-lab.html` is a ~150-line page that loads `css/pond.css` + `css/lab.css`, the vendored
+`js/vendor/p5.brush-2.2.2.js`, and the module entry `js/lab/main.js` (parity hooks + `createPond` + `mountPanel`). The pond itself is
+`js/pond/*` (`pond.js` = `createPond`, `boot.js` = `bootPond` for the site, `assets.js` = loaders), the panel is `js/lab/panel.js`
+(+ `panel-dom.js` markup template), the visitor card is `js/pond/visitors/*`.
+
+Assets are files under `assets/pond/`: `journal/journal.json` (+ `notebook/`, `items/`, `props/`, `hatch/`), `book/book.json`
+(+ `book.webp`, `pages.png`), `pond.config.json` (the site's config — the panel's **Save to site** writes it through the dev
+server's `POST /__editor/pond`), and `atlas/<key>.{json,webp}` (pre-rendered fish atlas; used only while the config still hashes
+to `<key>`).
+
+- `gen-journal.py [--sources <pond-sources backup>] [--out assets/pond/journal]` and `gen-book.py` now emit those files (the PNG
+  sources are not in git: they are backed up in `assets/_unshipped/pond-sources/` of the main checkout).
+- `npm run dev` → http://127.0.0.1:5173/lab/boids-lab.html (design mode); `lab/site-test.html` boots the pond the way the site will.
+- `npm run build:lab` → `dist/lab.html`, one self-contained file (esbuild bundle + inlined assets) for the claude.ai artifact.
+- `node scripts/pond/render-atlas.mjs` (dev server running) → `assets/pond/atlas/<key>.*`.
+- `node scripts/pond/shot.mjs <url> <out> [--ready expr] [--post expr]` — the headless Chrome driver used for every check.

@@ -1,6 +1,9 @@
 // Defaults, species presets, config migration and normalisation.
 import { clone, clamp } from './util.js';
 
+/** Bump when preset params change: pre-rendered atlases are keyed on it. */
+export var PRESETS_VERSION = '1';
+
 export var PLAIN6 = ['plain', 'plain', 'plain', 'plain', 'plain', 'plain'];
 
 export var DEFAULTS = {

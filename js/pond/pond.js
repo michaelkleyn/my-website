@@ -6,7 +6,7 @@
 //
 import { P, activePreset, replace as replaceConfig, patch as patchConfig, set as setConfigKey, snapshot, on as onConfig, off as offConfig } from './config.js';
 import { FLAGS } from './schema.js';
-import { clearStyleCache } from './style.js';
+import { clearStyleCache, atlasKey } from './style.js';
 import { brush, setBrush } from './brush.js';
 import { Painter } from './painter.js';
 import { Water } from './water.js';
@@ -155,8 +155,21 @@ export function createPond(opts) {
   // ---- go
   raf = requestAnimationFrame(frame);
   var ok = Painter.init();
+  function usePrerendered(meta) {   // { key, cellW, cellH, poses, variants, ox, oy, margin, bodyW, src } → school.atlas
+    var img = new Image();
+    img.onload = function () {
+      if (destroyed) return;
+      var c = document.createElement('canvas'); c.width = img.naturalWidth; c.height = img.naturalHeight; c.getContext('2d').drawImage(img, 0, 0);
+      school.atlas = { canvas: c, cellW: meta.cellW, cellH: meta.cellH, poses: meta.poses, variants: meta.variants, ox: meta.ox, oy: meta.oy, margin: meta.margin, bodyW: meta.bodyW, ms: 0, prerendered: true };
+      lastPaintMs = 0; emit('status', { text: 'atlas loaded' }); emit('atlas', school.atlas);
+    };
+    img.onerror = function () { if (!destroyed && Painter.ok) repaint(); };
+    img.src = meta.src;
+  }
+  var pre = assets.atlas, mode = opts.paintOnClient || 'auto';
   if (!ok) emit('error', { code: brush ? 'webgl2' : 'brush', text: brush ? 'WebGL2 unavailable.' : 'p5.brush failed to load.' });
-  else setTimeout(repaint, 0);   // deferred so the caller can subscribe to 'status' / 'atlas' first
+  if (pre && mode !== 'always' && pre.key === atlasKey(P, Painter.MAXW + 'x' + Painter.MAXH)) usePrerendered(pre);
+  else if (ok && mode !== 'never') setTimeout(repaint, 0);   // deferred so the caller can subscribe to 'status' / 'atlas' first
 
   var pond = {
     school: school, painter: Painter, water: Water, pondFlow: PondFlow, journal: Journal, drawings: Drawings, book: Book,
@@ -174,6 +187,13 @@ export function createPond(opts) {
     replaceConfig: function (obj, presetId) { replaceConfig(obj, presetId); },
     repaint: repaint,
     scheduleRepaint: scheduleRepaint,
+    atlasKey: function () { return atlasKey(P, Painter.MAXW + 'x' + Painter.MAXH); },
+    /** The painted atlas as a WebP data URL plus the metadata the school needs to draw from it. */
+    exportAtlas: function (quality) {
+      var A = school.atlas; if (!A) return null;
+      return { key: atlasKey(P, Painter.MAXW + 'x' + Painter.MAXH), cellW: A.cellW, cellH: A.cellH, poses: A.poses, variants: A.variants, ox: A.ox, oy: A.oy, margin: A.margin, bodyW: A.bodyW,
+               w: A.canvas.width, h: A.canvas.height, dataUrl: A.canvas.toDataURL('image/webp', quality || 0.92) };
+    },
     pause: function () { paused = true; emit('paused', true); },
     resume: function () { paused = false; emit('paused', false); },
     setPaused: function (v) { paused = !!v; emit('paused', paused); },

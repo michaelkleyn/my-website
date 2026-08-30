@@ -1,0 +1,31 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pond site boot test</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500;1,600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="../css/pond.css">
+<style>
+  #probe { position: fixed; left: 12px; top: 12px; z-index: 50; font: 12px "IBM Plex Mono", monospace; color: #2b3a48; background: rgba(251,247,238,0.9); padding: 6px 8px; border-radius: 4px; }
+</style>
+
+<canvas id="tank" aria-label="Pond"></canvas>
+<div id="journal-root" aria-label="Journal"></div>
+<div id="probe">booting…</div>
+
+<script src="../js/vendor/p5.brush-2.2.2.js"></script>
+<script type="module">
+// What the site will do: bootPond() from assets/pond — config, manifests, the pre-rendered atlas when its key matches —
+// with the visitor UI mounted from the template and no panel (add ?edit to load the panel over it).
+import { bootPond } from '../js/pond/boot.js';
+var q = new URLSearchParams(location.search), probe = document.getElementById('probe');
+var log = function (t) { probe.textContent = t; };
+bootPond({ canvas: document.getElementById('tank'), journalRoot: document.getElementById('journal-root'), root: document.body,
+  assetsBase: '../assets/pond/', edit: q.has('edit'), paintOnClient: q.get('paint') || 'auto' })
+  .then(function (pond) {
+    window.pond = pond;
+    pond.on('status', function (e) { log(e.text); });
+    pond.on('atlas', function (a) { log('atlas ' + (a.prerendered ? 'pre-rendered' : 'painted') + ' ' + a.canvas.width + '×' + a.canvas.height + ' · key ' + pond.atlasKey()); });
+  })
+  .catch(function (e) { log('ERROR ' + e.message); console.error(e); });
+</script>

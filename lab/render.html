@@ -1,0 +1,22 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pond render</title>
+<link rel="stylesheet" href="../css/pond.css">
+<style>body { background: #f4f4f4; }</style>
+
+<canvas id="tank" aria-label="Pond"></canvas>
+<div id="journal-root" aria-hidden="true"></div>
+
+<script src="../js/vendor/p5.brush-2.2.2.js"></script>
+<script type="module">
+// Headless render page: boots the pond from assets/pond (site config), always painting on the client,
+// and exposes it as window.pond so scripts/pond/render-atlas.mjs can export the atlas.
+import { createPond } from '../js/pond/pond.js';
+import { loadPondAssets } from '../js/pond/assets.js';
+var q = new URLSearchParams(location.search);
+loadPondAssets(q.get('assets') || '../assets/pond/').then(function (a) {
+  window.pond = createPond({ canvas: document.getElementById('tank'), journalRoot: document.getElementById('journal-root'), root: document.body,
+    config: a.config, presetId: null, assets: { journal: a.journal, book: a.book }, visitors: false, paintOnClient: 'always', respectReducedMotion: false });
+  window.pond.on('status', function (e) { document.title = e.text; });
+}).catch(function (e) { document.title = 'ERROR ' + e.message; console.error(e); });
+</script>

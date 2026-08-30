@@ -4,7 +4,7 @@ import { P } from './config.js';
 import { createEmitter } from './emitter.js';
 
 export var Book = {
-  D: null, ready: false, img: null,
+  D: null, ready: false, img: null, imgReady: false,
   MW: 0, MH: 0, R: 0.5,       // mask working resolution: R × the photo
   dist: null,                 // signed distance to the SAM page edge, in mask px (positive inside)
   edits: null,                // brush layer, −1..1 (added to the geometric mask)
@@ -28,14 +28,17 @@ export var Book = {
       var d = cx.getImageData(0, 0, self.MW, self.MH).data, inside = new Uint8Array(self.MW * self.MH);
       for (var i = 0; i < inside.length; i++) inside[i] = d[i * 4] > 64 ? 1 : 0;
       self.dist = self.signedDistance(inside);
+      self.maybeReady();
       self.maskDirty = true;
       self.syncFromP();
     };
     pages.src = D.pages;
     this.img = new Image();
-    this.img.onload = function () { self.ready = true; self.emit('ready'); };
+    this.img.onload = function () { self.imgReady = true; self.maybeReady(); };
     this.img.src = D.src;
   },
+  /** 'ready' fires once, when both the photo and the page mask have decoded — in either order (URLs load in any order). */
+  maybeReady: function () { if (this.imgReady && this.dist && !this.ready) { this.ready = true; this.emit('ready'); } },
   active: function () { return this.ready && !!this.dist && P.bookOn; },
 
   /** Fit the photo into the tank area (contain × zoom, shifted), and place the page spread as the world. */
