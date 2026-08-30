@@ -37,24 +37,28 @@ body {
 #book-space a, #book-space button, #book-space input, #book-space [data-node] { pointer-events: auto; }
 #book-space [data-node] { position: absolute; }   /* the compositor places these (content nodes) */
 
-/* ---------- nav: hand-lettered tags on the page ---------- */
+/* ---------- the site header: a fixed layer over everything but the tools; the nav is placed in it by the compositor ---------- */
+#site-header { position: fixed; inset: 0; z-index: 15; pointer-events: none; }
+#site-header [data-node] { position: absolute; pointer-events: auto; }
+
+/* ---------- nav: hand-lettered tags, fixed to the window ---------- */
 nav[data-node="nav"] {
   display: flex;
   align-items: baseline;
-  gap: 22px;
+  gap: 18px;
   font-family: "Cormorant Garamond", Georgia, serif;
-  font-size: 30px;
+  font-size: 22px;
   font-weight: 600;
   line-height: 1;
   color: var(--ink);
 }
-nav[data-node="nav"] .brand { font-style: italic; font-size: 36px; margin-right: 10px; text-decoration: none; color: inherit; }
+nav[data-node="nav"] .brand { font-style: italic; font-size: 27px; margin-right: 8px; text-decoration: none; color: inherit; }
 nav[data-node="nav"] a { color: inherit; text-decoration: none; border-bottom: 1.5px solid transparent; padding-bottom: 2px; }
 nav[data-node="nav"] a:hover, nav[data-node="nav"] a:focus-visible { border-bottom-color: var(--rule); outline: none; }
 nav[data-node="nav"] a.is-active { border-bottom-color: var(--ink); }
 #mode-toggle {
-  font: inherit; font-size: 20px; font-style: italic; color: var(--accent);
-  background: none; border: 1px solid var(--rule); border-radius: 999px; padding: 4px 14px 6px; cursor: pointer; margin-left: 8px;
+  font: inherit; font-size: 15px; font-style: italic; color: var(--accent);
+  background: none; border: 1px solid var(--rule); border-radius: 999px; padding: 3px 11px 4px; cursor: pointer; margin-left: 8px;
 }
 #mode-toggle:hover { border-color: var(--accent); }
 

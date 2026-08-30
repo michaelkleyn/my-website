@@ -23,7 +23,7 @@
   <canvas id="tank" aria-label="A painted pond on the pages of a journal"></canvas>
   <div id="journal-root" aria-hidden="true"></div>
 
-  <div id="book-space">
+  <header id="site-header" aria-label="Site header">
     <nav data-node="nav" aria-label="Site">
       <a class="brand" href="/" data-route="index">mkleyn.com</a>
       <a href="/projects" data-route="projects" data-work="/projects" data-life="https://michaelkleyn.notion.site/music" data-work-label="projects" data-life-label="music">projects</a>
@@ -31,6 +31,9 @@
       <a href="/contact" data-route="contact" data-work="/contact" data-life="https://www.instagram.com/michaelkleyn/" data-work-label="contact" data-life-label="photos">contact</a>
       <button id="mode-toggle" type="button" aria-pressed="false" title="work / life">work</button>
     </nav>
+  </header>
+
+  <div id="book-space">
     <div id="spread" aria-live="polite"></div>
   </div>
 

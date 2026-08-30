@@ -1,24 +1,28 @@
 {
   "page": "_global",
   "version": 1,
-  "space": "book",
   "nodes": [
     {
       "id": "nav",
       "kind": "content",
       "target": "[data-node=\"nav\"]",
-      "space": "book",
+      "space": "viewport",
       "z": 20,
       "placements": {
         "desktop": {
-          "x": 13,
-          "y": 5.5,
-          "w": 36
+          "x": 2.5,
+          "y": 3,
+          "w": 46
+        },
+        "tablet": {
+          "x": 3,
+          "y": 2.5,
+          "w": 70
         },
         "mobile": {
-          "x": 13,
-          "y": 5.5,
-          "w": 36
+          "x": 3,
+          "y": 2,
+          "w": 94
         }
       }
     }
