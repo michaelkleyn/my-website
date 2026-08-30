@@ -212,7 +212,7 @@
   "bookOn": true,
   "bookZoom": 1.1,
   "bookX": 0,
-  "bookY": 0,
+  "bookY": 0.12,
   "bookSpineShift": 0,
   "bookSpineWidth": 80,
   "bookSpineSoft": 30,

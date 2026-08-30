@@ -548,7 +548,8 @@ class LayoutEditor {
 
   /** The renderer switched pages (SPA navigation): edit what is on screen now, with a clean history. */
   reloadFromRenderer() {
-    if (this.dirty && !window.confirm('Discard unsaved layout changes on the previous page?')) { /* keep editing the stale copy */ }
+    // The navigator already confirms leaving a dirty page; by the time the page has switched, reloading is the only
+    // correct move — a second (previously broken) confirm here used to discard edits no matter what was answered.
     this.scene = clone(this.r.getScene());
     this.undoStack = []; this.redoStack = []; this.selectedId = null; this.dirty = false;
     const label = document.querySelector('.le-page'); if (label) label.textContent = this.r.pageKey();
