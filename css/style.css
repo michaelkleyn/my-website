@@ -21,7 +21,7 @@ body {
   font-family: "Courier New", Courier, monospace;
   font-size: 6px;
   line-height: 1.1;
-  color: #80cbc4;
+  color: #9dd1e3;
   opacity: 0;
   filter: blur(5px);
   transition: opacity 1.5s ease, filter 1.5s ease;
@@ -30,7 +30,7 @@ body {
 }
 
 .ascii-art.active {
-  opacity: 0.8;
+  opacity: 0.95;
   filter: blur(0);
 }
 
@@ -55,57 +55,53 @@ body {
 
 .sidebar-row {
   background-color: #2a2a2a;
-  opacity: 0.2;
-  transition: opacity 0.4s ease, box-shadow 0.4s ease;
+  opacity: 0.4;
+  transform-style: preserve-3d;
+  will-change: transform, opacity;
+  animation: breathe 3.5s ease-in-out infinite;
 }
 
-.sidebar-row.lit-2 {
-  opacity: 0.5;
-}
-
-.sidebar-row.lit-1 {
-  opacity: 0.75;
-}
-
-.sidebar-row.lit {
-  opacity: 1;
-  box-shadow: 0 0 15px rgba(255, 255, 255, 0.4);
-}
-
-.sidebar-row.random-lit {
-  opacity: 0.9;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+@keyframes breathe {
+  0%, 100% {
+    opacity: 0.3;
+  }
+  35% {
+    opacity: 0.6;
+  }
+  43% {
+    opacity: 0.6;
+  }
 }
 
 /* Row 1 (top) - Teal */
-.sidebar-row:nth-child(1), .sidebar-row:nth-child(2), .sidebar-row:nth-child(3) { background: #4db6ac; }
+.sidebar-row:nth-child(1), .sidebar-row:nth-child(2), .sidebar-row:nth-child(3) { background: #78c0e0; }
 
 /* Row 2 */
-.sidebar-row:nth-child(4), .sidebar-row:nth-child(5), .sidebar-row:nth-child(6) { background: #5abbb2; }
+.sidebar-row:nth-child(4), .sidebar-row:nth-child(5), .sidebar-row:nth-child(6) { background: #81c4e1; }
 
 /* Row 3 */
-.sidebar-row:nth-child(7), .sidebar-row:nth-child(8), .sidebar-row:nth-child(9) { background: #66c0b8; }
+.sidebar-row:nth-child(7), .sidebar-row:nth-child(8), .sidebar-row:nth-child(9) { background: #8bc9e1; }
 
 /* Row 4 */
-.sidebar-row:nth-child(10), .sidebar-row:nth-child(11), .sidebar-row:nth-child(12) { background: #73c5be; }
+.sidebar-row:nth-child(10), .sidebar-row:nth-child(11), .sidebar-row:nth-child(12) { background: #94cde2; }
 
 /* Row 5 */
-.sidebar-row:nth-child(13), .sidebar-row:nth-child(14), .sidebar-row:nth-child(15) { background: #80cbc4; }
+.sidebar-row:nth-child(13), .sidebar-row:nth-child(14), .sidebar-row:nth-child(15) { background: #9dd1e3; }
 
 /* Row 6 */
-.sidebar-row:nth-child(16), .sidebar-row:nth-child(17), .sidebar-row:nth-child(18) { background: #8dd0ca; }
+.sidebar-row:nth-child(16), .sidebar-row:nth-child(17), .sidebar-row:nth-child(18) { background: #a7d6e4; }
 
 /* Row 7 */
-.sidebar-row:nth-child(19), .sidebar-row:nth-child(20), .sidebar-row:nth-child(21) { background: #9ad5d0; }
+.sidebar-row:nth-child(19), .sidebar-row:nth-child(20), .sidebar-row:nth-child(21) { background: #b0dae4; }
 
 /* Row 8 */
-.sidebar-row:nth-child(22), .sidebar-row:nth-child(23), .sidebar-row:nth-child(24) { background: #a7dbd6; }
+.sidebar-row:nth-child(22), .sidebar-row:nth-child(23), .sidebar-row:nth-child(24) { background: #b9dee5; }
 
 /* Row 9 */
-.sidebar-row:nth-child(25), .sidebar-row:nth-child(26), .sidebar-row:nth-child(27) { background: #b4e0dc; }
+.sidebar-row:nth-child(25), .sidebar-row:nth-child(26), .sidebar-row:nth-child(27) { background: #c2e2e6; }
 
 /* Row 10 */
-.sidebar-row:nth-child(28), .sidebar-row:nth-child(29), .sidebar-row:nth-child(30) { background: #c1e5e2; }
+.sidebar-row:nth-child(28), .sidebar-row:nth-child(29), .sidebar-row:nth-child(30) { background: #cce7e6; }
 
 /* Row 11 - Transition zone */
 .sidebar-row:nth-child(31), .sidebar-row:nth-child(32), .sidebar-row:nth-child(33) { background: #d5ebe7; }
@@ -162,18 +158,18 @@ body {
 
   /* Mobile gradient remapping: 5 rows × 20 columns = 100 cells */
   /* Row 1: Teal start (cells 1-20) */
-  .sidebar-row:nth-child(1), .sidebar-row:nth-child(2), .sidebar-row:nth-child(3), .sidebar-row:nth-child(4) { background: #4db6ac !important; }
-  .sidebar-row:nth-child(5), .sidebar-row:nth-child(6), .sidebar-row:nth-child(7), .sidebar-row:nth-child(8) { background: #5abbb2 !important; }
-  .sidebar-row:nth-child(9), .sidebar-row:nth-child(10), .sidebar-row:nth-child(11), .sidebar-row:nth-child(12) { background: #66c0b8 !important; }
-  .sidebar-row:nth-child(13), .sidebar-row:nth-child(14), .sidebar-row:nth-child(15), .sidebar-row:nth-child(16) { background: #73c5be !important; }
-  .sidebar-row:nth-child(17), .sidebar-row:nth-child(18), .sidebar-row:nth-child(19), .sidebar-row:nth-child(20) { background: #80cbc4 !important; }
+  .sidebar-row:nth-child(1), .sidebar-row:nth-child(2), .sidebar-row:nth-child(3), .sidebar-row:nth-child(4) { background: #78c0e0 !important; }
+  .sidebar-row:nth-child(5), .sidebar-row:nth-child(6), .sidebar-row:nth-child(7), .sidebar-row:nth-child(8) { background: #81c4e1 !important; }
+  .sidebar-row:nth-child(9), .sidebar-row:nth-child(10), .sidebar-row:nth-child(11), .sidebar-row:nth-child(12) { background: #8bc9e1 !important; }
+  .sidebar-row:nth-child(13), .sidebar-row:nth-child(14), .sidebar-row:nth-child(15), .sidebar-row:nth-child(16) { background: #94cde2 !important; }
+  .sidebar-row:nth-child(17), .sidebar-row:nth-child(18), .sidebar-row:nth-child(19), .sidebar-row:nth-child(20) { background: #9dd1e3 !important; }
 
   /* Row 2: Teal to light teal (cells 21-40) */
-  .sidebar-row:nth-child(21), .sidebar-row:nth-child(22), .sidebar-row:nth-child(23), .sidebar-row:nth-child(24) { background: #8dd0ca !important; }
-  .sidebar-row:nth-child(25), .sidebar-row:nth-child(26), .sidebar-row:nth-child(27), .sidebar-row:nth-child(28) { background: #9ad5d0 !important; }
-  .sidebar-row:nth-child(29), .sidebar-row:nth-child(30), .sidebar-row:nth-child(31), .sidebar-row:nth-child(32) { background: #a7dbd6 !important; }
-  .sidebar-row:nth-child(33), .sidebar-row:nth-child(34), .sidebar-row:nth-child(35), .sidebar-row:nth-child(36) { background: #b4e0dc !important; }
-  .sidebar-row:nth-child(37), .sidebar-row:nth-child(38), .sidebar-row:nth-child(39), .sidebar-row:nth-child(40) { background: #c1e5e2 !important; }
+  .sidebar-row:nth-child(21), .sidebar-row:nth-child(22), .sidebar-row:nth-child(23), .sidebar-row:nth-child(24) { background: #a7d6e4 !important; }
+  .sidebar-row:nth-child(25), .sidebar-row:nth-child(26), .sidebar-row:nth-child(27), .sidebar-row:nth-child(28) { background: #b0dae4 !important; }
+  .sidebar-row:nth-child(29), .sidebar-row:nth-child(30), .sidebar-row:nth-child(31), .sidebar-row:nth-child(32) { background: #b9dee5 !important; }
+  .sidebar-row:nth-child(33), .sidebar-row:nth-child(34), .sidebar-row:nth-child(35), .sidebar-row:nth-child(36) { background: #c2e2e6 !important; }
+  .sidebar-row:nth-child(37), .sidebar-row:nth-child(38), .sidebar-row:nth-child(39), .sidebar-row:nth-child(40) { background: #cce7e6 !important; }
 
   /* Row 3: Transition zone (cells 41-60) */
   .sidebar-row:nth-child(41), .sidebar-row:nth-child(42), .sidebar-row:nth-child(43), .sidebar-row:nth-child(44) { background: #d5ebe7 !important; }
@@ -227,10 +223,29 @@ body {
 /* Fixed container width */
 .container {
   width: 60%; /* Optional, as the key is the min-width and max-width */
-  margin: 0 auto;
+  /* Scales with viewport so ~3/8 of screen stays clear on the right for ASCII.
+     Floors at 100px so the container never collides with the sidebar on narrower desktops. */
+  margin: 0 0 0 max(100px, calc(58vw - 606px));
   padding: 0 15px;
   min-width: 576px; /* Minimum width set to 600px */
   max-width: 576px; /* Maximum width set to 600px */
+  /* Keep site content above the scene compositor's .scene-layer (z-index:1). */
+  position: relative;
+  z-index: 2;
+}
+
+/* Tablet: sidebar shrinks to 60px — shrink the floor too */
+@media (max-width: 900px) {
+  .container {
+    margin: 0 0 0 max(70px, calc(58vw - 606px));
+  }
+}
+
+/* Sidebar becomes horizontal header and ASCII is hidden — re-center */
+@media (max-width: 768px) {
+  .container {
+    margin: 0 auto;
+  }
 }
 
 /* Adjustments for very small screens */
@@ -238,6 +253,7 @@ body {
   .container {
     width: 90%;
     padding: 0 5px;
+    margin: 0 auto; /* Re-center on mobile */
     min-width: auto; /* Override the fixed width for smaller screens */
     max-width: auto; /* Override the fixed width for smaller screens */
   }
@@ -367,25 +383,113 @@ social-links a:hover {
   text-decoration-thickness: 2px;
 }
 
-@keyframes fadeUp {
-  0% {
-    transform: translateY(10px);
+/* Inline prose links — drifting pink gas feathered to the letter shapes */
+main p a {
+  color: inherit;
+  text-decoration: none;
+  position: relative;
+  display: inline-block;
+  isolation: isolate;
+  cursor: pointer;
+  transition: color 0.5s ease;
+}
+
+/* Two stacked text-clipped pseudos act as blurred "bubble letter" auras.
+   ::before = subtle ambient glow, ::after = richer hover glow. */
+main p a::before,
+main p a::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  font: inherit;
+  letter-spacing: inherit;
+  white-space: nowrap;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  -webkit-background-clip: text;
+          background-clip: text;
+  background-size: 220% 220%, 200% 200%, 240% 240%;
+}
+
+main p a::before {
+  background-image:
+    radial-gradient(ellipse 55% 85% at 25% 40%, rgba(150, 195, 255, 0.9), transparent 70%),
+    radial-gradient(ellipse 65% 90% at 75% 55%, rgba(125, 175, 245, 0.85), transparent 70%),
+    radial-gradient(ellipse 45% 70% at 50% 85%, rgba(180, 215, 255, 0.8), transparent 75%);
+  background-position: 0% 0%, 100% 100%, 50% 50%;
+  filter: blur(6px);
+  opacity: 0.92;
+  animation: linkGasDrift var(--gas-duration-1, 18s) ease-in-out infinite;
+  animation-delay: var(--gas-delay-1, 0s);
+  animation-direction: var(--gas-direction-1, normal);
+  transition: opacity 1.4s ease-in-out, filter 1.4s ease-in-out;
+}
+
+/* Random, per-link pulse — JS toggles .pulsing at random intervals */
+main p a.pulsing::before {
+  opacity: 1;
+  filter: blur(4.5px);
+}
+
+main p a::after {
+  background-image:
+    radial-gradient(ellipse 55% 85% at 30% 45%, rgba(95, 160, 240, 1), transparent 65%),
+    radial-gradient(ellipse 65% 90% at 70% 60%, rgba(60, 130, 225, 1), transparent 65%),
+    radial-gradient(ellipse 45% 70% at 50% 30%, rgba(155, 200, 245, 0.95), transparent 70%);
+  background-position: 100% 50%, 0% 50%, 50% 100%;
+  filter: blur(8px);
+  opacity: 0;
+  animation: linkGasDriftAlt var(--gas-duration-2, 12s) ease-in-out infinite;
+  animation-delay: var(--gas-delay-2, 0s);
+  animation-direction: var(--gas-direction-2, normal);
+  transition: opacity 0.6s ease, filter 0.6s ease;
+}
+
+main p a:hover {
+  color: #2f5fa6;
+}
+
+main p a:hover::before {
+  opacity: 0.8;
+  filter: blur(5px);
+}
+
+main p a:hover::after {
+  opacity: 1;
+}
+
+@keyframes linkGasDrift {
+  0%, 100% { background-position: 0% 0%, 100% 100%, 50% 50%; }
+  25%      { background-position: 80% 20%, 30% 70%, 70% 30%; }
+  50%      { background-position: 60% 90%, 40% 10%, 20% 80%; }
+  75%      { background-position: 20% 60%, 80% 40%, 90% 20%; }
+}
+
+@keyframes linkGasDriftAlt {
+  0%, 100% { background-position: 100% 50%, 0% 50%, 50% 100%; }
+  33%      { background-position: 20% 80%, 90% 10%, 30% 30%; }
+  66%      { background-position: 70% 20%, 30% 80%, 80% 60%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  main p a,
+  main p a::before {
+    animation: none;
   }
-  100% {
-    transform: translateY(0px);
-  }
 }
 
-.fade-in-1 {
-  animation: fadeUp 0.1s ease-out forwards;
+/* Text load-in animation */
+.animate-text .word {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(20px);
 }
 
-.fade-in-2 {
-  animation: fadeUp 0.2s ease-out forwards;
-}
-
-.fade-in-3 {
-  animation: fadeUp 0.3s ease-out forwards;
+.animate-text .word-space {
+  display: inline-block;
+  width: 0.3em;
 }
 
 .cormorant-garamond-light {

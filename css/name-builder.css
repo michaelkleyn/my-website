@@ -1,0 +1,89 @@
+.name-wrapper {
+  position: relative;
+  margin-block: 0.67em;
+}
+
+.name-wrapper .name-h1 {
+  margin: 0;
+}
+
+.name-letters {
+  display: inline;
+}
+
+.name-letter {
+  display: inline-block;
+  transform-origin: 50% 85%;
+  opacity: 1;
+  transform: translateY(0) rotate(0);
+  transition:
+    transform 0.55s cubic-bezier(0.55, 0.05, 0.68, 0.52),
+    opacity 0.45s ease-out;
+}
+
+.name-letter.arriving {
+  opacity: 0;
+  transform: translateY(-14px) rotate(-6deg);
+}
+
+.name-letter.falling {
+  opacity: 0;
+  transform: translate(22px, 26px) rotate(96deg);
+}
+
+.creature {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translate(var(--text-width, 0), -50%);
+  transition: transform 0.55s cubic-bezier(0.22, 0.61, 0.36, 1);
+  padding-left: 0.5rem;
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.creature-body {
+  display: inline-block;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 1rem;
+  color: #d11e06;
+  line-height: 1;
+  white-space: nowrap;
+  user-select: none;
+  cursor: grab;
+  animation: creature-idle 2.4s ease-in-out infinite;
+  will-change: transform;
+}
+
+@keyframes creature-idle {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
+}
+
+.creature-body.placing {
+  animation: creature-place 0.5s ease-out;
+}
+
+@keyframes creature-place {
+  0%   { transform: translateY(0) scale(1); }
+  40%  { transform: translateY(-10px) scale(1.06); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+.creature-body.bumped {
+  animation: creature-bump 0.65s ease-out;
+}
+
+@keyframes creature-bump {
+  0%   { transform: translate(0, 0) rotate(0); }
+  18%  { transform: translate(14px, -3px) rotate(12deg); }
+  45%  { transform: translate(-3px, 2px) rotate(-5deg); }
+  72%  { transform: translate(6px, -1px) rotate(3deg); }
+  100% { transform: translate(0, 0) rotate(0); }
+}
+
+@media (max-width: 576px) {
+  .creature {
+    display: none;
+  }
+}

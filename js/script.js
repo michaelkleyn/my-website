@@ -1,4 +1,63 @@
 document.addEventListener("DOMContentLoaded", function () {
+  // ============================================
+  // Text Load-in Animation
+  // ============================================
+
+  function wrapWordsInSpans(element) {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null, false);
+    const textNodes = [];
+
+    while (walker.nextNode()) {
+      textNodes.push(walker.currentNode);
+    }
+
+    textNodes.forEach(textNode => {
+      const text = textNode.textContent;
+      if (!text.trim()) return;
+
+      const fragment = document.createDocumentFragment();
+      const words = text.split(/(\s+)/);
+
+      words.forEach(word => {
+        if (word.match(/^\s+$/)) {
+          // Whitespace - add a space element
+          const space = document.createElement('span');
+          space.className = 'word-space';
+          fragment.appendChild(space);
+        } else if (word) {
+          // Word - wrap in span
+          const span = document.createElement('span');
+          span.className = 'word';
+          span.textContent = word;
+          fragment.appendChild(span);
+        }
+      });
+
+      textNode.parentNode.replaceChild(fragment, textNode);
+    });
+  }
+
+  // Process all animate-text containers
+  const animateContainers = document.querySelectorAll('.animate-text');
+  animateContainers.forEach(container => {
+    // Process h1, p, and i elements
+    const elements = container.querySelectorAll('h1, p, i');
+    elements.forEach(el => wrapWordsInSpans(el));
+  });
+
+  // Animate words with stagger
+  const allWords = document.querySelectorAll('.animate-text .word');
+  if (allWords.length > 0) {
+    anime({
+      targets: allWords,
+      opacity: [0, 1],
+      translateY: [20, 0],
+      easing: 'easeOutCubic',
+      duration: 600,
+      delay: anime.stagger(15, { start: 100 })
+    });
+  }
+
   const navLink = document.querySelector("nav a:first-of-type");
 
   const updateLinkText = () => {
@@ -152,6 +211,41 @@ document.addEventListener("DOMContentLoaded", function () {
     });
   });
 
+  // Desync the drifting gas gradient on each inline prose link + mirror
+  // textContent into data-text so the ::before/::after pseudos can render
+  // a blurred text-clipped copy (the feathered "bubble letter" glow).
+  document.querySelectorAll('main p a').forEach(link => {
+    link.setAttribute('data-text', link.textContent);
+    const dur1 = 14 + Math.random() * 12;    // 14–26s
+    const dur2 = 9 + Math.random() * 9;      // 9–18s
+    const delay1 = -(Math.random() * dur1);  // start mid-cycle
+    const delay2 = -(Math.random() * dur2);
+    const dir1 = Math.random() < 0.5 ? 'normal' : 'reverse';
+    const dir2 = Math.random() < 0.5 ? 'normal' : 'reverse';
+    link.style.setProperty('--gas-duration-1', `${dur1.toFixed(2)}s`);
+    link.style.setProperty('--gas-duration-2', `${dur2.toFixed(2)}s`);
+    link.style.setProperty('--gas-delay-1', `${delay1.toFixed(2)}s`);
+    link.style.setProperty('--gas-delay-2', `${delay2.toFixed(2)}s`);
+    link.style.setProperty('--gas-direction-1', dir1);
+    link.style.setProperty('--gas-direction-2', dir2);
+
+    // Random pulse scheduler — each link pulses brighter/more opaque on
+    // its own irregular cadence. Recurses so the gaps stay random forever.
+    const schedulePulse = () => {
+      const gap = 5000 + Math.random() * 12000;    // 5–17s between pulses
+      const hold = 1100 + Math.random() * 900;      // 1.1–2.0s at peak
+      setTimeout(() => {
+        link.classList.add('pulsing');
+        setTimeout(() => {
+          link.classList.remove('pulsing');
+          schedulePulse();
+        }, hold);
+      }, gap);
+    };
+    // Stagger the first pulse so links don't all wake up together
+    setTimeout(schedulePulse, Math.random() * 8000);
+  });
+
   // Generate gradient sidebar cells dynamically
   const gradientSidebar = document.querySelector('.gradient-sidebar');
   if (gradientSidebar) {
@@ -163,181 +257,7 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Animated sidebar - Star Trek console style with traveling light (3-column)
-  const sidebarRows = document.querySelectorAll('.sidebar-row');
-  const numCols = 3;
-  const numRows = sidebarRows.length / numCols; // 20 rows with 3 columns
-
-  // Create animation sequence: left-to-right, bottom-to-top
-  // Grid flows by rows: [0,1,2] [3,4,5] [6,7,8] ... [57,58,59]
-  const animationSequence = [];
-  for (let row = numRows - 1; row >= 0; row--) {
-    const leftIndex = row * numCols;      // Left cell
-    const middleIndex = row * numCols + 1; // Middle cell
-    const rightIndex = row * numCols + 2;  // Right cell
-    animationSequence.push(leftIndex);
-    animationSequence.push(middleIndex);
-    animationSequence.push(rightIndex);
-  }
-
-  let currentStep = 0;
-  let direction = 1; // 1 for going up, -1 for going down
-
-  function clearAllLit() {
-    sidebarRows.forEach(row => {
-      row.classList.remove('lit', 'lit-1', 'lit-2');
-    });
-  }
-
-  function lightUpPosition(step) {
-    clearAllLit();
-
-    const currentIndex = animationSequence[step];
-    const prevIndex1 = step - direction >= 0 && step - direction < animationSequence.length ? animationSequence[step - direction] : -1;
-    const prevIndex2 = step - direction * 2 >= 0 && step - direction * 2 < animationSequence.length ? animationSequence[step - direction * 2] : -1;
-
-    // Light up current position (n) - brightest
-    if (currentIndex >= 0 && currentIndex < sidebarRows.length) {
-      sidebarRows[currentIndex].classList.add('lit');
-    }
-
-    // Light up previous positions with diminishing brightness
-    if (prevIndex1 >= 0 && prevIndex1 < sidebarRows.length) {
-      sidebarRows[prevIndex1].classList.add('lit-1');
-    }
-
-    if (prevIndex2 >= 0 && prevIndex2 < sidebarRows.length) {
-      sidebarRows[prevIndex2].classList.add('lit-2');
-    }
-  }
-
-  function animateSidebar() {
-    lightUpPosition(currentStep);
-    currentStep += direction;
-
-    // Reverse direction at the ends
-    if (currentStep >= animationSequence.length) {
-      currentStep = animationSequence.length - 1;
-      direction = -1;
-    } else if (currentStep < 0) {
-      currentStep = 0;
-      direction = 1;
-    }
-  }
-
-  // Run animation on page load
-  setTimeout(() => {
-    lightUpPosition(0);
-    // Continue animation
-    setInterval(animateSidebar, 100); // Move every 100ms
-  }, 300);
-
-  // Random cell lighting
-  function randomlyLightCell() {
-    // Pick a random cell
-    const randomIndex = Math.floor(Math.random() * sidebarRows.length);
-    const cell = sidebarRows[randomIndex];
-
-    // Temporarily add a random light class
-    cell.classList.add('random-lit');
-
-    // Remove it after a brief moment
-    setTimeout(() => {
-      cell.classList.remove('random-lit');
-    }, 300 + Math.random() * 400); // Random duration between 300-700ms
-  }
-
-  // Trigger random lights periodically
-  setInterval(() => {
-    // Randomly decide whether to light a cell (50% chance)
-    if (Math.random() > 0.5) {
-      randomlyLightCell();
-    }
-  }, 400); // Check every 400ms
-
-  // ============================================
-  // Occasional Pattern Animations
-  // ============================================
-
-  // Ripple effect - emanates from a random cell
-  function triggerRipple() {
-    const centerIndex = Math.floor(Math.random() * 60); // Only use first 60 cells for desktop
-    const centerRow = Math.floor(centerIndex / numCols);
-    const centerCol = centerIndex % numCols;
-
-    // Calculate distance from center for each cell
-    const cellsWithDistance = [];
-    for (let i = 0; i < 60; i++) {
-      const row = Math.floor(i / numCols);
-      const col = i % numCols;
-      const distance = Math.sqrt(Math.pow(row - centerRow, 2) + Math.pow(col - centerCol, 2));
-      cellsWithDistance.push({ index: i, distance });
-    }
-
-    // Sort by distance
-    cellsWithDistance.sort((a, b) => a.distance - b.distance);
-
-    // Animate ripple
-    cellsWithDistance.forEach((cell, idx) => {
-      setTimeout(() => {
-        if (cell.index < sidebarRows.length) {
-          sidebarRows[cell.index].classList.add('random-lit');
-          setTimeout(() => {
-            sidebarRows[cell.index].classList.remove('random-lit');
-          }, 200);
-        }
-      }, idx * 30);
-    });
-  }
-
-  // Random path tracer - zooms through random cells
-  function triggerRandomTracer() {
-    const pathLength = 15 + Math.floor(Math.random() * 10); // 15-25 cells
-    const path = [];
-
-    // Generate random path
-    let currentIndex = Math.floor(Math.random() * 60);
-    path.push(currentIndex);
-
-    for (let i = 1; i < pathLength; i++) {
-      const currentRow = Math.floor(currentIndex / numCols);
-      const currentCol = currentIndex % numCols;
-
-      // Move to adjacent cell (up, down, left, right)
-      const moves = [];
-      if (currentRow > 0) moves.push(currentIndex - numCols); // up
-      if (currentRow < numRows - 1) moves.push(currentIndex + numCols); // down
-      if (currentCol > 0) moves.push(currentIndex - 1); // left
-      if (currentCol < numCols - 1) moves.push(currentIndex + 1); // right
-
-      currentIndex = moves[Math.floor(Math.random() * moves.length)];
-      path.push(currentIndex);
-    }
-
-    // Animate tracer along path
-    path.forEach((cellIndex, idx) => {
-      setTimeout(() => {
-        if (cellIndex < sidebarRows.length) {
-          sidebarRows[cellIndex].classList.add('random-lit');
-          setTimeout(() => {
-            sidebarRows[cellIndex].classList.remove('random-lit');
-          }, 150);
-        }
-      }, idx * 50);
-    });
-  }
-
-  // Trigger occasional patterns
-  function triggerRandomPattern() {
-    const patterns = [triggerRipple, triggerRandomTracer];
-    const randomPattern = patterns[Math.floor(Math.random() * patterns.length)];
-    randomPattern();
-  }
-
-  // Run patterns every 15-25 seconds
-  setInterval(() => {
-    triggerRandomPattern();
-  }, 15000 + Math.random() * 10000); // Random interval between 15-25 seconds
+  // Old sidebar animation disabled - now using sidebar-latent.js
 
   // ============================================
   // ASCII Animation System - Cyclic
@@ -345,6 +265,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const asciiLayer = document.querySelector('.ascii-layer');
   if (!asciiLayer) return; // Skip if no ASCII layer on page
+  // The layout compositor (scene-renderer.js) now owns ASCII creatures as scene
+  // nodes (kind:'ascii'), so it can place/size/recolor them. Stand down here to
+  // avoid double-rendering into .ascii-layer.
+  if (window.__compositorAscii) return;
 
   let animationFrames = {
     jellyfish: null,
@@ -481,9 +405,9 @@ document.addEventListener("DOMContentLoaded", function () {
     await Promise.all(jellyfishPromises);
   }
 
-  // Show single butterfly (left side) - 12 seconds
+  // Show single butterfly (right side) - 12 seconds
   async function showButterfly() {
-    await animateASCII(animationFrames.butterfly, 1.4, 200, 12000, getFixedPosition(20, 'left', 10));
+    await animateASCII(animationFrames.butterfly, 1.4, 200, 12000, getFixedPosition(20, 'right', 15));
   }
 
   // Show single deer (right side) - 8 seconds
@@ -491,9 +415,9 @@ document.addEventListener("DOMContentLoaded", function () {
     await animateASCII(animationFrames.deer, 1.0, 200, 8000, getFixedPosition(55, 'right', 0));
   }
 
-  // Show single moonwalk (left side) - 10 seconds
+  // Show single moonwalk (right side) - 10 seconds
   async function showMoonwalk() {
-    await animateASCII(animationFrames.moonwalk, 1.0, 200, 10000, getFixedPosition(10, 'left', 0));
+    await animateASCII(animationFrames.moonwalk, 1.0, 200, 10000, getFixedPosition(10, 'right', 5));
   }
 
   // Show single horse (right side) - 8 seconds
@@ -501,50 +425,35 @@ document.addEventListener("DOMContentLoaded", function () {
     await animateASCII(animationFrames.horse, 1.0, 200, 8000, getFixedPosition(0, 'right', 0));
   }
 
-  // Show single whale (left side) - 10 seconds
+  // Show single whale (right side) - 10 seconds
   async function showWhale() {
-    await animateASCII(animationFrames.whale, 1.0, 200, 10000, getFixedPosition(35, 'left', 10));
+    await animateASCII(animationFrames.whale, 1.0, 200, 10000, getFixedPosition(35, 'right', 12));
   }
 
-  // Right side animation cycle
+  // Unified right-side animation cycle — all animations play sequentially on the right
   async function rightSideAnimationCycle() {
     while (true) {
       await showJellyfishGroup();
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Pause between animations
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      await showButterfly();
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       await showDeer();
+      await new Promise(resolve => setTimeout(resolve, 2000));
+
+      await showMoonwalk();
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       await showHorse();
       await new Promise(resolve => setTimeout(resolve, 2000));
 
-      // Cycle repeats
-    }
-  }
-
-  // Left side animation cycle
-  async function leftSideAnimationCycle() {
-    while (true) {
-      await showButterfly();
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Pause between animations
-
-      await showMoonwalk();
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
       await showWhale();
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      // Cycle repeats
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }
 
-  // Start both animation cycles independently with staggered timing
   function startAnimationCycle() {
-    rightSideAnimationCycle(); // Start immediately
-
-    // Start left side 4 seconds later
-    setTimeout(() => {
-      leftSideAnimationCycle();
-    }, 4000);
+    rightSideAnimationCycle();
   }
 });

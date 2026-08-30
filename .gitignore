@@ -1,0 +1,32 @@
+# Local dev notes (not tracked)
+.dev-log.md
+CLAUDE.md
+
+# OS files
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Node
+node_modules/
+
+# Spike outputs (not shipped)
+out/
+
+# Layout compositor: raw upload originals (local-only)
+assets/scene/_raw/
+
+# Claude Code worktrees / stale conductor checkouts
+.claude/
+.conductor/
+
+# Build outputs (single-file lab for the artifact)
+dist/
+
+# Never-shipped originals and large media (kept locally, backed up outside git)
+assets/_unshipped/
+*.mp4
+*.mp3
+*.ply

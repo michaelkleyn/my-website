@@ -1,0 +1,55 @@
+/* Scene compositor — base layer + node primitives.
+   The renderer (js/scene-renderer.js) injects .scene-layer into <body> and
+   emits a separate <style id="scene-style"> block with the per-node, per-breakpoint
+   transforms. This file only carries the static structural rules. */
+
+.scene-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+}
+
+/* Every art node is an absolutely-positioned box. The renderer's generated
+   <style> block sets its top-left corner via `left: x vw; top: y vh` and applies
+   only `rotate()`/`scaleX()` in `transform`. Origin is centered so a flipX mirror
+   (and any rotation) happens in place rather than shifting the box by its width.
+   Width is set per-breakpoint by the generated style block. */
+.scene-node {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: center;
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+
+.scene-node img,
+.scene-node svg,
+.scene-node video {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.scene-node--gradient {
+  /* gradient nodes get an explicit height from the generated style block;
+     fall back to their width if none is provided. */
+  height: 100%;
+}
+
+.scene-node--component {
+  /* component mount host — components manage their own internal sizing. */
+}
+
+/* ASCII creatures reuse the existing .ascii-art look (font/color/fade) from
+   style.css; these just neutralize <pre> defaults and let the inline color win. */
+.scene-node--ascii {
+  margin: 0;
+  pointer-events: none;
+}
+
+/* Keep site content above the art layer. The companion rule
+   `.container { position: relative; z-index: 2 }` lives in css/style.css so it
+   travels with the existing container/margin math. */

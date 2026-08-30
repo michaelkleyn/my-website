@@ -1,0 +1,153 @@
+/**
+ * Latent Popup Styles
+ * Frameless, feathered content that emerges from text
+ */
+
+/* Word wrapper to prevent mid-word line breaks */
+.latent-word {
+  display: inline;
+  white-space: nowrap;
+}
+
+/* Placeholder for pinned elements - invisible but holds space */
+.pin-placeholder {
+  visibility: hidden;
+}
+
+/* Character spans for text splitting */
+.latent-char {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+/* The popup container */
+.latent-popup {
+  position: fixed;
+  z-index: 10000;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(0.95);
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.latent-popup.visible {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+}
+
+/* The content wrapper */
+.latent-popup-content {
+  position: relative;
+  max-width: 400px;
+  max-height: 350px;
+  overflow: hidden;
+  border-radius: 4px;
+
+  /* Feathered rectangle reveal using CSS variables animated by JS
+     --reveal controls how much is visible (0 = hidden, 1 = fully visible)
+     The gradient creates soft feathered edges on all sides */
+  --reveal: 0;
+  --feather: 60px;
+  -webkit-mask-image:
+    linear-gradient(to right,
+      transparent,
+      black calc(50% - (40% * var(--reveal)) - var(--feather)),
+      black calc(50% + (40% * var(--reveal)) + var(--feather)),
+      transparent
+    ),
+    linear-gradient(to bottom,
+      transparent,
+      black calc(50% - (45% * var(--reveal)) - var(--feather)),
+      black calc(50% + (45% * var(--reveal)) + var(--feather)),
+      transparent
+    );
+  mask-image:
+    linear-gradient(to right,
+      transparent,
+      black calc(50% - (40% * var(--reveal)) - var(--feather)),
+      black calc(50% + (40% * var(--reveal)) + var(--feather)),
+      transparent
+    ),
+    linear-gradient(to bottom,
+      transparent,
+      black calc(50% - (45% * var(--reveal)) - var(--feather)),
+      black calc(50% + (45% * var(--reveal)) + var(--feather)),
+      transparent
+    );
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
+/* Swipe-out state - simple left-to-right feathered wipe */
+.latent-popup-content.swiping {
+  --swipe: 0;
+  -webkit-mask-image: linear-gradient(to right,
+    transparent calc(var(--swipe) * 100%),
+    black calc(var(--swipe) * 100% + var(--feather))
+  );
+  mask-image: linear-gradient(to right,
+    transparent calc(var(--swipe) * 100%),
+    black calc(var(--swipe) * 100% + var(--feather))
+  );
+  -webkit-mask-composite: auto;
+  mask-composite: add;
+}
+
+/* Feathered edges on all sides */
+.latent-popup-content::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  /* Linear gradients from all four edges */
+  background:
+    linear-gradient(to right, #f4f4f4, transparent 40px),
+    linear-gradient(to left, #f4f4f4, transparent 40px),
+    linear-gradient(to bottom, #f4f4f4, transparent 40px),
+    linear-gradient(to top, #f4f4f4, transparent 40px);
+  z-index: 1;
+}
+
+/* Images and videos */
+.latent-popup-content img,
+.latent-popup-content video {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 350px;
+  object-fit: cover;
+  border-radius: 4px;
+}
+
+/* Subtle breathing animation for the popup */
+.latent-popup.visible .latent-popup-content {
+  animation: popupBreathe 4s ease-in-out infinite;
+}
+
+@keyframes popupBreathe {
+  0%, 100% {
+    opacity: 0.95;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Links that trigger popups */
+a[data-popup] {
+  cursor: pointer;
+  position: relative;
+  color: #ff9878;
+  text-decoration: none;
+  border-bottom: 1px dotted #ff9878;
+  transition: border-color 0.2s ease, color 0.2s ease;
+}
+
+a[data-popup]:hover {
+  color: #ff5722;
+  border-bottom-color: #ff5722;
+}

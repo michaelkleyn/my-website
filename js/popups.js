@@ -73,6 +73,7 @@ class PopupManager {
   async showPopup(link, event) {
     const popupContent = link.dataset.popup;
     const popupType = link.dataset.popupType || 'html'; // html, image, text
+    const asciiPath = link.dataset.popupAscii || null;
 
     // Don't create duplicate popups for the same content
     const existingPopup = this.findPopupByContent(popupContent);
@@ -86,161 +87,117 @@ class PopupManager {
       return existingPopup;
     }
 
-    // Create popup element
+    // Phase 1: Create popup element (hidden with loading class)
     const popupId = this.nextPopupId++;
-    const popup = this.createPopupElement(popupId);
+    const popup = this.createPopupElement(popupId, asciiPath);
 
-    // Load content
-    await this.loadContent(popup, popupContent, popupType);
-
-    // Position near the link (initial position)
-    this.positionNearElement(popup, link);
-
-    // Add to DOM and tracking
+    // Phase 2: Add to DOM (still hidden)
     document.body.appendChild(popup);
+
+    // Create tracking data
     const popupData = {
       id: popupId,
       element: popup,
       content: popupContent,
-      mode: 'windowed', // windowed or inset
+      contentType: popupType,
+      mode: 'windowed',
       isDragging: false,
       hideTimeout: null,
       triggerLink: link
     };
     this.popups.set(popupId, popupData);
 
-    // Fade in
-    requestAnimationFrame(() => {
-      popup.classList.add('visible');
-    });
+    // Phase 3: Load content completely
+    await this.loadContent(popup, popupContent, popupType);
 
-    // Setup interactions
+    // Phase 4: Let CSS naturally size the popup, then measure for positioning
+    const dimensions = this.getPopupDimensions(popup);
+
+    // Phase 5: Position popup using measured dimensions
+    this.positionPopup(popup, link, dimensions);
+
+    // Phase 6: Setup interactions
     this.setupPopupInteractions(popupId);
-
-    // Setup hover behavior for the popup itself
     this.setupPopupHover(popupId);
+
+    // Phase 7: Show popup (remove loading, add visible)
+    requestAnimationFrame(() => {
+      popup.classList.remove('loading');
+      requestAnimationFrame(() => {
+        popup.classList.add('visible');
+      });
+    });
 
     return popupData;
   }
 
-  createPopupElement(popupId) {
+  createPopupElement(popupId, asciiPath = null) {
     const popup = document.createElement('div');
-    popup.className = 'popup-window';
+    popup.className = 'popup-window loading';
     popup.dataset.popupId = popupId;
     popup.style.zIndex = this.zIndexCounter++;
 
+    const asciiBackground = asciiPath
+      ? '<pre class="popup-ascii-background"></pre>'
+      : '';
+
+    const titleContent = asciiPath
+      ? '' // No title when we have ASCII
+      : '<div class="popup-title">Loading...</div>';
+
     popup.innerHTML = `
-      <div class="popup-dithered-border"></div>
-      <div class="popup-content-wrapper">
-        <div class="popup-header">
-          <div class="popup-title">Loading...</div>
-          <div class="popup-controls">
-            <button class="popup-btn popup-inset-btn" title="Inset Mode" aria-label="Inset mode">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="2" y="2" width="12" height="12" stroke="currentColor" stroke-width="1.5"/>
-                <line x1="10" y1="2" x2="10" y2="14" stroke="currentColor" stroke-width="1.5"/>
-              </svg>
-            </button>
-            <button class="popup-btn popup-windowed-btn active" title="Windowed Mode" aria-label="Windowed mode">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="3" y="3" width="10" height="10" stroke="currentColor" stroke-width="1.5"/>
-                <line x1="3" y1="6" x2="13" y2="6" stroke="currentColor" stroke-width="1.5"/>
-              </svg>
-            </button>
-            <button class="popup-btn popup-close-btn" title="Close" aria-label="Close popup">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <line x1="4" y1="4" x2="12" y2="12" stroke="currentColor" stroke-width="1.5"/>
-                <line x1="12" y1="4" x2="4" y2="12" stroke="currentColor" stroke-width="1.5"/>
-              </svg>
-            </button>
-          </div>
+      ${asciiBackground}
+      <div class="popup-header">
+        ${titleContent}
+        <div class="popup-controls">
+          <button class="popup-btn popup-mode-toggle-btn" title="Toggle Mode" aria-label="Toggle between windowed and inset mode" data-mode="windowed"></button>
+          <button class="popup-btn popup-close-btn" title="Close" aria-label="Close popup"></button>
         </div>
-        <div class="popup-body">
-          <div class="popup-loading">Loading content...</div>
-        </div>
+      </div>
+      <div class="popup-body">
+        <div class="popup-loading">Loading content...</div>
       </div>
     `;
 
-    // Generate and add dithered border
-    const borderContainer = popup.querySelector('.popup-dithered-border');
-    const canvas = this.generateDitheredBorder(450, 400); // Approximate size, will be styled to fit
-    borderContainer.appendChild(canvas);
+    // Load ASCII animation if specified
+    if (asciiPath) {
+      this.loadASCIIAnimation(popup, asciiPath);
+    }
 
     return popup;
   }
 
-  generateDitheredBorder(width, height) {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-
-    // Add extra space for dispersion
-    const dispersionDistance = 50;
-    const totalWidth = width + (dispersionDistance * 2);
-    const totalHeight = height + (dispersionDistance * 2);
-
-    canvas.width = totalWidth;
-    canvas.height = totalHeight;
-
-    // Parameters
-    const borderThickness = 25; // Dense region near edge
-    const maxDispersion = dispersionDistance; // How far dots spread
-    const dotSize = 2;
-    const gridSpacing = 4; // Check every N pixels
-    const baseDensity = 0.85; // Base probability multiplier
-
-    // Color
-    const tealColor = [128, 203, 196]; // #80cbc4
-
-    // Helper: Get distance from nearest edge
-    const getDistanceFromEdge = (x, y) => {
-      const leftDist = x - dispersionDistance;
-      const rightDist = (totalWidth - dispersionDistance) - x;
-      const topDist = y - dispersionDistance;
-      const bottomDist = (totalHeight - dispersionDistance) - y;
-
-      return Math.min(
-        Math.max(0, leftDist),
-        Math.max(0, rightDist),
-        Math.max(0, topDist),
-        Math.max(0, bottomDist)
-      );
-    };
-
-    // Generate dots
-    for (let x = 0; x < totalWidth; x += gridSpacing) {
-      for (let y = 0; y < totalHeight; y += gridSpacing) {
-        const distFromEdge = getDistanceFromEdge(x, y);
-
-        // Only draw in border region
-        if (distFromEdge <= maxDispersion) {
-          // Calculate probability: higher near edge, lower further out
-          let probability = baseDensity * (1 - (distFromEdge / maxDispersion));
-
-          // Add some randomness to make it more organic
-          probability *= (0.8 + Math.random() * 0.4);
-
-          if (Math.random() < probability) {
-            // Calculate opacity based on distance (fade out)
-            const opacity = 1 - (distFromEdge / maxDispersion) * 0.7;
-
-            ctx.fillStyle = `rgba(${tealColor[0]}, ${tealColor[1]}, ${tealColor[2]}, ${opacity})`;
-
-            // Add slight random offset for more organic look
-            const offsetX = Math.random() * gridSpacing;
-            const offsetY = Math.random() * gridSpacing;
-
-            ctx.fillRect(x + offsetX, y + offsetY, dotSize, dotSize);
-          }
-        }
+  async loadASCIIAnimation(popup, asciiPath) {
+    try {
+      const response = await fetch(asciiPath);
+      if (!response.ok) {
+        console.error('Failed to load ASCII animation');
+        return;
       }
+
+      const frames = await response.json();
+      const asciiElement = popup.querySelector('.popup-ascii-background');
+
+      if (!asciiElement || !frames || frames.length === 0) return;
+
+      // Sample every 3rd frame for performance
+      const sampledFrames = frames.filter((_, index) => index % 3 === 0);
+      let currentFrame = 0;
+
+      // Set initial frame
+      asciiElement.textContent = sampledFrames[0].join('\n');
+
+      const animationInterval = setInterval(() => {
+        currentFrame = (currentFrame + 1) % sampledFrames.length;
+        asciiElement.textContent = sampledFrames[currentFrame].join('\n');
+      }, 100); // Change frame every 100ms for smooth animation
+
+      // Store interval reference for cleanup
+      popup.dataset.asciiInterval = animationInterval;
+
+    } catch (error) {
+      console.error('Error loading ASCII animation:', error);
     }
-
-    // Add subtle glow effect
-    ctx.globalCompositeOperation = 'destination-over';
-    ctx.filter = 'blur(1px)';
-    ctx.drawImage(canvas, 0, 0);
-
-    return canvas;
   }
 
   async loadContent(popup, contentPath, contentType) {
@@ -249,19 +206,30 @@ class PopupManager {
 
     try {
       if (contentType === 'image') {
-        // Load image
-        const img = document.createElement('img');
-        img.src = contentPath;
-        img.alt = 'Popup content';
-        img.onload = () => {
-          body.innerHTML = '';
-          body.appendChild(img);
-          title.textContent = 'Image';
-        };
-        img.onerror = () => {
-          body.innerHTML = '<p class="popup-error">Failed to load image</p>';
-          title.textContent = 'Error';
-        };
+        // Load image and wait for it to complete
+        await new Promise((resolve, reject) => {
+          const img = document.createElement('img');
+          img.src = contentPath;
+          img.alt = 'Popup content';
+
+          img.onload = () => {
+            body.innerHTML = '';
+            // Wrap image in a container for feathering effect
+            const wrapper = document.createElement('div');
+            wrapper.className = 'popup-image-wrapper';
+            wrapper.appendChild(img);
+            body.appendChild(wrapper);
+            if (title) title.textContent = 'Image';
+            resolve();
+          };
+
+          img.onerror = () => {
+            body.innerHTML = '<p class="popup-error">Failed to load image</p>';
+            if (title) title.textContent = 'Error';
+            reject(new Error('Image failed to load'));
+          };
+        });
+
       } else if (contentType === 'html') {
         // Load HTML snippet
         const response = await fetch(contentPath);
@@ -270,45 +238,116 @@ class PopupManager {
         const html = await response.text();
         body.innerHTML = html;
 
-        // Try to extract title from first heading
-        const heading = body.querySelector('h1, h2, h3, h4');
-        if (heading) {
-          title.textContent = heading.textContent;
-        } else {
-          title.textContent = 'Content';
+        // Try to extract title from first heading (only if not using ASCII background)
+        if (!popup.querySelector('.popup-ascii-background') && title) {
+          const heading = body.querySelector('h1, h2, h3, h4');
+          if (heading) {
+            title.textContent = heading.textContent;
+          } else {
+            title.textContent = 'Content';
+          }
         }
+
+        // Wait for all images in HTML content to load and wrap them
+        const images = body.querySelectorAll('img');
+        if (images.length > 0) {
+          await Promise.all(
+            Array.from(images).map(img => {
+              if (img.complete) return Promise.resolve();
+              return new Promise((resolve, reject) => {
+                img.onload = resolve;
+                img.onerror = resolve; // Don't fail entire popup if one image fails
+                // Timeout after 5 seconds
+                setTimeout(resolve, 5000);
+              });
+            })
+          );
+
+          // Wrap each image in a feathering container
+          images.forEach(img => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'popup-image-wrapper';
+            img.parentNode.insertBefore(wrapper, img);
+            wrapper.appendChild(img);
+          });
+        }
+
+        // Wait for all videos in HTML content to load and wrap them
+        const videos = body.querySelectorAll('video');
+        if (videos.length > 0) {
+          await Promise.all(
+            Array.from(videos).map(video => {
+              if (video.readyState >= 2) return Promise.resolve(); // HAVE_CURRENT_DATA or better
+              return new Promise((resolve) => {
+                video.onloadeddata = resolve;
+                video.onerror = resolve; // Don't fail entire popup if one video fails
+                // Timeout after 5 seconds
+                setTimeout(resolve, 5000);
+              });
+            })
+          );
+
+          // Wrap each video in a feathering container
+          videos.forEach(video => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'popup-image-wrapper';
+            video.parentNode.insertBefore(wrapper, video);
+            wrapper.appendChild(video);
+          });
+        }
+
       } else if (contentType === 'text') {
         // Direct text content
         body.innerHTML = `<p>${contentPath}</p>`;
-        title.textContent = 'Note';
+        if (title) title.textContent = 'Note';
       }
     } catch (error) {
       body.innerHTML = '<p class="popup-error">Failed to load content</p>';
-      title.textContent = 'Error';
+      if (title) title.textContent = 'Error';
       console.error('Popup content load error:', error);
     }
   }
 
-  positionNearElement(popup, element) {
+  positionPopup(popup, element, dimensions) {
     const rect = element.getBoundingClientRect();
-    const popupWidth = 400; // Default width
-    const popupHeight = 300; // Estimated height
+    const popupWidth = dimensions.width;
+    const popupHeight = dimensions.height;
+    const margin = 10;
 
-    // Position to the right of the element if space, otherwise to the left
-    let left = rect.right + 10;
-    if (left + popupWidth > window.innerWidth) {
-      left = rect.left - popupWidth - 10;
+    // Try to position to the right of the element
+    let left = rect.right + margin;
+    let preferredPosition = 'right';
+
+    // If not enough space on right, try left
+    if (left + popupWidth > window.innerWidth - margin) {
+      left = rect.left - popupWidth - margin;
+      preferredPosition = 'left';
+    }
+
+    // If still not enough space, center horizontally in viewport
+    if (left < margin) {
+      left = Math.max(margin, (window.innerWidth - popupWidth) / 2);
+      preferredPosition = 'center';
     }
 
     // Vertically center with the element
     let top = rect.top + (rect.height / 2) - (popupHeight / 2);
 
-    // Keep within viewport
-    top = Math.max(20, Math.min(top, window.innerHeight - popupHeight - 20));
-    left = Math.max(20, Math.min(left, window.innerWidth - popupWidth - 20));
+    // Keep within viewport vertically
+    if (top < margin) {
+      top = margin;
+    } else if (top + popupHeight > window.innerHeight - margin) {
+      top = window.innerHeight - popupHeight - margin;
+    }
+
+    // Final boundary checks
+    left = Math.max(margin, Math.min(left, window.innerWidth - popupWidth - margin));
+    top = Math.max(margin, Math.min(top, window.innerHeight - popupHeight - margin));
 
     popup.style.left = `${left}px`;
     popup.style.top = `${top}px`;
+
+    return preferredPosition;
   }
 
   setupPopupInteractions(popupId) {
@@ -318,22 +357,18 @@ class PopupManager {
     const popup = popupData.element;
     const header = popup.querySelector('.popup-header');
     const closeBtn = popup.querySelector('.popup-close-btn');
-    const windowedBtn = popup.querySelector('.popup-windowed-btn');
-    const insetBtn = popup.querySelector('.popup-inset-btn');
+    const modeToggleBtn = popup.querySelector('.popup-mode-toggle-btn');
 
     // Close button
     closeBtn.addEventListener('click', () => {
       this.closePopup(popupId);
     });
 
-    // Windowed mode button
-    windowedBtn.addEventListener('click', () => {
-      this.setPopupMode(popupId, 'windowed');
-    });
-
-    // Inset mode button
-    insetBtn.addEventListener('click', () => {
-      this.setPopupMode(popupId, 'inset');
+    // Mode toggle button
+    modeToggleBtn.addEventListener('click', () => {
+      const currentMode = popupData.mode;
+      const newMode = currentMode === 'windowed' ? 'inset' : 'windowed';
+      this.setPopupMode(popupId, newMode);
     });
 
     // Bring to front on click
@@ -393,6 +428,10 @@ class PopupManager {
 
       isDragging = true;
       popup.classList.add('dragging');
+
+      // Prevent text selection during drag
+      e.preventDefault();
+      document.body.style.userSelect = 'none';
     };
 
     const drag = (e) => {
@@ -409,6 +448,9 @@ class PopupManager {
     const dragEnd = () => {
       isDragging = false;
       popup.classList.remove('dragging');
+
+      // Re-enable text selection
+      document.body.style.userSelect = '';
     };
 
     dragHandle.addEventListener('mousedown', dragStart);
@@ -422,8 +464,7 @@ class PopupManager {
 
     const popup = popupData.element;
     const container = document.querySelector('.container');
-    const windowedBtn = popup.querySelector('.popup-windowed-btn');
-    const insetBtn = popup.querySelector('.popup-inset-btn');
+    const modeToggleBtn = popup.querySelector('.popup-mode-toggle-btn');
 
     if (mode === 'inset') {
       // Switch to inset mode
@@ -439,8 +480,8 @@ class PopupManager {
       popup.classList.remove('windowed-mode');
       container.classList.add('has-inset-popup');
 
-      windowedBtn.classList.remove('active');
-      insetBtn.classList.add('active');
+      modeToggleBtn.dataset.mode = 'inset';
+      modeToggleBtn.classList.add('active');
 
       // Move popup to inset container
       const insetContainer = this.getOrCreateInsetContainer();
@@ -457,10 +498,10 @@ class PopupManager {
       popup.classList.add('windowed-mode');
       container.classList.remove('has-inset-popup');
 
-      windowedBtn.classList.add('active');
-      insetBtn.classList.remove('active');
+      modeToggleBtn.dataset.mode = 'windowed';
+      modeToggleBtn.classList.remove('active');
 
-      // Move popup back to body
+      // Moe popup back to body
       document.body.appendChild(popup);
 
       // Reposition to a reasonable location
@@ -501,6 +542,11 @@ class PopupManager {
       popupData.hideTimeout = null;
     }
 
+    // Clear ASCII animation interval if exists
+    if (popup.dataset.asciiInterval) {
+      clearInterval(parseInt(popup.dataset.asciiInterval));
+    }
+
     // Clean up inset mode if active
     if (popupData.mode === 'inset') {
       container.classList.remove('has-inset-popup');
@@ -529,9 +575,68 @@ class PopupManager {
     }
     return null;
   }
+
+  /**
+   * Get the natural dimensions of the popup after CSS has sized it
+   * This is ONLY used for positioning, not for sizing
+   */
+  getPopupDimensions(popup) {
+    // Temporarily make popup visible but hidden to measure its natural size
+    const wasVisible = popup.classList.contains('visible');
+    const originalVisibility = popup.style.visibility;
+
+    popup.style.visibility = 'hidden';
+    popup.style.display = 'flex';
+    if (!wasVisible) {
+      popup.classList.add('visible');
+    }
+
+    // Force reflow and measure
+    popup.offsetHeight;
+    const rect = popup.getBoundingClientRect();
+
+    // Restore original state
+    if (!wasVisible) {
+      popup.classList.remove('visible');
+    }
+    popup.style.visibility = originalVisibility;
+
+    return {
+      width: Math.round(rect.width),
+      height: Math.round(rect.height)
+    };
+  }
+
+  handleWindowResize() {
+    // Recalculate popup positions on window resize
+    this.popups.forEach((popupData, popupId) => {
+      if (popupData.mode === 'windowed') {
+        const popup = popupData.element;
+        // Ensure popup stays within viewport
+        const rect = popup.getBoundingClientRect();
+        if (rect.right > window.innerWidth) {
+          popup.style.left = `${window.innerWidth - rect.width - 20}px`;
+        }
+        if (rect.bottom > window.innerHeight) {
+          popup.style.top = `${window.innerHeight - rect.height - 20}px`;
+        }
+      }
+    });
+  }
 }
 
 // Initialize popup system when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
   window.popupManager = new PopupManager();
+
+  // Handle window resize
+  let resizeTimeout;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      if (window.popupManager) {
+        window.popupManager.handleWindowResize();
+      }
+    }, 250);
+  });
 });

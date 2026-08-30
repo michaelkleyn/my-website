@@ -1,0 +1,132 @@
+/* ASCII map panel — fades in with a blur lift. */
+
+.map-panel {
+  position: fixed;
+  top: 50%;
+  right: 48px;
+  width: 480px;
+  height: 480px;
+  margin-top: -240px;
+  background: #f5f3ee;
+  opacity: 0;
+  /* drop-shadow (not box-shadow) so the lift follows the feathered mask */
+  filter: blur(12px) drop-shadow(0 24px 48px rgba(28, 49, 68, 0.10));
+  pointer-events: none;
+  /* Tight feathered edges — 1.5px fade on all four sides */
+  mask-image:
+    linear-gradient(to right, transparent, #000 1.5px, #000 calc(100% - 1.5px), transparent),
+    linear-gradient(to bottom, transparent, #000 1.5px, #000 calc(100% - 1.5px), transparent);
+  mask-composite: intersect;
+  -webkit-mask-image:
+    linear-gradient(to right, transparent, #000 1.5px, #000 calc(100% - 1.5px), transparent),
+    linear-gradient(to bottom, transparent, #000 1.5px, #000 calc(100% - 1.5px), transparent);
+  -webkit-mask-composite: source-in;
+  transition: opacity 1.5s cubic-bezier(0.4, 0, 0.2, 1),
+              filter 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1500;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.map-panel.open {
+  opacity: 1;
+  filter: blur(0) drop-shadow(0 24px 48px rgba(28, 49, 68, 0.10));
+  pointer-events: auto;
+}
+
+
+.map-viewport {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  /* Tell the browser nothing inside this box affects layout/paint outside it
+   * — lets it skip work when the giant inner text shifts. */
+  contain: strict;
+}
+
+.map-viewport.grabbing {
+  cursor: grabbing;
+}
+
+.map-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: none;
+}
+
+.map-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 10;
+  background: rgba(245, 243, 238, 0.85);
+  backdrop-filter: blur(4px);
+  border: 1px solid #1c3144;
+  color: #1c3144;
+  padding: 4px 12px;
+  cursor: pointer;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+}
+
+.map-close:hover {
+  background: #1c3144;
+  color: #f5f3ee;
+}
+
+.map-label {
+  position: absolute;
+  bottom: 18px;
+  left: 24px;
+  z-index: 10;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.3rem;
+  color: #1c3144;
+  pointer-events: none;
+  letter-spacing: 0.02em;
+}
+
+.map-hint {
+  position: absolute;
+  bottom: 22px;
+  right: 24px;
+  z-index: 10;
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  color: rgba(28, 49, 68, 0.45);
+  pointer-events: none;
+  letter-spacing: 0.05em;
+}
+
+/* Style the link itself so users know it's a map trigger */
+a[data-map] {
+  cursor: pointer;
+}
+
+/* Narrow screens: shrink the panel so it fits nicely without dominating */
+@media (max-width: 1100px) {
+  .map-panel {
+    width: 380px;
+    height: 380px;
+    margin-top: -190px;
+    right: 24px;
+  }
+}
+
+@media (max-width: 768px) {
+  .map-panel {
+    width: 86vw;
+    height: 60vh;
+    margin-top: -30vh;
+    right: 7vw;
+  }
+}

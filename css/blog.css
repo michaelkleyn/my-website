@@ -1,0 +1,413 @@
+/* ============================================
+   BLOG STYLES - Three Column Layout
+   Typography: Cormorant Garamond body, JetBrains Mono nav/headers
+   ============================================ */
+
+/* Reset for blog pages */
+.blog-page {
+  font-family: "Cormorant Garamond", serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+  font-size: 18px;
+  line-height: 1.7;
+  color: #1a1a1a;
+}
+
+/* ============================================
+   LAYOUT STRUCTURE
+   ============================================ */
+
+.blog-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.blog-header {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+  padding: 1rem 2rem;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: #f4f4f4;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.blog-header .back-link {
+  color: #1a1a1a;
+  text-decoration: none;
+  font-size: 1rem;
+  padding: 0.25rem 0.5rem;
+  transition: color 0.2s;
+}
+
+.blog-header .back-link:hover {
+  color: #80cbc4;
+}
+
+.blog-header .breadcrumb {
+  color: #666;
+  letter-spacing: 0.05em;
+}
+
+.blog-header .chapter-name {
+  color: #999;
+}
+
+.blog-header .post-name {
+  color: #1a1a1a;
+}
+
+/* Three-column layout */
+.blog-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr 180px;
+  flex: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ============================================
+   LEFT NAVIGATION - Chapters & Posts
+   ============================================ */
+
+.left-nav {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+  padding: 2rem 1.5rem;
+  border-right: 1px solid #e0e0e0;
+  position: sticky;
+  top: 60px;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+}
+
+.left-nav .chapter {
+  margin-bottom: 2rem;
+}
+
+.left-nav h3 {
+  font-size: 0.7rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  color: #1a1a1a;
+  margin: 0 0 0.75rem 0;
+}
+
+.left-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.left-nav li {
+  margin-bottom: 0.5rem;
+}
+
+.left-nav a {
+  color: #666;
+  text-decoration: none;
+  transition: color 0.2s;
+  display: block;
+  padding: 0.1rem 0;
+}
+
+.left-nav a:hover {
+  color: #80cbc4;
+}
+
+.left-nav li.active a {
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+/* ============================================
+   MAIN CONTENT AREA
+   ============================================ */
+
+.blog-content {
+  padding: 3rem 4rem;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.blog-content article {
+  /* Prose styling */
+}
+
+/* Headings */
+.blog-content h1 {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 1.5rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  margin: 0 0 2rem 0;
+  color: #1a1a1a;
+}
+
+.blog-content h2 {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  margin: 3rem 0 1.5rem 0;
+  color: #1a1a1a;
+  padding-top: 1rem;
+}
+
+.blog-content h3 {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.9rem;
+  font-weight: 500;
+  margin: 2rem 0 1rem 0;
+  color: #333;
+}
+
+/* Paragraphs */
+.blog-content p {
+  margin: 0 0 1.5rem 0;
+  font-size: 1.15rem;
+}
+
+/* Links */
+.blog-content a {
+  color: #1a1a1a;
+  text-decoration: underline;
+  text-decoration-color: #d11e06;
+  text-decoration-thickness: 2px;
+  transition: color 0.2s;
+}
+
+.blog-content a:hover {
+  color: #d11e06;
+}
+
+/* Lists */
+.blog-content ul,
+.blog-content ol {
+  margin: 0 0 1.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.blog-content li {
+  margin-bottom: 0.5rem;
+}
+
+/* Code blocks */
+.blog-content pre {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.85rem;
+  background: #1a1a1a;
+  color: #e0e0e0;
+  padding: 1.5rem;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin: 1.5rem 0;
+  line-height: 1.5;
+}
+
+.blog-content code {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.9em;
+}
+
+.blog-content p code,
+.blog-content li code {
+  background: #e8e8e8;
+  padding: 0.15rem 0.4rem;
+  border-radius: 3px;
+}
+
+/* Blockquotes */
+.blog-content blockquote {
+  border-left: 3px solid #80cbc4;
+  margin: 1.5rem 0;
+  padding: 0.5rem 0 0.5rem 1.5rem;
+  color: #555;
+  font-style: italic;
+}
+
+/* Images */
+.blog-content img {
+  max-width: 100%;
+  height: auto;
+  margin: 2rem 0;
+  border-radius: 4px;
+}
+
+/* Horizontal rule / divider */
+.blog-content hr,
+.divider {
+  border: none;
+  text-align: center;
+  margin: 2rem 0;
+  color: #ccc;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.8rem;
+  letter-spacing: 0.2em;
+}
+
+.divider {
+  color: #999;
+}
+
+/* ============================================
+   RIGHT NAVIGATION - In-page sections
+   ============================================ */
+
+.right-nav {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  padding: 2rem 1.5rem;
+  border-left: 1px solid #e0e0e0;
+  position: sticky;
+  top: 60px;
+  height: calc(100vh - 60px);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.right-nav a {
+  display: block;
+  color: #999;
+  text-decoration: none;
+  padding: 0.3rem 0;
+  transition: color 0.2s;
+  letter-spacing: 0.03em;
+}
+
+.right-nav a:hover {
+  color: #1a1a1a;
+}
+
+.right-nav a.active {
+  color: #1a1a1a;
+}
+
+.right-nav a.indent {
+  font-size: 0.65rem;
+  padding-right: 0.5rem;
+}
+
+/* ============================================
+   INDEX PAGE STYLES
+   ============================================ */
+
+.chapter-section {
+  margin-bottom: 1rem;
+}
+
+.chapter-section h2 {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.9rem;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  margin: 0 0 1rem 0;
+  color: #1a1a1a;
+}
+
+.post-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.post-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #eee;
+}
+
+.post-list li:last-child {
+  border-bottom: none;
+}
+
+.post-list a {
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.15rem;
+  color: #1a1a1a;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.post-list a:hover {
+  color: #80cbc4;
+}
+
+.post-list .date {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  color: #999;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+
+/* Tablet: Hide left nav */
+@media (max-width: 1200px) {
+  .blog-layout {
+    grid-template-columns: 1fr 160px;
+  }
+
+  .left-nav {
+    display: none;
+  }
+
+  .blog-content {
+    padding: 2rem 3rem;
+  }
+}
+
+/* Mobile: Single column */
+@media (max-width: 800px) {
+  .blog-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .right-nav {
+    display: none;
+  }
+
+  .blog-content {
+    padding: 1.5rem;
+  }
+
+  .blog-header {
+    padding: 1rem;
+  }
+
+  .blog-content h1 {
+    font-size: 1.25rem;
+  }
+
+  .blog-content h2 {
+    font-size: 0.9rem;
+  }
+
+  .blog-content p {
+    font-size: 1.05rem;
+  }
+}
+
+/* ============================================
+   SCROLL-SPY HIGHLIGHT
+   ============================================ */
+
+/* Active section highlighting handled by JS */
+.right-nav a.active {
+  color: #1a1a1a;
+  font-weight: 500;
+}
