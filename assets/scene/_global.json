@@ -1,6 +1,7 @@
 {
   "page": "_global",
   "version": 1,
+  "space": "book",
   "nodes": [
     {
       "id": "nav",
@@ -12,8 +13,7 @@
         "desktop": {
           "x": 13,
           "y": 5.5,
-          "w": 36,
-          "hidden": true
+          "w": 36
         },
         "mobile": {
           "x": 13,

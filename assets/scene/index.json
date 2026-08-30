@@ -1,33 +1,6 @@
 {
   "page": "index",
   "version": 1,
-  "breakpoints": {
-    "mobile": 576,
-    "tablet": 768,
-    "desktop": 99999
-  },
-  "nodes": [
-    {
-      "id": "hero",
-      "kind": "content",
-      "target": "[data-node=\"hero\"]",
-      "space": "book",
-      "z": 10,
-      "placements": {
-        "desktop": {
-          "x": 53.5,
-          "y": 12,
-          "w": 35,
-          "hidden": true
-        },
-        "mobile": {
-          "x": 53.5,
-          "y": 12,
-          "w": 35
-        }
-      }
-    }
-  ],
   "space": "book",
   "camera": {
     "desktop": {
@@ -40,5 +13,26 @@
       "cx": 1080,
       "cy": 330
     }
-  }
+  },
+  "nodes": [
+    {
+      "id": "hero",
+      "kind": "content",
+      "target": "[data-node=\"hero\"]",
+      "space": "book",
+      "z": 10,
+      "placements": {
+        "desktop": {
+          "x": 53.5,
+          "y": 12,
+          "w": 34
+        },
+        "mobile": {
+          "x": 53.5,
+          "y": 12,
+          "w": 34
+        }
+      }
+    }
+  ]
 }

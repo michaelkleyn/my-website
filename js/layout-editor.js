@@ -1394,7 +1394,10 @@ class LayoutEditor {
       const strip = (n) => { const c = Object.assign({}, n); delete c.scope; return c; };
       const globals = this.scene.nodes.filter((n) => n.scope === 'global').map(strip);
       const own = this.scene.nodes.filter((n) => n.scope !== 'global').map(strip);
-      const pageScene = Object.assign({}, this.scene, { nodes: own });
+      // the page file keeps its top-level fields (space, camera, fluid, anchorWidths) even if this working copy predates them
+      const live = (this.r.getScene && this.r.getScene()) || {};
+      const pageScene = Object.assign({}, live, this.scene, { nodes: own });
+      ['space', 'camera', 'fluid', 'anchorWidths'].forEach((k) => { if (pageScene[k] === undefined && live[k] !== undefined) pageScene[k] = live[k]; });
       const post = (key, body) => fetch(`/__editor/scene/${key}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body, null, 2) + '\n' })
         .then(async (res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.json().catch(() => ({})); });
       const data = await post(page, pageScene);
