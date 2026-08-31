@@ -94,6 +94,28 @@ nav[data-node="nav"] a.is-active { border-bottom-color: var(--chrome-ink); }
 #spread .small { font-family: "IBM Plex Sans", sans-serif; font-size: 14px; color: var(--ink-2); }
 #spread .projects a > b { font-size: 26px; }
 
+/* ---------- 'Leave a fish': a brass bookmark whose tab slips between the pages ---------- */
+#bookmark-leave {
+  --bm-x: 132px; --bm-y: 60px;         /* photo px; the tab tip crosses the page edge at x≈141 */
+  position: absolute; left: var(--bm-x); top: var(--bm-y);
+  width: 300px; aspect-ratio: 640 / 125;
+  background: none; border: none; padding: 0; cursor: pointer;
+}
+#bookmark-leave .bm { position: absolute; inset: 0; background-image: url(/assets/pond/bookmark-leave.png); background-size: 100% 100%; }
+:root[data-theme="dark"] #bookmark-leave .bm { background-image: url(/assets/pond/bookmark-leave.dark.png); }
+/* the cut: everything left of the clip hole's left rail is the tab, swallowed by the page mask
+   (mask-image set live by pond.js from Book.maskUrl(), so brush edits move the slot) */
+#bookmark-leave .bm-tab {
+  clip-path: inset(0 calc(100% - 3.44%) 0 0);
+  -webkit-mask-size: 1536px 1024px; mask-size: 1536px 1024px;
+  -webkit-mask-position: calc(var(--bm-x) * -1) calc(var(--bm-y) * -1); mask-position: calc(var(--bm-x) * -1) calc(var(--bm-y) * -1);
+  -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
+}
+#bookmark-leave .bm-main { clip-path: inset(0 0 0 3.44%); filter: drop-shadow(2px 3px 3px rgba(30, 20, 8, 0.35)); transition: transform 120ms ease; }
+#bookmark-leave:hover .bm-main, #bookmark-leave:focus-visible .bm-main { transform: translateY(-1px); }
+#bookmark-leave:active .bm-main { transform: translateY(1px); }
+#btn-leave { display: none; }            /* the paper button lives on in the lab; the bookmark replaces it here */
+
 /* drawings that reveal themselves once the page has settled */
 .scene-node--reveal { opacity: 0; transition: opacity var(--reveal-duration, 900ms) ease var(--reveal-delay, 0ms); }
 .scene-node--reveal.is-revealed { opacity: 1; }
