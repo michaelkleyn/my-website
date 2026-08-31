@@ -123,9 +123,15 @@ export var Book = {
     wctx.globalCompositeOperation = 'source-over';
     var cam = this.camera, cz = cam.zoom || 1;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-    ctx.fillStyle = P.paper; ctx.fillRect(0, 0, sc.cw, sc.ch);   // the journal is a cut-out: it sits on the tank's paper
+    // the journal is a cut-out: it sits on the tank's paper (dark value in sync with --paper in css/site.css)
+    ctx.fillStyle = document.documentElement.dataset.theme === 'dark' ? '#141a21' : P.paper;
+    ctx.fillRect(0, 0, sc.cw, sc.ch);
     ctx.setTransform(dpr * cz, 0, 0, dpr * cz, dpr * cam.x, dpr * cam.y);   // the camera: photo, pond and overlays move as one
+    // down-right shadow matching the iPod's (css/ipod.css .ipod-shadow); offsets are CTM-independent so it holds at any zoom
+    ctx.shadowColor = 'rgba(20, 16, 8, 0.3)';
+    ctx.shadowOffsetX = 6 * dpr; ctx.shadowOffsetY = 7 * dpr; ctx.shadowBlur = 8 * dpr;
     ctx.drawImage(this.img, f.x, f.y, D.W * f.s, D.H * f.s);
+    ctx.shadowColor = 'rgba(0, 0, 0, 0)'; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
     ctx.globalCompositeOperation = 'multiply';
     ctx.drawImage(wc, 0, 0, wc.width, wc.height, f.x + sc.ox * f.s, f.y + sc.oy * f.s, sc.W * f.s, sc.H * f.s);   // world = photo px: same transform as the photo
     ctx.globalCompositeOperation = 'source-over';

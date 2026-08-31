@@ -10,7 +10,16 @@
   --accent: #b0522f;
   --accent-2: #78c0e0;
   --rule: rgba(43, 58, 72, 0.28);
+  /* chrome = what sits over the tank's surround (nav, toggle); the spread sits on the photo pages, which stay light */
+  --chrome-ink: var(--ink);
+  --chrome-rule: var(--rule);
   color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --paper: #141a21;   /* keep in sync with the dark surround fill in js/pond/book.js */
+  --chrome-ink: #e8e2d4;
+  --chrome-rule: rgba(232, 226, 212, 0.35);
+  color-scheme: dark;
 }
 
 html, body { height: 100%; }
@@ -52,11 +61,17 @@ nav[data-node="nav"] {
   font-size: 22px;
   font-weight: 600;
   line-height: 1;
-  color: var(--ink);
+  color: var(--chrome-ink);
 }
 nav[data-node="nav"] a { color: inherit; text-decoration: none; border-bottom: 1.5px solid transparent; padding-bottom: 2px; }
-nav[data-node="nav"] a:hover, nav[data-node="nav"] a:focus-visible { border-bottom-color: var(--rule); outline: none; }
-nav[data-node="nav"] a.is-active { border-bottom-color: var(--ink); }
+nav[data-node="nav"] a:hover, nav[data-node="nav"] a:focus-visible { border-bottom-color: var(--chrome-rule); outline: none; }
+nav[data-node="nav"] a.is-active { border-bottom-color: var(--chrome-ink); }
+
+/* ---------- theme toggle: two icons, right edge of the window ---------- */
+#theme-toggle { position: fixed; top: 24px; right: 22px; display: flex; gap: 8px; pointer-events: auto; color: var(--chrome-ink); }
+#theme-toggle button { background: none; border: none; padding: 4px; cursor: pointer; color: inherit; opacity: 0.35; line-height: 0; }
+#theme-toggle button:hover { opacity: 0.7; }
+#theme-toggle button.is-active { opacity: 1; }
 
 /* ---------- the spread: whatever the current page puts on the pages ---------- */
 #spread { position: absolute; inset: 0; transition: opacity 220ms ease; }
@@ -100,6 +115,8 @@ html.site-failed::after { content: "The pond could not start — see the console
 body:has(#le-root) #panel { top: 40px; z-index: 2000001; }                     /* above the editor's hit overlay, below nothing */
 body:has(#le-root) #toggle-panel { top: 52px; right: 12px; z-index: 2000001; }
 body:has(#le-root) #visitor-ui { z-index: 2000001; }
+body:has(#le-root) #theme-toggle { top: 50px; right: 64px; z-index: 2000001; }    /* below the editor bar, left of the pond button */
+body:has(#panel:not(.hidden)) #theme-toggle { right: 380px; }                     /* step left of the pond panel */
 body:has(#le-root) #designer { z-index: 2000002; }
 body:has(#panel:not(.hidden)) .le-right { right: 360px; }                       /* the inspector steps left of the pond panel */
 body:has(#le-root.le-clean) #panel, body:has(#le-root.le-clean) #toggle-panel, body:has(#le-root.le-clean) #visitor-ui { display: none; }   /* Tab preview: nothing but the page */

@@ -11,9 +11,23 @@
   <link rel="stylesheet" href="/css/pond.css">
   <link rel="stylesheet" href="/css/scene.css">
   <link rel="stylesheet" href="/css/site.css">
+  <link rel="stylesheet" href="/css/ipod.css">
   <script>
     // The scene renderer reads the page key from the URL; SPA routes like /blog/<slug> map to their first segment.
     (function () { var seg = (location.pathname.split('/').filter(Boolean)[0] || 'index').toLowerCase().replace(/\.html?$/, ''); document.documentElement.dataset.scenePage = seg || 'index'; })();
+    // Theme: saved choice wins, else the OS preference; applied before first paint. Clicks on the toggle persist.
+    (function () {
+      var root = document.documentElement;
+      function mark(t) { var bs = document.querySelectorAll('#theme-toggle button'); for (var i = 0; i < bs.length; i++) bs[i].classList.toggle('is-active', bs[i].dataset.themeSet === t); }
+      var saved = null; try { saved = localStorage.getItem('site-theme'); } catch (e) {}
+      root.dataset.theme = saved || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.addEventListener('DOMContentLoaded', function () { mark(root.dataset.theme); });
+      document.addEventListener('click', function (e) {
+        var b = e.target.closest && e.target.closest('[data-theme-set]'); if (!b) return;
+        root.dataset.theme = b.dataset.themeSet; try { localStorage.setItem('site-theme', b.dataset.themeSet); } catch (e2) {}
+        mark(b.dataset.themeSet);
+      });
+    })();
   </script>
 </head>
 <body>
@@ -27,6 +41,14 @@
       <a href="/blog" data-route="blog">blog</a>
       <a href="/about" data-route="about">about</a>
     </nav>
+    <div id="theme-toggle" role="group" aria-label="Color scheme">
+      <button type="button" data-theme-set="light" aria-label="Light mode" title="Light">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="10" cy="10" r="4"/><path d="M10 1.6v2.2M10 16.2v2.2M1.6 10h2.2M16.2 10h2.2M4.1 4.1l1.5 1.5M14.4 14.4l1.5 1.5M15.9 4.1l-1.5 1.5M5.6 14.4l-1.5 1.5"/></svg>
+      </button>
+      <button type="button" data-theme-set="dark" aria-label="Dark mode" title="Dark">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15.8 12.4a6.6 6.6 0 0 1-8.2-8.2 6.9 6.9 0 1 0 8.2 8.2Z"/></svg>
+      </button>
+    </div>
   </header>
 
   <div id="book-space">
@@ -36,6 +58,9 @@
   <script src="/js/vendor/p5.brush-2.2.2.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/animejs@4.2.0/dist/bundles/anime.umd.min.js"></script>
   <script src="/js/scene-renderer.js"></script>
+  <script src="/js/grab.js" defer></script>
+  <script src="/js/ipod/games.js" defer></script>
+  <script src="/js/ipod/ipod.js" defer></script>
   <script type="module" src="/js/site/main.js"></script>
 </body>
 </html>
