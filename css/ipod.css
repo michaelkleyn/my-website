@@ -36,18 +36,7 @@
   box-shadow: 12px 15px 16px rgba(20, 16, 8, 0.25);
 }
 
-/* picked-up items swell slightly. `scale` composes with the generated
-   `transform` (rotate/flip) instead of overriding it; artwork (.grabbed via
-   grab.js) and rig (.lifted) get the same factor so screen tracks bezel. */
-.scene-layer .scene-node,
-#ipod-rig {
-  transition: scale 0.25s ease, rotate 0.25s ease;
-}
-.scene-layer .scene-node.grabbed,
-#ipod-rig.lifted {
-  scale: 1.05;
-  rotate: -5deg;
-}
+/* the pick-up lift (scale/rotate, artwork + rig together) lives in css/objects.css */
 
 /* ---- LCD ---- */
 .ipod-screen {

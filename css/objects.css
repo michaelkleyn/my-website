@@ -1,0 +1,26 @@
+/* Objects lying on the journal that a visitor can pick up (js/grab.js).
+   Shared behavior lives here; an object's own internals (the iPod's LCD and
+   rig shadow) stay in its own stylesheet. */
+
+/* Picked up: swell and tilt. `scale`/`rotate` are their own properties, so they
+   compose with the scene renderer's generated `transform` instead of fighting it. */
+.scene-layer .scene-node,
+#ipod-rig {
+  transition: scale 0.25s ease, rotate 0.25s ease;
+}
+.scene-layer .scene-node.grabbed,
+#ipod-rig.lifted {
+  scale: 1.05;
+  rotate: -5deg;
+}
+
+/* Pencil: thin and cylindrical, so it rests close to the page and throws a
+   short shadow. Safe as a drop-shadow — unlike the iPod, its silhouette has no
+   transparent interior for the shade to land in. */
+.scene-layer [data-node-id="pencil"] {
+  filter: drop-shadow(2px 3px 2.5px rgba(30, 20, 8, 0.34));
+  transition: filter 0.25s ease, scale 0.25s ease, rotate 0.25s ease;
+}
+.scene-layer [data-node-id="pencil"].grabbed {
+  filter: drop-shadow(7px 9px 8px rgba(30, 20, 8, 0.28));
+}

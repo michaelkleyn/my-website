@@ -32,6 +32,31 @@
       }
     },
     {
+      "id": "pencil",
+      "kind": "image",
+      "src": "/assets/pencil/pencil.png",
+      "grab": true,
+      "a11y": {
+        "alt": "A mechanical pencil resting on the journal"
+      },
+      "space": "book",
+      "z": 12,
+      "placements": {
+        "desktop": {
+          "x": 62,
+          "y": 46,
+          "w": 13,
+          "rot": 0
+        },
+        "mobile": {
+          "x": 62,
+          "y": 46,
+          "w": 13,
+          "rot": 0
+        }
+      }
+    },
+    {
       "id": "hero",
       "kind": "content",
       "target": "[data-node=\"hero\"]",
