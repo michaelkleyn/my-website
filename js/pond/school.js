@@ -117,11 +117,13 @@ School.prototype.step = function (dt) {
   this.retargetIn -= dt;
   if (this.retargetIn <= 0) this.retarget();
   var ptr = this.pointer, PR2 = P.mouseRadius * P.mouseRadius, mv = P.motionVariety;
+  // night: the school drifts — slower cruise, gentler wander, wider turns (flee bursts untouched)
+  var night = Book.active() && document.documentElement.dataset.theme === 'dark' ? 0.45 : 1;
 
   for (var i = 0; i < n; i++) {
     var f = fish[i];
     var size = P.sizeMin + f.sizeNorm * (P.sizeMax - P.sizeMin);
-    var base = P.speed * (1.25 - 0.5 * f.sizeNorm);
+    var base = P.speed * (1.25 - 0.5 * f.sizeNorm) * night;
     var ax = 0, ay = 0, alx = 0, aly = 0, cx = 0, cy = 0, cnt = 0, sx = 0, sy = 0;
     var sep = P.separationRadius * (0.5 + size / 120), S2 = sep * sep;
 
@@ -142,8 +144,8 @@ School.prototype.step = function (dt) {
     ax += sx * P.separation; ay += sy * P.separation;
 
     f.wander += rand(-1, 1) * dt * 2.5; f.wander *= 0.98;
-    ax += Math.cos(f.heading + f.wander) * P.wander;
-    ay += Math.sin(f.heading + f.wander) * P.wander;
+    ax += Math.cos(f.heading + f.wander) * P.wander * night;
+    ay += Math.sin(f.heading + f.wander) * P.wander * night;
 
     if (P.roam) { ax += (this.target.x - f.x) * P.roamPull; ay += (this.target.y - f.y) * P.roamPull; }
 
@@ -180,7 +182,7 @@ School.prototype.step = function (dt) {
     var vy = Math.sin(f.heading) * f.speed + ay * dt;
     var want = Math.atan2(vy, vx);
     var delta = wrapAngle(want - f.heading);
-    var maxTurn = P.turnRate * dt;
+    var maxTurn = P.turnRate * dt * (night === 1 ? 1 : 0.65);
     if (delta > maxTurn) delta = maxTurn; else if (delta < -maxTurn) delta = -maxTurn;
     f.heading += delta;
     f.turn += ((dt > 0 ? delta / dt : 0) - f.turn) * Math.min(1, dt * 6); // smoothed angular velocity
