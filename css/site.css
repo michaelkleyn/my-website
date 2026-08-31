@@ -127,7 +127,8 @@ body, nav[data-node="nav"], nav[data-node="nav"] a, #theme-toggle, #spread [data
   position: absolute; left: var(--bm-x); top: var(--bm-y);
   width: 300px; aspect-ratio: 640 / 125;
   background: none; border: none; padding: 0; cursor: pointer;
-  filter: drop-shadow(2px 3px 3px rgba(30, 20, 8, 0.35));   /* on the button: shadows the composed silhouette, not the notch edges */
+  /* tight shadow: the plate sits nearly flush on the page, so it throws barely any distance */
+  filter: drop-shadow(1px 1px 1.5px rgba(30, 20, 8, 0.35));
 }
 /* the cut: raster, not geometry — the asset is pre-split at build time into the clip piece
    (bracket + tongue + their engravings, traced from the pixels) and the plate piece. The clip
