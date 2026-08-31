@@ -78,8 +78,10 @@ export function paintRecipe(h, displayScale, opt) {
   return c;
 }
 Drawing.prototype.paint = function () {
-  var c = paintRecipe(this.recipe, this.displayScale()); if (!c) return;
-  if (this.shadowRecipe && P.shadowOn && P.shadowStrength > 0) {
+  // at night the drawing is just the pen work: no paper body, no cast shadow — lines on the dark page
+  var dark = document.documentElement.dataset.theme === 'dark';
+  var c = paintRecipe(this.recipe, this.displayScale(), dark ? { body: false } : null); if (!c) return;
+  if (!dark && this.shadowRecipe && P.shadowOn && P.shadowStrength > 0) {
     var sh = paintRecipe(this.shadowRecipe, this.displayScale(), { spacing: P.shadowSpacing, angleOffset: P.shadowAngle - 30, body: false, weight: 0.9 });
     if (sh) {
       var out = document.createElement('canvas'); out.width = c.width; out.height = c.height; var ctx = out.getContext('2d');
@@ -165,7 +167,11 @@ export var Drawings = {
       var names = Object.keys(Journal.D.items);
       for (var j = 0; j < names.length; j++) {
         var it = Journal.D.items[names[j]];
-        if (it.hatch && !this.poseSprites[names[j]]) { this.poseSprites[names[j]] = paintRecipe(it.hatch, P.journalScale * 1.2 * (Book.active() ? Book.fit.s : 1)); return true; }
+        if (it.hatch && !this.poseSprites[names[j]]) {
+          var darkPose = document.documentElement.dataset.theme === 'dark';   // same night treatment as Drawing.paint: lines only
+          this.poseSprites[names[j]] = paintRecipe(it.hatch, P.journalScale * 1.2 * (Book.active() ? Book.fit.s : 1), darkPose ? { body: false } : null);
+          return true;
+        }
       }
     }
     return false;

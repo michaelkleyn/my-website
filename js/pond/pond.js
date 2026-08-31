@@ -190,6 +190,11 @@ export function createPond(opts) {
   listen(canvas, 'pointercancel', function (e) { if (Book.editing) Book.pointer(e, 'up'); });
   listen(canvas, 'pointerleave', function () { school.pointer.on = false; if (!Book.stroke) Book.brushPos = null; });
   listen(window, 'resize', function () { school.resize(); Journal.layout(); syncJournalView(); emit('resize'); });
+  // drawings repaint lines-only in the dark — all at once, not one per frame, so nothing lags the toggle
+  listen(window, 'themechange', function () {
+    Drawings.markDirty();
+    if (school.atlas && !Painter.painting) { while (Drawings.paintDirty()) { /* burst */ } }
+  });
   listen(document, 'visibilitychange', function () {
     if (document.hidden) { cancelAnimationFrame(raf); raf = 0; }
     else if (!raf && !destroyed) { last = performance.now(); raf = requestAnimationFrame(frame); }

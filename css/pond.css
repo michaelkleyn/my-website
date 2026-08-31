@@ -90,4 +90,5 @@ body:has(#panel:not(.hidden)) #designer { right: 348px; }
 
 
 #tank.editing { cursor: none; }
-body.book #journal-root { mix-blend-mode: multiply; }
+body.book #journal-root { mix-blend-mode: multiply; }   /* ink soaks into the light paper */
+:root[data-theme="dark"] body.book #journal-root { mix-blend-mode: normal; }   /* multiply can only darken: on dark pages the paper body must show */
