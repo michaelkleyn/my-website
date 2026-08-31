@@ -107,6 +107,10 @@ export function createPond(opts) {
     el.style.setProperty('--bm-x', P.bookmarkX + 'px');
     el.style.setProperty('--bm-y', P.bookmarkY + 'px');
     el.style.width = P.bookmarkW + 'px';
+    // `rotate` (not transform) so it composes with anything else on the element.
+    // Pivot is the tab tip (css/site.css) — the tongue's page cut is masked in page
+    // space, so keeping the tip still keeps that cut aligned as the plate swings.
+    el.style.rotate = (P.bookmarkRot || 0) + 'deg';
   }
   function applyReplace() {
     if (Journal.ready) { Journal.applyProps(P.journalProps); Journal.refit(); }

@@ -94,6 +94,7 @@ export var SCHEMA = {
     { k: 'bookmarkX', l: 'Left', t: 'range', min: 0, max: 1536, step: 1, bookmark: 1, tip: 'photo px — keep the tab tip left of the page edge (~141)' },
     { k: 'bookmarkY', l: 'Top', t: 'range', min: 0, max: 1024, step: 1, bookmark: 1 },
     { k: 'bookmarkW', l: 'Width', t: 'range', min: 80, max: 640, step: 2, bookmark: 1 },
+    { k: 'bookmarkRot', l: 'Rotate', t: 'range', min: -30, max: 30, step: 0.5, bookmark: 1, tip: 'degrees — pivots at the tab tip, so the page cut stays put' },
     { sub: 'Page mask' },
     { k: 'bookSpineShift', l: 'Spine x shift', t: 'range', min: -60, max: 60, step: 1, book: 'mask', tip: 'photo px from the detected spine' },
     { k: 'bookSpineWidth', l: 'Spine band', t: 'range', min: 0, max: 300, step: 1, book: 'mask', tip: 'width of the strip fish pass under' },
