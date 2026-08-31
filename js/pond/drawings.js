@@ -77,10 +77,15 @@ export function paintRecipe(h, displayScale, opt) {
   }
   return c;
 }
-Drawing.prototype.paint = function () {
-  // at night the drawing is just the pen work: no paper body, no cast shadow — lines on the dark page
-  var dark = document.documentElement.dataset.theme === 'dark';
-  var c = paintRecipe(this.recipe, this.displayScale(), dark ? { body: false } : null); if (!c) return;
+/** 'light' | 'dark' — the page the drawings are sitting on. */
+function themeName() { return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light'; }
+
+/** Paint this drawing for one theme into its cache. Night = the pen work only: no paper body, no cast
+ *  shadow. Painting a recipe is expensive (p5.brush hatches every band), so it is cached per theme and
+ *  a theme flip becomes a texture swap — see Drawings.setTheme / the idle prewarm in paintDirty. */
+Drawing.prototype.paintFor = function (theme) {
+  var dark = theme === 'dark';
+  var c = paintRecipe(this.recipe, this.displayScale(), dark ? { body: false } : null); if (!c) return null;
   if (!dark && this.shadowRecipe && P.shadowOn && P.shadowStrength > 0) {
     var sh = paintRecipe(this.shadowRecipe, this.displayScale(), { spacing: P.shadowSpacing, angleOffset: P.shadowAngle - 30, body: false, weight: 0.9 });
     if (sh) {
@@ -92,8 +97,17 @@ Drawing.prototype.paint = function () {
       ctx.drawImage(c, 0, 0); c = out;
     }
   }
+  (this.cache || (this.cache = {}))[theme] = c;
+  return c;
+};
+/** Show an already-painted sprite: a texture upload, cheap enough to do mid-click. */
+Drawing.prototype.show = function (c) {
   this.sprite = c; this.dirty = false;
   if (this.ok) { this.upload(this.texH, c); this.needsFrame = true; }
+};
+Drawing.prototype.paint = function () {
+  var theme = themeName(), c = (this.cache && this.cache[theme]) || this.paintFor(theme);
+  if (c) this.show(c);
 };
 /** Swap what this drawing shows (used by the page-turn pool): a hatched sprite and the real image it hides. */
 Drawing.prototype.setSources = function (sprite, img) {
@@ -158,25 +172,41 @@ export var Drawings = {
       jd.shadowRecipe = jh.shadow || null; self.items.push(jd);
       el.style.display = 'none';
     }
+    this.setTheme();   // bind poseSprites to this theme's map
   },
-  poseSprites: {}, poseImgs: {}, pool: [], lastPointer: null,
+  poseSprites: {}, poseCache: {}, poseImgs: {}, pool: [], lastPointer: null,   // poseSprites = poseCache[current theme]
   /** The page-turn poses drawn the same way (one sprite each), used while the journal is drawn. */
+  /** One page-turn pose, painted for a theme into that theme's map. */
+  paintPose: function (name, theme) {
+    var map = this.poseCache[theme] || (this.poseCache[theme] = {});
+    map[name] = paintRecipe(Journal.D.items[name].hatch, P.journalScale * 1.2 * (Book.active() ? Book.fit.s : 1), theme === 'dark' ? { body: false } : null);
+  },
+  /** One paint per frame: what's showing first, then the other theme's copies so a toggle costs nothing. */
   paintDirty: function () {
-    for (var i = 0; i < this.items.length; i++) { var d = this.items[i]; if (d.dirty && d.enabled()) { d.paint(); return true; } }
+    var theme = themeName(), other = theme === 'dark' ? 'light' : 'dark', i, j, names;
+    for (i = 0; i < this.items.length; i++) { var d = this.items[i]; if (d.dirty && d.enabled()) { d.paint(); return true; } }
     if (P.rockOnJournal && Journal.D) {
-      var names = Object.keys(Journal.D.items);
-      for (var j = 0; j < names.length; j++) {
-        var it = Journal.D.items[names[j]];
-        if (it.hatch && !this.poseSprites[names[j]]) {
-          var darkPose = document.documentElement.dataset.theme === 'dark';   // same night treatment as Drawing.paint: lines only
-          this.poseSprites[names[j]] = paintRecipe(it.hatch, P.journalScale * 1.2 * (Book.active() ? Book.fit.s : 1), darkPose ? { body: false } : null);
-          return true;
-        }
-      }
+      names = Object.keys(Journal.D.items);
+      for (j = 0; j < names.length; j++) if (Journal.D.items[names[j]].hatch && !this.poseSprites[names[j]]) { this.paintPose(names[j], theme); return true; }
+    }
+    for (i = 0; i < this.items.length; i++) { var d2 = this.items[i]; if (d2.recipe && d2.enabled() && !(d2.cache && d2.cache[other])) { d2.paintFor(other); return true; } }
+    if (P.rockOnJournal && Journal.D) {
+      var om = this.poseCache[other] || (this.poseCache[other] = {});
+      names = Object.keys(Journal.D.items);
+      for (j = 0; j < names.length; j++) if (Journal.D.items[names[j]].hatch && !om[names[j]]) { this.paintPose(names[j], other); return true; }
     }
     return false;
   },
-  markDirty: function () { this.items.forEach(function (d) { d.dirty = true; }); this.poseSprites = {}; },
+  /** Theme flip: show each cached sprite (a texture upload), repaint only what the prewarm hasn't reached. */
+  setTheme: function () {
+    var theme = themeName();
+    this.poseSprites = this.poseCache[theme] || (this.poseCache[theme] = {});
+    this.items.forEach(function (d) { var c = d.cache && d.cache[theme]; if (c) d.show(c); else d.dirty = true; });
+  },
+  markDirty: function () {
+    this.items.forEach(function (d) { d.dirty = true; d.cache = null; });
+    this.poseCache = {}; this.poseSprites = this.poseCache[themeName()] = {};
+  },
   journalDrawn: function () { var j = this.items.filter(function (d) { return d.name === 'journal'; })[0]; return !!(j && j.active); },
   setPointer: function (x, y) { this.lastPointer = [x, y]; },
   tick: function (now, dt) {
