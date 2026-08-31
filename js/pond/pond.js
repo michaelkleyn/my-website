@@ -115,6 +115,10 @@ export function createPond(opts) {
   function placeJournalRoot() {
     if (!journalRoot) return;
     var sf = Book.screenFit();
+    // Box = the photo, so the border box coincides with the mask image (mask-clip clips painting to the
+    // border box — a viewport-sized box would guillotine the journal at window edges in local px).
+    if (Book.active()) { journalRoot.style.width = Book.D.W + 'px'; journalRoot.style.height = Book.D.H + 'px'; }
+    else { journalRoot.style.width = journalRoot.style.height = ''; }
     journalRoot.style.transformOrigin = '0 0';
     journalRoot.style.transform = 'translate(' + sf.x + 'px,' + sf.y + 'px) scale(' + sf.s + ')';
   }
