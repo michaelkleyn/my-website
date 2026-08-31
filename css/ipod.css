@@ -1,0 +1,166 @@
+/* iPod 3G — screen UI + invisible controls, riding under the ipod scene image.
+   The rig copies the ipod scene node's placement (see js/ipod/ipod.js) and sits
+   at z 10, one below the image (z 11), so the bezel art overlaps the LCD edges
+   and the screen shows through the image's transparent hole. */
+
+/* ChicagoFLF is the classic iPod bitmap face; drop the ttf in assets/ipod/ for
+   pixel-perfect text — everything falls back to the system stack without it. */
+@font-face {
+  font-family: 'ChicagoFLF';
+  src: url('/assets/ipod/ChicagoFLF.ttf') format('truetype');
+  font-display: swap;
+}
+
+#ipod-rig {
+  position: absolute;
+  pointer-events: none;
+  container-type: inline-size;
+}
+
+/* resting shadow, down-right; grows while held. A box-shadow on a rounded
+   box matching the device silhouette — NOT a drop-shadow on the artwork,
+   whose transparent screen hole would cast shade onto the LCD. Outer
+   box-shadows never paint inside the box, so the screen stays clean. */
+/* Box sits ~6px (at full res) INSIDE the artwork silhouette — the device
+   corner is a squircle no border-radius matches, so the box must stay under
+   the artwork everywhere or a light unshadowed sliver peeks at the corners.
+   Offsets are bumped to keep the same visible rim despite the inset. */
+.ipod-shadow {
+  position: absolute;
+  inset: 0.4% 0.65%;
+  border-radius: 9.6% / 5.75%;
+  box-shadow: 6px 7px 8px rgba(20, 16, 8, 0.3);
+  transition: box-shadow 0.25s ease;
+}
+#ipod-rig.lifted .ipod-shadow {
+  box-shadow: 12px 15px 16px rgba(20, 16, 8, 0.25);
+}
+
+/* picked-up items swell slightly. `scale` composes with the generated
+   `transform` (rotate/flip) instead of overriding it; artwork (.grabbed via
+   grab.js) and rig (.lifted) get the same factor so screen tracks bezel. */
+.scene-layer .scene-node,
+#ipod-rig {
+  transition: scale 0.25s ease, rotate 0.25s ease;
+}
+.scene-layer .scene-node.grabbed,
+#ipod-rig.lifted {
+  scale: 1.05;
+  rotate: -5deg;
+}
+
+/* ---- LCD ---- */
+.ipod-screen {
+  position: absolute;
+  left: 16.6%;
+  top: 5.75%;
+  width: 67.34%;
+  height: 32.63%;
+  overflow: hidden;
+  /* 1 original-LCD pixel (screen is 160x128) in container units */
+  --px: 0.4273cqw;
+  --lcd-bg: #b9c1b0;
+  --lcd-ink: #17210f;
+  background: var(--lcd-bg);
+  color: var(--lcd-ink);
+  font-family: 'ChicagoFLF', 'Chicago', 'Helvetica Neue', 'Segoe UI', sans-serif;
+  font-size: calc(11 * var(--px));
+  line-height: calc(16 * var(--px));
+  transition: background 0.35s, color 0.35s;
+  user-select: none;
+}
+.ipod-screen.lit {
+  --lcd-bg: #cfe0f2;
+  --lcd-ink: #101c2e;
+}
+
+/* dark mode: the artwork swaps to the black body (ipod-3g.dark.png — screen
+   off, red buttons). The LCD rests off; any wheel/button press still wakes
+   the backlight glow, then it fades back to black on the backlight timer. */
+[data-theme="dark"] .ipod-screen {
+  --lcd-bg: #08090b;
+  --lcd-ink: #15181d;
+}
+[data-theme="dark"] .ipod-screen.lit {
+  --lcd-bg: #cfe0f2;
+  --lcd-ink: #101c2e;
+}
+
+.ipod-title {
+  position: relative;
+  height: calc(20 * var(--px));
+  line-height: calc(20 * var(--px));
+  text-align: center;
+  font-weight: bold;
+  border-bottom: calc(1 * var(--px)) solid var(--lcd-ink);
+}
+.ipod-batt {
+  position: absolute;
+  right: calc(3 * var(--px));
+  top: calc(5 * var(--px));
+  width: calc(18 * var(--px));
+  height: calc(9 * var(--px));
+  border: calc(1 * var(--px)) solid var(--lcd-ink);
+}
+.ipod-batt::before {
+  content: '';
+  position: absolute;
+  inset: calc(1 * var(--px));
+  background: var(--lcd-ink);
+}
+.ipod-batt::after {
+  content: '';
+  position: absolute;
+  left: 100%;
+  top: 25%;
+  width: calc(2 * var(--px));
+  height: 50%;
+  background: var(--lcd-ink);
+}
+
+.ipod-body { position: absolute; inset: calc(21 * var(--px)) 0 0 0; }
+
+/* menu rows */
+.ipod-row {
+  height: calc(17 * var(--px));
+  line-height: calc(17 * var(--px));
+  padding: 0 calc(6 * var(--px)) 0 calc(4 * var(--px));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+}
+.ipod-row.sel { background: var(--lcd-ink); color: var(--lcd-bg); }
+.ipod-row .r { position: absolute; right: calc(6 * var(--px)); }
+.ipod-row.has-scroll { margin-right: calc(8 * var(--px)); }
+
+.ipod-scrollbar {
+  position: absolute;
+  top: 0;
+  right: calc(1 * var(--px));
+  bottom: 0;
+  width: calc(6 * var(--px));
+  border: calc(1 * var(--px)) solid var(--lcd-ink);
+}
+.ipod-scrollbar .thumb { position: absolute; left: 0; right: 0; background: var(--lcd-ink); }
+
+/* now playing */
+.ipod-np { text-align: center; padding-top: calc(2 * var(--px)); }
+.ipod-np .idx { text-align: left; padding-left: calc(4 * var(--px)); }
+.ipod-np .t1 { font-weight: bold; }
+.ipod-np .t2, .ipod-np .t3 { }
+.ipod-bar {
+  position: relative;
+  margin: calc(6 * var(--px)) calc(8 * var(--px)) 0;
+  height: calc(8 * var(--px));
+  border: calc(1 * var(--px)) solid var(--lcd-ink);
+}
+.ipod-bar .fill { position: absolute; inset: calc(1 * var(--px)); right: auto; background: var(--lcd-ink); }
+.ipod-times { display: flex; justify-content: space-between; padding: 0 calc(8 * var(--px)); }
+
+/* plain text screens (clock, about, legal…) */
+.ipod-text { padding: calc(4 * var(--px)) calc(6 * var(--px)); text-align: center; }
+.ipod-text .big { font-size: calc(22 * var(--px)); line-height: calc(28 * var(--px)); font-weight: bold; }
+
+/* ---- invisible controls (the artwork is the visual) ---- */
+.ipod-hit { position: absolute; pointer-events: auto; cursor: pointer; border-radius: 50%; }

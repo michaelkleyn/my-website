@@ -8,6 +8,30 @@
   },
   "nodes": [
     {
+      "id": "ipod",
+      "kind": "image",
+      "src": "/assets/ipod/ipod-3g.png",
+      "a11y": {
+        "alt": "A 3rd-generation iPod resting on the journal"
+      },
+      "space": "book",
+      "z": 11,
+      "placements": {
+        "desktop": {
+          "x": 99.52,
+          "y": 34.3,
+          "w": 22.81,
+          "rot": 4.27
+        },
+        "mobile": {
+          "x": 20,
+          "y": 24,
+          "w": 9,
+          "rot": -6
+        }
+      }
+    },
+    {
       "id": "hero",
       "kind": "content",
       "target": "[data-node=\"hero\"]",
@@ -29,11 +53,7 @@
   ],
   "space": "book",
   "camera": {
-    "desktop": {
-      "zoom": 1,
-      "cx": 768,
-      "cy": 512
-    },
+    "desktop": null,
     "mobile": {
       "zoom": 1.6,
       "cx": 1080,

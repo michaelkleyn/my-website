@@ -1,0 +1,15 @@
+{
+  "playlists": [
+    { "name": "Pond Ambience", "songs": [0] }
+  ],
+  "songs": [
+    {
+      "title": "Pond Loop",
+      "artist": "Mori",
+      "album": "Journal Sounds",
+      "genre": "Ambient",
+      "composer": "M. Kleyn",
+      "src": "/assets/ipod/music/pond-loop.m4a"
+    }
+  ]
+}
