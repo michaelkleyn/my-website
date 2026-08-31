@@ -96,7 +96,7 @@ nav[data-node="nav"] a.is-active { border-bottom-color: var(--chrome-ink); }
 
 /* ---------- 'Leave a fish': a brass bookmark whose tab slips between the pages ---------- */
 #bookmark-leave {
-  --bm-x: 132px; --bm-y: 60px;         /* photo px; the tab tip crosses the page edge at x≈141 */
+  --bm-x: 132px; --bm-y: 60px;         /* fallbacks — the pond panel's Bookmark sliders (bookmarkX/Y/W) drive these at runtime */
   position: absolute; left: var(--bm-x); top: var(--bm-y);
   width: 300px; aspect-ratio: 640 / 125;
   background: none; border: none; padding: 0; cursor: pointer;

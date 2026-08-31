@@ -95,14 +95,23 @@ export function createPond(opts) {
       if (f.visitors) { Residents.trim(); Visitors.refresh(); }
       if (f.book === 'layout') { school.resize(); Journal.layout(); Book.maskDirty = true; syncJournalView(); scheduleJournalMask(); emit('resize'); }
       if (f.book === 'mask') { Book.maskDirty = true; scheduleJournalMask(); }
+      if (f.bookmark) applyBookmarkVars();
     });
     if (opts2 && opts2.silent) return;
     if (paint) scheduleRepaint(); else school.sync();
     emit('config', { keys: keys });
   }
+  /** The bookmark button (site DOM) is placed by config so the panel's sliders drive it. */
+  function applyBookmarkVars() {
+    var el = document.getElementById('bookmark-leave'); if (!el) return;
+    el.style.setProperty('--bm-x', P.bookmarkX + 'px');
+    el.style.setProperty('--bm-y', P.bookmarkY + 'px');
+    el.style.width = P.bookmarkW + 'px';
+  }
   function applyReplace() {
     if (Journal.ready) { Journal.applyProps(P.journalProps); Journal.refit(); }
     Book.syncFromP(); if (Book.ready) { school.resize(); Journal.layout(); syncJournalView(); scheduleJournalMask(); }
+    applyBookmarkVars();
     school.sync();
     emit('config', { keys: null });
   }
@@ -148,7 +157,7 @@ export function createPond(opts) {
   unsubs.push(Journal.on('props', function () { emit('config', { keys: ['journalProps'] }); }));
   Drawings.init(); Journal.setDrawings(Drawings);
   Book.init(assets.book || null, { canvas: canvas });
-  unsubs.push(Book.on('ready', function () { school.resize(); Journal.layout(); syncJournalView(); applyJournalMask(); emit('resize'); }));
+  unsubs.push(Book.on('ready', function () { school.resize(); Journal.layout(); syncJournalView(); applyJournalMask(); applyBookmarkVars(); emit('resize'); }));
   unsubs.push(Book.on('edits', function () { scheduleJournalMask(); emit('config', { keys: ['bookMask'] }); }));
   unsubs.push(Book.on('mask', function () { scheduleJournalMask(); }));   // live: the compose rebuilds the mask per stroke
   listen(document, 'pointermove', function (e) { Drawings.setPointer(e.clientX, e.clientY); });
