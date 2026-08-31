@@ -3,6 +3,16 @@
 import { P } from './config.js';
 import { createEmitter } from './emitter.js';
 
+/** Linear ramp of `cur` toward `target` by `step`, clamped at the target. */
+function ramp(cur, target, step) {
+  if (cur === undefined) return target;
+  return cur < target ? Math.min(target, cur + step) : Math.max(target, cur - step);
+}
+
+/** How much of the lit book shows through inside the lamp's radius: the night stays 70% dark —
+    the lamp is a warm pool on the dark journal (the warmth itself is #lamp in css/site.css). */
+var LAMP_MIX = 0.34;
+
 export var Book = {
   D: null, ready: false, img: null, imgReady: false,
   camera: { zoom: 1, x: 0, y: 0 },   // runtime screen-space transform (navigation), never part of the config
@@ -125,23 +135,11 @@ export var Book = {
     return this.worldC.getContext('2d');
   },
 
-  /** Screen = surround + photo + (world × mask) multiplied onto the pages; then the mask tint and the brush cursor. */
-  compose: function (ctx, sc) {
-    var dpr = sc.dpr, D = this.D, f = this.fit, wc = this.worldC, R = this.R, b = this.bbox;
-    if (this.maskDirty) this.rebuildMask();
-    var wctx = wc.getContext('2d');
-    wctx.setTransform(dpr, 0, 0, dpr, 0, 0); wctx.globalAlpha = 1; wctx.globalCompositeOperation = 'destination-in';
-    wctx.drawImage(this.maskC, b[0] * R, b[1] * R, (b[2] - b[0]) * R, (b[3] - b[1]) * R, 0, 0, sc.W, sc.H);
-    wctx.globalCompositeOperation = 'source-over';
+  /** One full surround + photo + (world × mask) pass in either theme. The lamp blends two of these. */
+  pass: function (ctx, sc, dark) {
+    var dpr = sc.dpr, D = this.D, f = this.fit, wc = this.worldC;
     var cam = this.camera, cz = cam.zoom || 1;
-    // dark mode: a lights-off photo of the same journal (opaque, black to its edges) + the water glows additively
-    var dark = document.documentElement.dataset.theme === 'dark' && this.D.srcDark;
-    if (dark && !this.darkImg) {
-      var s2 = this; this.darkImg = new Image();
-      this.darkImg.onload = function () { s2.darkReady = true; };
-      this.darkImg.src = this.D.srcDark;
-    }
-    var photo = dark && this.darkReady ? this.darkImg : this.img;
+    var photo = dark ? this.darkImg : this.img;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
     // the journal is a cut-out: it sits on the tank's paper (dark value in sync with --paper in css/site.css)
     ctx.fillStyle = dark ? '#000000' : P.paper;
@@ -174,6 +172,67 @@ export var Book = {
       ctx.globalAlpha = 1;
     }
     ctx.globalCompositeOperation = 'source-over';
+  },
+
+  /** Screen = lit pass, then the dark pass faded in over it (fast linear crossfade) with the desk lamp's
+      radius punched out as a feathered hole — the lamp's falloff IS the light/dark blend for the photo,
+      the pond, the fish, and anything else composed on the Book. Then the mask tint and the brush cursor. */
+  compose: function (ctx, sc) {
+    var dpr = sc.dpr, D = this.D, f = this.fit, wc = this.worldC, R = this.R, b = this.bbox;
+    if (this.maskDirty) this.rebuildMask();
+    var wctx = wc.getContext('2d');
+    wctx.setTransform(dpr, 0, 0, dpr, 0, 0); wctx.globalAlpha = 1; wctx.globalCompositeOperation = 'destination-in';
+    wctx.drawImage(this.maskC, b[0] * R, b[1] * R, (b[2] - b[0]) * R, (b[3] - b[1]) * R, 0, 0, sc.W, sc.H);
+    wctx.globalCompositeOperation = 'source-over';
+    var cam = this.camera, cz = cam.zoom || 1;
+    // dark mode: a lights-off photo of the same journal (opaque, black to its edges) + the water glows additively
+    var dark = document.documentElement.dataset.theme === 'dark' && this.D.srcDark;
+    if (dark && !this.darkImg) {
+      var s2 = this; this.darkImg = new Image();
+      this.darkImg.onload = function () { s2.darkReady = true; };
+      this.darkImg.src = this.D.srcDark;
+    }
+    // darkA: crossfade toward the current theme (180ms linear on elapsed time, in lockstep with the
+    // CSS transitions, so 30Hz and 120Hz displays fade at the same speed).
+    // lampA: 90ms — a filament warming when .lamp-on lands (js/theme-toggle.js), not a bloom.
+    var now = performance.now();
+    var dt = Math.min(100, now - (this.composeT || now)); this.composeT = now;
+    var darkOn = dark && this.darkReady ? 1 : 0;
+    var lampOn = darkOn && document.documentElement.classList.contains('lamp-on') ? 1 : 0;
+    this.darkA = ramp(this.darkA, darkOn, dt / 180);
+    this.lampA = ramp(this.lampA, lampOn, dt / 90);
+
+    if (this.darkA === 1 && this.lampA === 0) {
+      this.pass(ctx, sc, true);   // steady dark, no lamp: one pass, not a lit pass fully painted over
+    } else {
+      this.pass(ctx, sc, false);
+    }
+    if (this.darkA > 0 && !(this.darkA === 1 && this.lampA === 0)) {
+      var dc = this.darkC || (this.darkC = document.createElement('canvas'));
+      var pw = ctx.canvas.width, ph = ctx.canvas.height;
+      if (dc.width !== pw || dc.height !== ph) { dc.width = pw; dc.height = ph; }
+      var dx = dc.getContext('2d');
+      this.pass(dx, sc, true);
+      if (this.lampA > 0) {
+        // the lamp's hole: geometry (circle 60vmax at -4vw -10vh) in sync with #lamp in css/site.css —
+        // a lamp close to the desk: small concentrated pool, steep falloff
+        var lx = -0.04 * pw, ly = -0.10 * ph, lr = 0.60 * Math.max(pw, ph);
+        var punch = this.lampA * LAMP_MIX;
+        var grad = dx.createRadialGradient(lx, ly, 0, lx, ly, lr);
+        grad.addColorStop(0, 'rgba(0,0,0,' + punch + ')');
+        grad.addColorStop(0.55, 'rgba(0,0,0,' + punch + ')');
+        grad.addColorStop(0.92, 'rgba(0,0,0,0)');
+        dx.setTransform(1, 0, 0, 1, 0, 0);
+        dx.globalCompositeOperation = 'destination-out';
+        dx.fillStyle = grad; dx.fillRect(0, 0, pw, ph);
+        dx.globalCompositeOperation = 'source-over';
+      }
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalAlpha = this.darkA;
+      ctx.drawImage(dc, 0, 0);
+      ctx.globalAlpha = 1;
+    }
+    ctx.setTransform(dpr * cz, 0, 0, dpr * cz, dpr * cam.x, dpr * cam.y);
     if (P.bookShowMask || this.editing) { ctx.globalAlpha = 0.38; ctx.drawImage(this.tintC, f.x, f.y, D.W * f.s, D.H * f.s); ctx.globalAlpha = 1; }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (this.editing && this.brushPos) {
