@@ -16,11 +16,16 @@
   color-scheme: light;
 }
 :root[data-theme="dark"] {
-  --paper: #141a21;   /* keep in sync with the dark surround fill in js/pond/book.js */
+  --paper: #000000;   /* keep in sync with the dark surround fill in js/pond/book.js */
   --chrome-ink: #e8e2d4;
   --chrome-rule: rgba(232, 226, 212, 0.35);
   color-scheme: dark;
 }
+/* the lights are off: drawings/props sink into the dark; page text reads by the water's glow */
+:root[data-theme="dark"] #journal-root { filter: brightness(0.5) saturate(0.85); }
+:root[data-theme="dark"] #spread [data-node] { color: #c9d2d8; }
+:root[data-theme="dark"] #spread .small { color: #93a1ab; }
+:root[data-theme="dark"] #spread a { color: #e08d63; border-bottom-color: rgba(224, 141, 99, 0.35); }
 
 html, body { height: 100%; }
 body {

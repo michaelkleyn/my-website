@@ -20,5 +20,6 @@
  "surroundBottom": "#151009",
  "alpha": true,
  "src": "book.webp",
+ "srcDark": "book.dark.jpg",
  "pages": "pages.png"
 }

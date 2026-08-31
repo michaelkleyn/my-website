@@ -245,8 +245,12 @@ School.prototype.draw = function () {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.globalAlpha = 1;
   ctx.globalCompositeOperation = 'source-over';
-  ctx.fillStyle = book ? '#ffffff' : P.paper;   // on paper, white is the paper
-  ctx.fillRect(0, 0, this.fullW, this.H);
+  if (book && document.documentElement.dataset.theme === 'dark') {
+    ctx.clearRect(0, 0, this.fullW, this.H);   // strokes on transparent: multiply leaves the dark page, 'lighter' can glow
+  } else {
+    ctx.fillStyle = book ? '#ffffff' : P.paper;   // on paper, white is the paper
+    ctx.fillRect(0, 0, this.fullW, this.H);
+  }
   if (P.waterOn && P.pondOn) {
     if (Water.pondDirty && this.atlas && !Painter.painting) Water.paintPond();
     if (Water.pond) {

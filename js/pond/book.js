@@ -122,18 +122,37 @@ export var Book = {
     wctx.drawImage(this.maskC, b[0] * R, b[1] * R, (b[2] - b[0]) * R, (b[3] - b[1]) * R, 0, 0, sc.W, sc.H);
     wctx.globalCompositeOperation = 'source-over';
     var cam = this.camera, cz = cam.zoom || 1;
+    // dark mode: a lights-off photo of the same journal (opaque, black to its edges) + the water glows additively
+    var dark = document.documentElement.dataset.theme === 'dark' && this.D.srcDark;
+    if (dark && !this.darkImg) {
+      var s2 = this; this.darkImg = new Image();
+      this.darkImg.onload = function () { s2.darkReady = true; };
+      this.darkImg.src = this.D.srcDark;
+    }
+    var photo = dark && this.darkReady ? this.darkImg : this.img;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
     // the journal is a cut-out: it sits on the tank's paper (dark value in sync with --paper in css/site.css)
-    ctx.fillStyle = document.documentElement.dataset.theme === 'dark' ? '#141a21' : P.paper;
+    ctx.fillStyle = dark ? '#000000' : P.paper;
     ctx.fillRect(0, 0, sc.cw, sc.ch);
     ctx.setTransform(dpr * cz, 0, 0, dpr * cz, dpr * cam.x, dpr * cam.y);   // the camera: photo, pond and overlays move as one
     // down-right shadow matching the iPod's (css/ipod.css .ipod-shadow); offsets are CTM-independent so it holds at any zoom
     ctx.shadowColor = 'rgba(20, 16, 8, 0.3)';
     ctx.shadowOffsetX = 6 * dpr; ctx.shadowOffsetY = 7 * dpr; ctx.shadowBlur = 8 * dpr;
-    ctx.drawImage(this.img, f.x, f.y, D.W * f.s, D.H * f.s);
+    ctx.drawImage(photo, f.x, f.y, D.W * f.s, D.H * f.s);
     ctx.shadowColor = 'rgba(0, 0, 0, 0)'; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
     ctx.globalCompositeOperation = 'multiply';
     ctx.drawImage(wc, 0, 0, wc.width, wc.height, f.x + sc.ox * f.s, f.y + sc.oy * f.s, sc.W * f.s, sc.H * f.s);   // world = photo px: same transform as the photo
+    if (dark) {
+      // bioluminescence: the masked world again, downsampled ×4 (the upscale is the blur) and added on top
+      var g = this.glowC || (this.glowC = document.createElement('canvas'));
+      var gw = Math.max(1, Math.round(wc.width / 4)), gh = Math.max(1, Math.round(wc.height / 4));
+      if (g.width !== gw || g.height !== gh) { g.width = gw; g.height = gh; }
+      var gx = g.getContext('2d');
+      gx.setTransform(1, 0, 0, 1, 0, 0); gx.clearRect(0, 0, gw, gh); gx.drawImage(wc, 0, 0, gw, gh);
+      ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.6;
+      ctx.drawImage(g, 0, 0, gw, gh, f.x + sc.ox * f.s, f.y + sc.oy * f.s, sc.W * f.s, sc.H * f.s);
+      ctx.globalAlpha = 1;
+    }
     ctx.globalCompositeOperation = 'source-over';
     if (P.bookShowMask || this.editing) { ctx.globalAlpha = 0.38; ctx.drawImage(this.tintC, f.x, f.y, D.W * f.s, D.H * f.s); ctx.globalAlpha = 1; }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);

@@ -42,6 +42,7 @@ export async function loadBook(url) {
   var inline = fromInline(); if (inline && inline.book) return inline.book;
   var base = absolute(location.href, url), b = await getJSON(base);
   b.src = absolute(base, b.src); b.pages = absolute(base, b.pages);
+  if (b.srcDark) b.srcDark = absolute(base, b.srcDark);
   return b;
 }
 

@@ -330,6 +330,23 @@
     return styleEl;
   }
 
+  // Image nodes with a '<name>.dark.<ext>' sibling on disk swap to it while the page theme is dark.
+  // Probed once per URL on first need; index.html dispatches 'themechange' on toggle.
+  var darkProbe = {};
+  function setThemedSrc(img) {
+    var dark = document.documentElement.dataset.theme === 'dark', ds = img.dataset.darkSrc;
+    if (!dark) { img.src = img.dataset.lightSrc; return; }
+    if (darkProbe[ds] === false) return;
+    if (darkProbe[ds] === true) { img.src = ds; return; }
+    var probe = new Image();
+    probe.onload = function () { darkProbe[ds] = true; setThemedSrc(img); };
+    probe.onerror = function () { darkProbe[ds] = false; };
+    probe.src = ds;
+  }
+  window.addEventListener('themechange', function () {
+    document.querySelectorAll('img[data-dark-src]').forEach(setThemedSrc);
+  });
+
   function makeNodeElement(node) {
     var el;
     var kind = node.kind;
@@ -337,6 +354,8 @@
     if (kind === 'image') {
       el = document.createElement('img');
       el.src = node.src;
+      var dm = /^(.*)\.(png|webp|jpe?g)$/i.exec(node.src || '');
+      if (dm) { el.dataset.lightSrc = node.src; el.dataset.darkSrc = dm[1] + '.dark.' + dm[2]; setThemedSrc(el); }
       if (node.srcset) el.srcset = node.srcset;
       if (node.a11y && node.a11y.decorative) {
         el.alt = '';

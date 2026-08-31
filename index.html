@@ -26,6 +26,7 @@
         var b = e.target.closest && e.target.closest('[data-theme-set]'); if (!b) return;
         root.dataset.theme = b.dataset.themeSet; try { localStorage.setItem('site-theme', b.dataset.themeSet); } catch (e2) {}
         mark(b.dataset.themeSet);
+        window.dispatchEvent(new Event('themechange'));
       });
     })();
   </script>
