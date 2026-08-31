@@ -26,7 +26,8 @@ export function createNavigator(deps) {
     const target = cameraOf(scene, bucket);
     if (!meta.initial) {
       // pull back over the spine while the pages change
-      await Promise.all([fade(true), camera.to({ zoom: Math.max(0.9, target.zoom * 0.92), cx: 768, cy: 512 }, { duration: 520, ease: 'inOutQuad' })]);
+      const tz = target && target.zoom ? target.zoom : 1;
+      await Promise.all([fade(true), camera.to({ zoom: Math.max(0.9, tz * 0.92), cx: 768, cy: 512 }, { duration: 520, ease: 'inOutQuad' })]);
       if (pond.journal && pond.journal.ready && currentSpread != null && route.spread !== currentSpread && typeof pond.journal.turn === 'function') {
         pond.journal.turn(route.spread > currentSpread ? 1 : -1);
       }

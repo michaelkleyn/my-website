@@ -12,6 +12,7 @@ export function createCamera(pond) {
   }
   /** photo-space target → the pond's screen-space camera { zoom, x, y } */
   function toScreen(t) {
+    if (!t) return { zoom: 1, x: 0, y: 0 };   // null target = the base fit (bookX/bookY/bookZoom place the book)
     const f = pond.book.fit, a = area();
     const zoom = t.zoom || 1, cx = t.cx != null ? t.cx : 768, cy = t.cy != null ? t.cy : 512;
     return { zoom, x: a.w / 2 - (f.x + cx * f.s) * zoom, y: a.h / 2 - (f.y + cy * f.s) * zoom };
@@ -38,9 +39,11 @@ export function createCamera(pond) {
   return { to, set, toScreen, get current() { return pond.camera; } };
 }
 
-/** The camera target a scene declares for the current breakpoint, else the default (whole journal). */
+/** The camera target a scene declares for the current breakpoint. No camera — or an explicit null — means
+ *  the base fit: the book sits where the pond config (bookX/bookY/bookZoom) puts it. */
 export function cameraOf(scene, bucket) {
   const c = scene && scene.camera;
-  if (!c) return { zoom: 1, cx: 768, cy: 512 };
-  return c[bucket] || c.desktop || c.tablet || c.mobile || { zoom: 1, cx: 768, cy: 512 };
+  if (!c) return null;
+  for (const k of [bucket, 'desktop', 'tablet', 'mobile']) if (c[k] !== undefined) return c[k];
+  return null;
 }
