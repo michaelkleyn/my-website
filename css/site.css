@@ -103,8 +103,7 @@ body:has(#le-root) #visitor-ui { z-index: 2000001; }
 body:has(#le-root) #designer { z-index: 2000002; }
 body:has(#panel:not(.hidden)) .le-right { right: 360px; }                       /* the inspector steps left of the pond panel */
 body:has(#le-root.le-clean) #panel, body:has(#le-root.le-clean) #toggle-panel, body:has(#le-root.le-clean) #visitor-ui { display: none; }   /* Tab preview: nothing but the page */
-body.pond-tool .le-overlay { pointer-events: none; }                            /* mask brush / arrange: the pond gets the pointer */
-body.pond-tool #tank { cursor: crosshair; }
+body.pond-tool .le-overlay { pointer-events: none; }                            /* mask brush / arrange: the pond gets the pointer; #tank's own cursor (pond.css) shows */
 
 /* ---------- reading card: a blog post ---------- */
 #site-modal.reading .modal-card { width: min(760px, 100%); padding: 36px 44px 44px; }
