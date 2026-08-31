@@ -609,18 +609,31 @@ class LayoutEditor {
 
     const grid = el('div', { class: 'le-fields' });
     this._fieldRefs = {};
+    this._sliderRefs = {};
+    const SLIDER_RANGE = { x: [-10, 110], y: [-10, 110], w: [0, 60], h: [0, 100], rot: [-180, 180], opacity: [0, 1], scale: [0.05, 4] };
     const numField = (key, label, step = 1) => {
       const fallback = key === 'scale' ? 1 : '';
       const input = el('input', {
         class: 'le-num', type: 'number', step: String(step),
         value: p[key] != null ? p[key] : fallback,
         'data-key': key,
-        onInput: (e) => this.onFieldInput(key, e.target.value),
+        onInput: (e) => { slider.value = e.target.value; this.onFieldInput(key, e.target.value); },
+      });
+      const range = SLIDER_RANGE[key] || [0, 100];
+      const slider = el('input', {
+        class: 'le-slider', type: 'range',
+        min: String(range[0]), max: String(range[1]), step: String(step),
+        value: p[key] != null ? p[key] : (key === 'scale' ? 1 : 0),
+        // one undo entry per slider drag: snapshot at gesture start, apply-only after
+        onPointerdown: () => this.snapshot(),
+        onInput: (e) => { input.value = e.target.value; this.onFieldInput(key, e.target.value, true); },
       });
       this._fieldRefs[key] = input;
+      this._sliderRefs[key] = slider;
       return el('label', { class: 'le-field' }, [
         el('span', { class: 'le-field-label', text: label }),
         input,
+        slider,
       ]);
     };
 
@@ -714,15 +727,17 @@ class LayoutEditor {
       if (document.activeElement === input) continue; // don't fight the user typing
       const v = p[key];
       input.value = v != null ? v : '';
+      const slider = this._sliderRefs && this._sliderRefs[key];
+      if (slider && document.activeElement !== slider) slider.value = v != null ? v : (key === 'scale' ? 1 : 0);
     }
   }
 
-  onFieldInput(key, raw) {
+  onFieldInput(key, raw, skipSnapshot) {
     const node = this.nodeById(this.selectedId);
     if (!node) return;
     const num = parseFloat(raw);
     if (Number.isNaN(num)) return;
-    this.snapshot();
+    if (!skipSnapshot) this.snapshot();
     const p = this.placementFor(node);
     p[key] = key === 'opacity' ? clamp(num, 0, 1) : num;
     this.preview();
