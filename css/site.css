@@ -96,22 +96,28 @@ nav[data-node="nav"] a.is-active { border-bottom-color: var(--chrome-ink); }
 
 /* ---------- 'Leave a fish': a brass bookmark whose tab slips between the pages ---------- */
 #bookmark-leave {
-  --bm-x: 132px; --bm-y: 60px;         /* fallbacks — the pond panel's Bookmark sliders (bookmarkX/Y/W) drive these at runtime */
+  --bm-x: 115px; --bm-y: 60px;          /* fallbacks — the pond panel's Bookmark sliders (bookmarkX/Y/W) drive these at runtime */
   position: absolute; left: var(--bm-x); top: var(--bm-y);
   width: 300px; aspect-ratio: 640 / 125;
   background: none; border: none; padding: 0; cursor: pointer;
+  filter: drop-shadow(2px 3px 3px rgba(30, 20, 8, 0.35));   /* on the button: shadows the composed silhouette, not the notch edges */
 }
 #bookmark-leave .bm { position: absolute; inset: 0; background-image: url(/assets/pond/bookmark-leave.png); background-size: 100% 100%; }
 :root[data-theme="dark"] #bookmark-leave .bm { background-image: url(/assets/pond/bookmark-leave.dark.png); }
-/* the cut: everything left of the clip hole's left rail is the tab, swallowed by the page mask
-   (mask-image set live by pond.js from Book.maskUrl(), so brush edits move the slot) */
+/* the cut: the clip's TONGUE (the flap inside the cutout, box 3.44–29.38% × 18.4–87.2%) is its own piece.
+   It wears the INVERSE page mask (set live by pond.js from Book.maskUrlInv()), so it vanishes under the
+   paper while the frame stays on top — the page edge slides into the clip's mouth. */
 #bookmark-leave .bm-tab {
-  clip-path: inset(0 calc(100% - 3.44%) 0 0);
+  clip-path: polygon(3.44% 24.8%, 11% 24.8%, 13% 51.2%, 11% 80%, 3.44% 80%);   /* the tongue, traced from alpha */
   -webkit-mask-size: 1536px 1024px; mask-size: 1536px 1024px;
   -webkit-mask-position: calc(var(--bm-x) * -1) calc(var(--bm-y) * -1); mask-position: calc(var(--bm-x) * -1) calc(var(--bm-y) * -1);
   -webkit-mask-repeat: no-repeat; mask-repeat: no-repeat;
 }
-#bookmark-leave .bm-main { clip-path: inset(0 0 0 3.44%); filter: drop-shadow(2px 3px 3px rgba(30, 20, 8, 0.35)); transition: transform 120ms ease; }
+#bookmark-leave .bm-main {
+  clip-path: polygon(evenodd, 0 0, 100% 0, 100% 100%, 0 100%, 0 0,
+    3.44% 24.8%, 11% 24.8%, 13% 51.2%, 11% 80%, 3.44% 80%, 3.44% 24.8%);
+  transition: transform 120ms ease;
+}
 #bookmark-leave:hover .bm-main, #bookmark-leave:focus-visible .bm-main { transform: translateY(-1px); }
 #bookmark-leave:active .bm-main { transform: translateY(1px); }
 #btn-leave { display: none; }            /* the paper button lives on in the lab; the bookmark replaces it here */

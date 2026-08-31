@@ -143,7 +143,8 @@ export function createPond(opts) {
     journalRoot.style.webkitMaskImage = url; journalRoot.style.maskImage = url;
     journalRoot.style.webkitMaskSize = size; journalRoot.style.maskSize = size;
     journalRoot.style.webkitMaskRepeat = 'no-repeat'; journalRoot.style.maskRepeat = 'no-repeat';
-    if (bmTab) { bmTab.style.webkitMaskImage = url; bmTab.style.maskImage = url; }   // size/position live in css/site.css
+    var inv = 'url(' + Book.maskUrlInv() + ')';   // the tongue hides where the paper is: inverse mask
+    if (bmTab) { bmTab.style.webkitMaskImage = inv; bmTab.style.maskImage = inv; }   // size/position live in css/site.css
   }
   function scheduleJournalMask() { clearTimeout(maskCssTimer); maskCssTimer = setTimeout(applyJournalMask, 250); }
   function syncJournalView() {

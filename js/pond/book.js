@@ -56,6 +56,18 @@ export var Book = {
   screenFit: function () { var f = this.fit, c = this.camera; return { s: f.s * c.zoom, x: f.x * c.zoom + c.x, y: f.y * c.zoom + c.y }; },
   /** The composed page mask as a CSS mask-image data URL (alpha = where the pond shows), in photo space. */
   maskUrl: function () { if (this.maskDirty) this.rebuildMask(); return this.maskC ? this.maskC.toDataURL() : ''; },
+  /** The inverse (alpha = where there is NO page): for things that slide UNDER the paper, like the bookmark's tongue. */
+  maskUrlInv: function () {
+    if (this.maskDirty) this.rebuildMask();
+    if (!this.maskC) return '';
+    var c = this.invC || (this.invC = document.createElement('canvas'));
+    if (c.width !== this.maskC.width || c.height !== this.maskC.height) { c.width = this.maskC.width; c.height = this.maskC.height; }
+    var x = c.getContext('2d');
+    x.globalCompositeOperation = 'source-over'; x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+    x.globalCompositeOperation = 'destination-out'; x.drawImage(this.maskC, 0, 0);
+    x.globalCompositeOperation = 'source-over';
+    return c.toDataURL();
+  },
 
   /** Two-pass chamfer distance, inside and outside, → signed distance in mask px. */
   signedDistance: function (inside) {
