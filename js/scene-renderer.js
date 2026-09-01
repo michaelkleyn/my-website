@@ -332,16 +332,15 @@
 
   // Image nodes with a '<name>.dark.<ext>' sibling on disk swap to it while the page theme is dark.
   // Probed once per URL on first need; index.html dispatches 'themechange' on toggle.
+  // Ask for the theme's art directly and fall back if it isn't there, rather than loading the light
+  // copy first and swapping: one request instead of two, and no flash of light art on a dark load.
   var darkProbe = {};
   function setThemedSrc(img) {
     var dark = document.documentElement.dataset.theme === 'dark', ds = img.dataset.darkSrc;
-    if (!dark) { img.src = img.dataset.lightSrc; return; }
-    if (darkProbe[ds] === false) return;
-    if (darkProbe[ds] === true) { img.src = ds; return; }
-    var probe = new Image();
-    probe.onload = function () { darkProbe[ds] = true; setThemedSrc(img); };
-    probe.onerror = function () { darkProbe[ds] = false; };
-    probe.src = ds;
+    if (!dark || darkProbe[ds] === false) { img.src = img.dataset.lightSrc; return; }
+    img.onerror = function () { img.onerror = null; darkProbe[ds] = false; img.src = img.dataset.lightSrc; };
+    img.addEventListener('load', function () { darkProbe[ds] = true; }, { once: true });
+    img.src = ds;
   }
   window.addEventListener('themechange', function () {
     document.querySelectorAll('img[data-dark-src]').forEach(setThemedSrc);
@@ -353,9 +352,14 @@
 
     if (kind === 'image') {
       el = document.createElement('img');
-      el.src = node.src;
+      // hidden until the pixels are there, so a node never appears as a gap or half-dressed
+      el.classList.add('scene-img');
+      var show = function () { el.classList.add('is-loaded'); };
+      el.addEventListener('load', show);
       var dm = /^(.*)\.(png|webp|jpe?g)$/i.exec(node.src || '');
       if (dm) { el.dataset.lightSrc = node.src; el.dataset.darkSrc = dm[1] + '.dark.' + dm[2]; setThemedSrc(el); }
+      else el.src = node.src;
+      if (el.complete && el.naturalWidth) show();
       if (node.srcset) el.srcset = node.srcset;
       if (node.a11y && node.a11y.decorative) {
         el.alt = '';
@@ -364,7 +368,7 @@
         el.alt = (node.a11y && node.a11y.alt) || '';
       }
       el.decoding = 'async';
-      el.loading = 'lazy';
+      el.loading = 'eager';   // scene nodes are all on the opening spread: lazy only delays the reveal
       if (node.objectFit) el.style.objectFit = node.objectFit;
       el.draggable = false;
       if (node.action && (node.action.href || node.action.modal)) {   // a drawing you can click: a link, or a modal the site opens

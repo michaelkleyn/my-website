@@ -47,6 +47,13 @@ export var Book = {
     this.img = new Image();
     this.img.onload = function () { self.imgReady = true; self.maybeReady(); };
     this.img.src = D.src;
+    // In the dark the very first composed frame wants the night photo: load it alongside the lit one
+    // rather than on demand, or the book is briefly lit. (compose() still loads it lazily on a toggle.)
+    if (D.srcDark && document.documentElement.dataset.theme === 'dark') {
+      this.darkImg = new Image();
+      this.darkImg.onload = function () { self.darkReady = true; };
+      this.darkImg.src = D.srcDark;
+    }
   },
   /** 'ready' fires once, when both the photo and the page mask have decoded — in either order (URLs load in any order). */
   maybeReady: function () { if (this.imgReady && this.dist && !this.ready) { this.ready = true; this.emit('ready'); } },

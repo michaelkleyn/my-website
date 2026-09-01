@@ -33,6 +33,15 @@ async function start() {
 
   document.addEventListener('click', (e) => { const t = e.target.closest && e.target.closest('[data-leave-fish]'); if (!t) return; e.preventDefault(); const b = document.getElementById('btn-leave'); if (b) b.click(); });
   window.__site = { pond, camera, bookSpace, router, navigator, modal, renderer };
+  // One reveal for the whole scene: hold it until the spread's art has decoded, so nothing arrives
+  // half-dressed (the iPod's screen before its body). Bounded — a slow asset can't strand the page.
+  const art = Array.from(document.querySelectorAll('#book-space img'), (i) => (i.decode ? i.decode().catch(() => {}) : Promise.resolve()));
+  const photo = new Promise((res) => {   // the journal photo the canvas composes — in the dark, the night one
+    const ok = () => pond.book.ready && (!pond.book.darkImg || pond.book.darkReady);
+    if (ok()) return res();
+    const iv = setInterval(() => { if (ok()) { clearInterval(iv); res(); } }, 60);
+  });
+  await Promise.race([Promise.all([...art, photo]), new Promise((r) => setTimeout(r, 1500))]);
   document.documentElement.classList.add('site-ready');
 }
 

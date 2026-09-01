@@ -103,7 +103,7 @@ body, nav[data-node="nav"], nav[data-node="nav"] a, #theme-toggle, #spread [data
   transition-duration: 0.18s;
   transition-timing-function: linear;
 }
-#journal-root { transition: filter 0.18s linear; }
+#journal-root { transition: filter 0.18s linear, opacity 500ms ease; }
 
 /* ---------- the spread: whatever the current page puts on the pages ---------- */
 #spread { position: absolute; inset: 0; transition: opacity 220ms ease; }
@@ -161,8 +161,14 @@ body, nav[data-node="nav"], nav[data-node="nav"] a, #theme-toggle, #spread [data
 .modal-loading, .modal-error { font-family: "IBM Plex Mono", monospace; font-size: 13px; color: var(--ink-2); }
 
 /* ---------- states ---------- */
-html:not(.site-ready) #book-space { opacity: 0; }
-html.site-ready #book-space { opacity: 1; transition: opacity 400ms ease; }
+/* the scene arrives as one fade — canvas, journal object and page content together, once the pond has
+   booted and the spread's art has decoded (js/site/main.js). site-failed reveals whatever did load. */
+html:not(.site-ready):not(.site-failed) :is(#book-space, #tank, #journal-root) { opacity: 0; }
+html:is(.site-ready, .site-failed) :is(#book-space, #tank, #journal-root) { opacity: 1; }
+#book-space, #tank { transition: opacity 500ms ease; }
+/* a node that still arrives late (a route change, a slow image) fades in on its own rather than popping */
+#book-space img.scene-img { opacity: 0; }
+#book-space img.scene-img.is-loaded { opacity: 1; transition: opacity 350ms ease; }
 html.site-failed::after { content: "The pond could not start — see the console."; position: fixed; left: 16px; bottom: 16px; font: 13px "IBM Plex Mono", monospace; color: var(--accent); }
 :is(a, button):focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
