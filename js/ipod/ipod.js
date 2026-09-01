@@ -152,14 +152,33 @@
 
   var backlightTimer = null;
   var BACKLIGHT_SECS = { 'Off': 0, '2 Seconds': 2, '5 Seconds': 5, '10 Seconds': 10, '20 Seconds': 20, 'Always On': -1 };
+  // Dark mode leaves the backlight on, the way a lit LCD is the only thing you
+  // see on a dark desk. That holds until the owner works the backlight controls
+  // themselves; from then on it is theirs, and a reload starts from the theme again.
+  var ownBacklight = false;
+  function themeLit() { return !ownBacklight && document.documentElement.dataset.theme === 'dark'; }
+  function syncBacklight() {
+    if (ownBacklight) return;
+    clearTimeout(backlightTimer);
+    screen.classList.toggle('lit', themeLit());
+  }
+  window.addEventListener('themechange', syncBacklight);
   function backlightPoke(force) {
     var secs = BACKLIGHT_SECS[cfg.backlightTimer] || 0;
     if (!force && secs === 0) return;
     screen.classList.add('lit');
     clearTimeout(backlightTimer);
-    if (secs !== -1) backlightTimer = setTimeout(function () { screen.classList.remove('lit'); }, (secs || 5) * 1000);
+    if (secs !== -1) backlightTimer = setTimeout(function () { if (!themeLit()) screen.classList.remove('lit'); }, (secs || 5) * 1000);
+  }
+  // picking a new timer hands the backlight over and applies that choice now
+  function takeBacklight() {
+    ownBacklight = true;
+    clearTimeout(backlightTimer);
+    screen.classList.remove('lit');
+    backlightPoke();
   }
   function backlightToggle() {
+    ownBacklight = true;
     if (screen.classList.contains('lit')) { clearTimeout(backlightTimer); screen.classList.remove('lit'); }
     else backlightPoke(true);
   }
@@ -481,7 +500,7 @@
         cycle('Repeat', 'repeat', ['Off', 'One', 'All']),
         cycle('Sound Check', 'soundCheck', ['Off', 'On']),
         { label: 'EQ', go: function () { return pickList('EQ', 'eq', ['Off', 'Acoustic', 'Bass Booster', 'Classical', 'Dance', 'Electronic', 'Flat', 'Hip Hop', 'Jazz', 'Pop', 'Rock']); } },
-        { label: 'Backlight Timer', go: function () { return pickList('Backlight', 'backlightTimer', ['Off', '2 Seconds', '5 Seconds', '10 Seconds', '20 Seconds', 'Always On']); } },
+        { label: 'Backlight Timer', go: function () { return pickList('Backlight', 'backlightTimer', ['Off', '2 Seconds', '5 Seconds', '10 Seconds', '20 Seconds', 'Always On'], takeBacklight); } },
         { label: 'Contrast', go: function () { return contrastView; } },
         cycle('Clicker', 'clicker', ['On', 'Off']),
         { label: 'Date & Time', go: function () { return textView('Date & Time', function () { return new Date().toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' }) + '<br><span class="big">' + new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }) + '</span>'; }, true); } },
@@ -570,6 +589,7 @@
 
   // ---- boot ---------------------------------------------------------------
   applyContrast();
+  syncBacklight();
   push(mainView);
   fetch('/assets/ipod/library.json', { cache: 'no-cache' })
     .then(function (r) { return r.ok ? r.json() : null; })
