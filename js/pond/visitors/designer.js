@@ -95,6 +95,9 @@ export var Designer = {
       swatches('Ink', SWATCHES.ink, d.colors[0], function (c, quiet) { self.ink = c; d.colors = self.colorsFor(d.style, c); if (!quiet) self.build(); self.changed(); });
     }
   },
+  /** Hold the pending paint and keep "painting…" up. Painting a sprite is ~100ms of p5.brush on the main
+   *  thread; the site holds it while the camera moves onto the page, or the move freezes mid-tween. */
+  hold: function () { clearTimeout(this.timer); $('#fd-painting').hidden = false; },
   changed: function (now) {
     clearTimeout(this.timer); var self = this;
     $('#fd-painting').hidden = false;

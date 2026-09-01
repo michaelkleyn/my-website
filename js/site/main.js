@@ -67,11 +67,15 @@ function mountFishPage(pond, camera, bookSpace) {
   }
   pond.designer.on('open', () => {
     document.documentElement.classList.add('fish-page');
-    camera.to({ zoom: pageZoom(), cx: (r[0] + r[2]) / 2, cy: (r[1] + r[3]) / 2 }, { duration: 620, ease: 'outCubic' });
+    pond.designer.hold();   // measured 104ms of sprite painting, landing right on frame one of the move
+    // An S-curve, not outCubic: leaning in over the page should start from a standstill. outCubic opens at
+    // full speed, and a camera that is already moving on frame one reads as a lurch of the objects on it.
+    camera.to({ zoom: pageZoom(), cx: (r[0] + r[2]) / 2, cy: (r[1] + r[3]) / 2 }, { duration: 900, ease: 'inOutCubic' })
+      .then(() => pond.designer.changed(true));   // paint the fish once the page has arrived
   });
   pond.designer.on('close', () => {
     document.documentElement.classList.remove('fish-page');
-    camera.to(cameraOf(renderer.getScene(), renderer.activeBreakpoint()), { duration: 520, ease: 'outCubic' });
+    camera.to(cameraOf(renderer.getScene(), renderer.activeBreakpoint()), { duration: 750, ease: 'inOutCubic' });
   });
 }
 
