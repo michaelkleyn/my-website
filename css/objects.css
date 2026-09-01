@@ -3,10 +3,17 @@
    rig shadow) stay in its own stylesheet. */
 
 /* Picked up: swell and tilt. `scale`/`rotate` are their own properties, so they
-   compose with the scene renderer's generated `transform` instead of fighting it. */
+   compose with the scene renderer's generated `transform` instead of fighting it.
+
+   !important guards the easing: `transition` is a shorthand, so ANY rule that
+   sets it on a scene node replaces this one wholesale, and a scene node loses
+   its lift silently. That shipped once — an image fade on #book-space img
+   out-specified this, so an iPod picked up by the body snapped while its screen
+   eased, and the two came apart mid-drag. Style scene nodes with animations, or
+   restate scale/rotate, rather than removing this. */
 .scene-layer .scene-node,
 #ipod-rig {
-  transition: scale 0.25s ease, rotate 0.25s ease;
+  transition: scale 0.25s ease, rotate 0.25s ease !important;
 }
 .scene-layer .scene-node.grabbed,
 #ipod-rig.lifted {
@@ -19,7 +26,9 @@
    transparent interior for the shade to land in. */
 .scene-layer [data-node-id="pencil"] {
   filter: drop-shadow(2px 3px 2.5px rgba(30, 20, 8, 0.34));
-  transition: filter 0.25s ease, scale 0.25s ease, rotate 0.25s ease;
+  /* restates scale/rotate — see the guard above; last !important at this
+     specificity wins, so the shadow eases without dropping the lift */
+  transition: filter 0.25s ease, scale 0.25s ease, rotate 0.25s ease !important;
 }
 .scene-layer [data-node-id="pencil"].grabbed {
   filter: drop-shadow(7px 9px 8px rgba(30, 20, 8, 0.28));
