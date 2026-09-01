@@ -33,3 +33,20 @@
 .scene-layer [data-node-id="pencil"].grabbed {
   filter: drop-shadow(7px 9px 8px rgba(30, 20, 8, 0.28));
 }
+
+/* Polaroid: a stiff card lying flat, so a wider, softer shade than the pencil's.
+   Same restated scale/rotate — see the guard above. */
+.scene-layer [data-node-id="polaroid"] {
+  filter: drop-shadow(4px 6px 6px rgba(30, 20, 8, 0.3));
+  transition: filter 0.25s ease, scale 0.25s ease, rotate 0.25s ease !important;
+}
+.scene-layer [data-node-id="polaroid"].grabbed {
+  filter: drop-shadow(10px 14px 16px rgba(30, 20, 8, 0.26));
+}
+/* Dark room: warm brown shade reads as a smudge on a black page — cool it and pull it in. */
+:root[data-theme="dark"] .scene-layer [data-node-id="polaroid"] {
+  filter: drop-shadow(3px 4px 7px rgba(0, 0, 0, 0.55));
+}
+:root[data-theme="dark"] .scene-layer [data-node-id="polaroid"].grabbed {
+  filter: drop-shadow(8px 12px 18px rgba(0, 0, 0, 0.5));
+}

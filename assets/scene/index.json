@@ -58,6 +58,37 @@
       }
     },
     {
+      "id": "polaroid",
+      "kind": "image",
+      "src": "/assets/polaroid/polaroid.webp",
+      "grab": true,
+      "a11y": {
+        "alt": "A polaroid of Michael Brennan, product engineer in San Francisco, tucked into the journal"
+      },
+      "space": "book",
+      "z": 9,
+      "placements": {
+        "desktop": {
+          "x": 0.51,
+          "y": -13.47,
+          "w": 32.71,
+          "rot": 349.04
+        },
+        "tablet": {
+          "x": 0.51,
+          "y": -13.47,
+          "w": 32.71,
+          "rot": 349.04
+        },
+        "mobile": {
+          "x": 0.51,
+          "y": -13.47,
+          "w": 32.71,
+          "rot": 349.04
+        }
+      }
+    },
+    {
       "id": "hero",
       "kind": "content",
       "target": "[data-node=\"hero\"]",
