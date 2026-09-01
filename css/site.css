@@ -166,14 +166,19 @@ body, nav[data-node="nav"], nav[data-node="nav"] a, #theme-toggle, #spread [data
 html:not(.site-ready):not(.site-failed) :is(#book-space, #tank, #journal-root) { opacity: 0; }
 html:is(.site-ready, .site-failed) :is(#book-space, #tank, #journal-root) { opacity: 1; }
 #book-space, #tank { transition: opacity 500ms ease; }
-/* a node that still arrives late (a route change, a slow image) fades in on its own rather than popping */
+/* a node that still arrives late (a route change, a slow image) fades in on its own rather than popping.
+   An animation, not a transition: `transition` here would REPLACE the scale/rotate transitions
+   css/objects.css puts on the same elements, and a picked-up object's art would snap while its rig
+   eased — the iPod's body and screen coming apart. */
 #book-space img.scene-img { opacity: 0; }
-#book-space img.scene-img.is-loaded { opacity: 1; transition: opacity 350ms ease; }
+#book-space img.scene-img.is-loaded { animation: scene-img-in 350ms ease both; }
+@keyframes scene-img-in { from { opacity: 0; } to { opacity: 1; } }
 html.site-failed::after { content: "The pond could not start — see the console."; position: fixed; left: 16px; bottom: 16px; font: 13px "IBM Plex Mono", monospace; color: var(--accent); }
 :is(a, button):focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
   #spread, html.site-ready #book-space, .scene-node--reveal, #lamp, #journal-root,
   body, nav[data-node="nav"], nav[data-node="nav"] a, #theme-toggle, #spread [data-node], #spread .small, #spread a { transition: none; }
+  #book-space img.scene-img, #book-space img.scene-img.is-loaded { animation: none; opacity: 1; }
 }
 
 /* ---------- design mode: the layout editor (compositor) and the pond panel share the screen ---------- */
