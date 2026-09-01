@@ -53,8 +53,9 @@ export var Designer = {
     this.open = true; this.el.hidden = false; $('#fd-err').textContent = '';
     $('#fd-name').value = this.name; $('.fd-preview').style.background = P.paper;
     Visitors.refresh(); this.build(); this.changed(true);
+    this.emit('open');
   },
-  hide: function () { this.open = false; this.el.hidden = true; clearTimeout(this.timer); },
+  hide: function () { this.open = false; this.el.hidden = true; clearTimeout(this.timer); this.emit('close'); },
   build: function () {
     var self = this, d = this.d, box = $('#fd-controls'); box.innerHTML = '';
     var sec = function (t) { var h = document.createElement('div'); h.className = 'fd-section'; h.textContent = t; box.appendChild(h); };
@@ -87,7 +88,7 @@ export var Designer = {
     if (d.style === 'koi') {
       swatches('Body', SWATCHES.body, d.colors[0], function (c, quiet) { self.body = c; d.colors = self.colorsFor('koi', c, d.colors[3]); if (!quiet) self.build(); self.changed(); });
       swatches('Markings', SWATCHES.mark, d.colors[3], function (c, quiet) { self.mark = c; d.colors = self.colorsFor('koi', d.colors[0], c); if (!quiet) self.build(); self.changed(); });
-      sec('Markings');
+      sec('Pattern');   // "Markings" is already the colour above it
       chips([['plain', 'none'], ['kohaku', 'Kohaku'], ['sanke', 'Sanke'], ['showa', 'Showa'], ['bekko', 'Bekko'], ['tancho', 'Tancho'], ['asagi', 'Asagi']], d.pattern, function (v) { d.pattern = v; self.build(); self.changed(); });
       if (d.pattern !== 'plain') { slider('Patch size', 'markScale', 0.5, 2, 0.05); slider('How many', 'markDensity', 0.3, 2, 0.05); }
     } else {
@@ -105,7 +106,7 @@ export var Designer = {
     if (Painter.painting || !school.atlas) { this.timer = setTimeout(function () { self.paint(); }, 250); return; }   // let the atlas finish first
     var sp = Residents.paint(this.d);
     var c = $('#fd-preview'), ctx = c.getContext('2d');
-    var dpr = Math.min(window.devicePixelRatio || 1, 2), k = Math.min(270 / sp.cellW, 190 / sp.cellH);
+    var dpr = Math.min(window.devicePixelRatio || 1, 2), k = Math.min(360 / sp.cellW, 150 / sp.cellH);   // the page is wider than the lab's box; .fd-preview canvas caps it there
     c.width = Math.round(sp.cellW * k * dpr); c.height = Math.round(sp.cellH * k * dpr);
     c.style.width = Math.round(sp.cellW * k) + 'px'; c.style.height = Math.round(sp.cellH * k) + 'px';
     ctx.drawImage(sp.canvas, 0, 0, c.width, c.height);

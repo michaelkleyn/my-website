@@ -20,7 +20,9 @@ export var Visitors = {
       note.hidden = false;
       var b = document.createElement('b'); b.textContent = mine.name;
       note.appendChild(document.createTextNode('Your fish ')); note.appendChild(b); note.appendChild(document.createTextNode(' is in the pond · '));
-      var f = document.createElement('button'); f.type = 'button'; f.textContent = 'find it'; f.addEventListener('click', function () { school.spotlight(mine.id); }); note.appendChild(f);
+      var f = document.createElement('button'); f.type = 'button'; f.textContent = 'find it';
+      f.addEventListener('click', function () { Designer.hide(); school.spotlight(mine.id); });   // the note now lives on the fish page — get out of the way of the pond
+      note.appendChild(f);
     } else if (mine && Residents.loaded) {
       note.hidden = false;
       var b2 = document.createElement('b'); b2.textContent = mine.name;
