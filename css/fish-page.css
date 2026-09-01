@@ -172,7 +172,3 @@
 /* the corner "Leave a fish" button is the bookmark's job on the site */
 #visitor-ui { display: none; }
 
-/* the camera pushes in on the page, which brings the nav down over the title — let it recede */
-#site-header { transition: opacity 400ms ease; }
-html.fish-page #site-header { opacity: 0.28; }
-@media (prefers-reduced-motion: reduce) { #site-header { transition: none; } }

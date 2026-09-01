@@ -59,14 +59,15 @@ function mountFishPage(pond, camera, bookSpace) {
   Object.assign(el.style, { left: r[0] + 'px', top: r[1] + 'px', width: pw + 'px', height: ph + 'px' });
   bookSpace.el.appendChild(el);
 
-  /** The zoom that fits the page in the view with a margin — never below the resting view. */
+  /** The zoom that fits the page in the view with a margin — never below the resting view.
+   *  GROW buys the page a little more of the screen than a plain margin fit would give it. */
+  const GROW = 32;
   function pageZoom() {
     const s = pond.book.fit.s, sc = pond.school;
     const w = sc.cw - ((sc.insets && sc.insets.right) || 0);
-    return Math.max(1, Math.min((w * 0.92) / (pw * s), (sc.ch * 0.92) / (ph * s)));
+    return Math.max(1, Math.min((w * 0.92 + GROW) / (pw * s), (sc.ch * 0.92 + GROW) / (ph * s)));
   }
   pond.designer.on('open', () => {
-    document.documentElement.classList.add('fish-page');
     pond.designer.hold();   // measured 104ms of sprite painting, landing right on frame one of the move
     // An S-curve, not outCubic: leaning in over the page should start from a standstill. outCubic opens at
     // full speed, and a camera that is already moving on frame one reads as a lurch of the objects on it.
@@ -74,7 +75,6 @@ function mountFishPage(pond, camera, bookSpace) {
       .then(() => pond.designer.changed(true));   // paint the fish once the page has arrived
   });
   pond.designer.on('close', () => {
-    document.documentElement.classList.remove('fish-page');
     camera.to(cameraOf(renderer.getScene(), renderer.activeBreakpoint()), { duration: 750, ease: 'inOutCubic' });
   });
 }
