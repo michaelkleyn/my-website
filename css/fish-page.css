@@ -34,6 +34,30 @@
 }
 #book-space #designer[hidden] { display: none; }
 
+/* The pond swims under the page, and pencil hatching behind pencil handwriting is unreadable
+   (the drawn fish crossed straight through "Ink minnow" and the colour rows). This softens the
+   backdrop to a wash. Feathered on both axes and bled past the panel, so the haze has no edge
+   anywhere — it reads as depth of field on the paper, not a pane laid over it.
+   z-index: -1 keeps it behind .fd-card but inside #designer's own stacking context, so the
+   backdrop it blurs is the page photo and the pond, never the writing on top of it. */
+#book-space #designer::before {
+  content: "";
+  position: absolute;
+  inset: -3% -6%;
+  z-index: -1;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  -webkit-mask-image:
+    linear-gradient(to right, transparent 0, #000 15%, #000 85%, transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 10%, #000 90%, transparent 100%);
+  mask-image:
+    linear-gradient(to right, transparent 0, #000 15%, #000 85%, transparent 100%),
+    linear-gradient(to bottom, transparent 0, #000 10%, #000 90%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+}
+
 /* the writing itself, in pencil */
 #book-space #designer,
 #book-space #designer :is(button, input, label, span, div, h2) {
