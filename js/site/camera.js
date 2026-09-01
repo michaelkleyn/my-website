@@ -18,21 +18,32 @@ export function createCamera(pond) {
     return { zoom, x: a.w / 2 - (f.x + cx * f.s) * zoom, y: a.h / 2 - (f.y + cy * f.s) * zoom };
   }
 
-  function set(t) { running && running.cancel && running.cancel(); running = null; pond.setCamera(toScreen(t)); }
+  /** Stop the running tween AND settle its promise. anime's cancel() never fires onComplete, so a bare
+   *  cancel strands whoever awaited that move — and navigate.js awaits it while holding its `busy` latch,
+   *  so one interrupted move (open the fish editor mid-navigation) would kill routing until reload. */
+  function stop() { const r = running; running = null; if (!r) return; if (r.cancel) r.cancel(); if (r.settle) r.settle(); }
+
+  /** Already there, to within a pixel? Then there is nothing to tween. */
+  function near(a, b) { return Math.abs(a.zoom - b.zoom) < 1e-4 && Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) < 0.5; }
+
+  function set(t) { stop(); pond.setCamera(toScreen(t)); }
 
   function to(t, o) {
     o = o || {};
     const target = toScreen(t), cam = pond.camera;
     if (reduced || o.duration === 0 || !window.anime || typeof window.anime.animate !== 'function') { set(t); return Promise.resolve(); }
-    if (running && running.cancel) running.cancel();
+    if (!running && near(target, cam)) return Promise.resolve();   // a route with no camera of its own: don't tween nothing
+    stop();
     const state = { zoom: cam.zoom, x: cam.x, y: cam.y };
     return new Promise((resolve) => {
-      running = window.anime.animate(state, {
+      const anim = window.anime.animate(state, {
         zoom: target.zoom, x: target.x, y: target.y,
         duration: o.duration || 700, ease: o.ease || 'inOutQuad',
         onUpdate: () => pond.setCamera(state),
         onComplete: () => { running = null; pond.setCamera(target); resolve(); },
       });
+      anim.settle = resolve;
+      running = anim;
     });
   }
 

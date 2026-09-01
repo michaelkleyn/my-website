@@ -1,6 +1,8 @@
-// Navigation = a camera move over the journal: pull back a little, swap the spread, apply the page's scene,
-// then settle on the page's own camera. (The big journal's page-turn frames are still to be drawn; until then
-// the spread crossfades.) Only the newest pending navigation runs; reduced motion makes every step instant.
+// Navigation = turning to a spread: fade the pages out, swap the spread, apply the page's scene, then settle on
+// whatever camera that page asks for — the section routes ask for none and stay at the resting view, so on a
+// desktop nothing moves at all. (The big journal's page-turn frames are still to be drawn; until then the spread
+// crossfades — `dir` below is the seam the turn lands in.) Only the newest pending navigation runs; reduced
+// motion makes every step instant.
 import { loadFragment } from './fragments.js';
 import { cameraOf } from './camera.js';
 
@@ -24,13 +26,16 @@ export function createNavigator(deps) {
     ]);
     const bucket = renderer.activeBreakpoint();
     const target = cameraOf(scene, bucket);
+    // Which way the book turns to get here: +1 forward, -1 back, 0 = the same spread (closing a post, or
+    // /work ↔ /projects). Never hand 0 to turn(): its step counter would never reach either end, so `playing`
+    // would latch on, freezing the last frame and blocking every turn after it.
+    const dir = (currentSpread == null || route.spread === currentSpread) ? 0 : (route.spread > currentSpread ? 1 : -1);
     if (!meta.initial) {
-      // pull back over the spine while the pages change
-      const tz = target && target.zoom ? target.zoom : 1;
-      await Promise.all([fade(true), camera.to({ zoom: Math.max(0.9, tz * 0.92), cx: 768, cy: 512 }, { duration: 520, ease: 'inOutQuad' })]);
-      if (pond.journal && pond.journal.ready && currentSpread != null && route.spread !== currentSpread && typeof pond.journal.turn === 'function') {
-        pond.journal.turn(route.spread > currentSpread ? 1 : -1);
-      }
+      // ---- the seam the page turn drops into ----
+      // For now the pages just crossfade: #spread's own 220ms opacity transition carries them back in when
+      // is-leaving comes off below, so there is nothing to await on the way in.
+      await fade(true);
+      if (dir && pond.journal && pond.journal.ready && typeof pond.journal.turn === 'function') pond.journal.turn(dir);
     }
     spreadEl.innerHTML = '';
     spreadEl.appendChild(fragment);

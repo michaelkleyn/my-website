@@ -108,6 +108,10 @@ body, nav[data-node="nav"], nav[data-node="nav"] a, #theme-toggle, #spread [data
 /* ---------- the spread: whatever the current page puts on the pages ---------- */
 #spread { position: absolute; inset: 0; transition: opacity 220ms ease; }
 #spread.is-leaving { opacity: 0; }
+/* A spread is two pages. The compositor gives these their left/top/width (assets/scene/<page>.json, % of the
+   1536×1024 photo); the height is the paper's, so copy that overruns gets cut at the page edge instead of
+   painting on the desk. 70.5% = 722px = the page bottom (y 783) less the 61px top margin. */
+#spread [data-node="page-left"], #spread [data-node="page-right"] { height: 70.5%; overflow: hidden; }
 #spread [data-node] { font-family: "Cormorant Garamond", Georgia, serif; color: var(--ink); }
 #spread h1 { font-family: "Cormorant Garamond", Georgia, serif; font-style: italic; font-weight: 600; font-size: 64px; line-height: 1; letter-spacing: -0.01em; margin: 0 0 14px; text-wrap: balance; }
 #spread h1:focus { outline: none; }
