@@ -50,6 +50,7 @@ export function createPond(opts) {
     if (Drawings.items.length) { if (school.atlas && !Painter.painting) Drawings.paintDirty(); Drawings.tick(now, dt); }
     if (school.residents.length) Residents.tick(now);
     if (P.waterOn && !paused && school.atlas && !Painter.painting && now - Water.lastPaint > P.inkEvery) { Water.lastPaint = now; Water.paint(now); }
+    syncCameraDom();   // the DOM on the book and the photo under it, from one camera value, in one frame
     school.draw();
     frames++;
     tickStats(now);
@@ -151,6 +152,21 @@ export function createPond(opts) {
     if (bmTab) { bmTab.style.webkitMaskImage = inv; bmTab.style.maskImage = inv; }   // size/position live in css/site.css
   }
   function scheduleJournalMask() { clearTimeout(maskCssTimer); maskCssTimer = setTimeout(applyJournalMask, 250); }
+  /** Everything lying on the book is DOM (#book-space's objects and spread, #journal-root); the book photo and
+   *  the pond are canvas. They only stay stuck together if they are transformed with the SAME camera value in
+   *  the SAME frame, so the camera is applied here, from the draw loop — never straight from setCamera.
+   *
+   *  Pushing it from setCamera put the DOM a frame AHEAD of the photo: a tween ticks on anime's rAF, which
+   *  runs after this loop has already drawn, so the objects were placed with a camera value the book had not
+   *  been drawn with yet. Every object slid against the page for the length of the move, and worse the further
+   *  the pond's frame rate fell below the display's — measured at 155px of slip at 17fps. */
+  var camDirty = true;
+  function syncCameraDom() {
+    if (!camDirty) return;
+    camDirty = false;
+    placeJournalRoot();
+    emit('camera', Book.camera);
+  }
   function syncJournalView() {
     placeJournalRoot();
     if (Book.ready && Math.abs(Book.fit.s - lastFitS) > 0.02) { lastFitS = Book.fit.s; Drawings.markDirty(); }
@@ -251,8 +267,7 @@ export function createPond(opts) {
     get camera() { return Book.camera; },
     setCamera: function (c) {
       var cam = Book.camera; if (c) { if (c.zoom != null) cam.zoom = Math.max(0.05, c.zoom); if (c.x != null) cam.x = c.x; if (c.y != null) cam.y = c.y; }
-      placeJournalRoot();
-      emit('camera', cam);
+      camDirty = true;   // applied in frame(), alongside the draw — see syncCameraDom
       return cam;
     },
     /** #book-space transform = the photo's on-screen fit with the camera applied */
