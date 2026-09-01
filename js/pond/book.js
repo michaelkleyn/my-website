@@ -16,6 +16,8 @@ var LAMP_MIX = 0.34;
 export var Book = {
   D: null, ready: false, img: null, imgReady: false,
   camera: { zoom: 1, x: 0, y: 0 },   // runtime screen-space transform (navigation), never part of the config
+  worldAlpha: 1,   // how much of the pond reaches the page: the section spreads fade it to 0 and get the bare photo
+
   MW: 0, MH: 0, R: 0.5,       // mask working resolution: R × the photo
   dist: null,                 // signed distance to the SAM page edge, in mask px (positive inside)
   edits: null,                // brush layer, −1..1 (added to the geometric mask)
@@ -158,25 +160,28 @@ export var Book = {
     ctx.drawImage(photo, f.x, f.y, D.W * f.s, D.H * f.s);
     ctx.shadowColor = 'rgba(0, 0, 0, 0)'; ctx.shadowBlur = 0; ctx.shadowOffsetX = 0; ctx.shadowOffsetY = 0;
     var wx = f.x + sc.ox * f.s, wy = f.y + sc.oy * f.s, ww = sc.W * f.s, wh = sc.H * f.s;
-    ctx.globalCompositeOperation = 'multiply';
-    if (dark) ctx.globalAlpha = 0.45;   // faint imprint only: ink fish stay as shadows gliding under the glow
-    ctx.drawImage(wc, 0, 0, wc.width, wc.height, wx, wy, ww, wh);   // world = photo px: same transform as the photo
-    ctx.globalAlpha = 1;
-    if (dark) {
-      // bioluminescence: the strokes emit — sharp pass lights the bodies, a ×4-downsampled pass (the upscale
-      // is the blur) adds the halo, boosted while drawing into the small buffer so the filter cost stays tiny
-      var g = this.glowC || (this.glowC = document.createElement('canvas'));
-      var gw = Math.max(1, Math.round(wc.width / 4)), gh = Math.max(1, Math.round(wc.height / 4));
-      if (g.width !== gw || g.height !== gh) { g.width = gw; g.height = gh; }
-      var gx = g.getContext('2d');
-      gx.setTransform(1, 0, 0, 1, 0, 0); gx.clearRect(0, 0, gw, gh);
-      gx.filter = 'saturate(1.5) brightness(1.25)';   // no-op where canvas filters are unsupported
-      gx.drawImage(wc, 0, 0, gw, gh);
-      gx.filter = 'none';
-      ctx.globalCompositeOperation = 'lighter';
-      ctx.globalAlpha = 0.9; ctx.drawImage(wc, 0, 0, wc.width, wc.height, wx, wy, ww, wh);
-      ctx.globalAlpha = 0.7; ctx.drawImage(g, 0, 0, gw, gh, wx, wy, ww, wh);
+    var wa = this.worldAlpha;   // 0 on the section spreads: skip the pond entirely and leave the photo as it is
+    if (wa > 0.001) {   // wa 0 = no pond on this spread: skip the passes entirely, the photo stands alone
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.globalAlpha = (dark ? 0.45 : 1) * wa;   // dark: a faint imprint — ink fish stay as shadows under the glow
+      ctx.drawImage(wc, 0, 0, wc.width, wc.height, wx, wy, ww, wh);   // world = photo px: same transform as the photo
       ctx.globalAlpha = 1;
+      if (dark) {
+        // bioluminescence: the strokes emit — sharp pass lights the bodies, a ×4-downsampled pass (the upscale
+        // is the blur) adds the halo, boosted while drawing into the small buffer so the filter cost stays tiny
+        var g = this.glowC || (this.glowC = document.createElement('canvas'));
+        var gw = Math.max(1, Math.round(wc.width / 4)), gh = Math.max(1, Math.round(wc.height / 4));
+        if (g.width !== gw || g.height !== gh) { g.width = gw; g.height = gh; }
+        var gx = g.getContext('2d');
+        gx.setTransform(1, 0, 0, 1, 0, 0); gx.clearRect(0, 0, gw, gh);
+        gx.filter = 'saturate(1.5) brightness(1.25)';   // no-op where canvas filters are unsupported
+        gx.drawImage(wc, 0, 0, gw, gh);
+        gx.filter = 'none';
+        ctx.globalCompositeOperation = 'lighter';
+        ctx.globalAlpha = 0.9 * wa; ctx.drawImage(wc, 0, 0, wc.width, wc.height, wx, wy, ww, wh);
+        ctx.globalAlpha = 0.7 * wa; ctx.drawImage(g, 0, 0, gw, gh, wx, wy, ww, wh);
+        ctx.globalAlpha = 1;
+      }
     }
     ctx.globalCompositeOperation = 'source-over';
   },

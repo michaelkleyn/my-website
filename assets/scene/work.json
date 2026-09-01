@@ -2,6 +2,7 @@
   "page": "work",
   "version": 1,
   "space": "book",
+  "pond": false,
   "camera": {
     "desktop": null,
     "tablet": {

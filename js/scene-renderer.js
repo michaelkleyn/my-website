@@ -244,6 +244,10 @@
     // the journal site: which space nodes default to, and where the camera rests on this page (page wins, else global)
     var sp = base.space || (globalScene && globalScene.space); if (sp) merged.space = sp;
     var cam = base.camera || (globalScene && globalScene.camera); if (cam) merged.camera = cam;
+    // whether the pond is on this page's paper at all (js/site/navigate.js). `false` is the whole point of the
+    // key, so test for null rather than falsiness — the same trap `fluid` above sidesteps.
+    if (base.pond != null) merged.pond = base.pond;
+    else if (globalScene && globalScene.pond != null) merged.pond = globalScene.pond;
     var byId = {};
     var order = [];
     function add(list, scope) {

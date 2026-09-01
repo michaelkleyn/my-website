@@ -14,6 +14,29 @@ export function createNavigator(deps) {
   const wait = (ms) => new Promise((r) => setTimeout(r, reduced ? 0 : ms));
   function fade(out) { spreadEl.classList.toggle('is-leaving', out); return wait(out ? 220 : 0); }
 
+  /** The pond belongs to the home spread. A section page declares `"pond": false` and everything painted on the
+   *  paper leaves: the water, the ripples and every fish through one alpha on the world's multiply
+   *  (js/pond/book.js), and the drawn journal object — boulder, page-turn rocks — with it, since it is DOM over
+   *  the pond rather than part of the world. Nothing is destroyed, so coming home costs nothing to restore, and
+   *  the photo underneath is untouched either way: it is never part of the world canvas.
+   *  #journal-root already carries a 500ms opacity transition (css/site.css), so it needs no tween of its own. */
+  let pondAnim = null;
+  function setPond(on, instant) {
+    const B = pond.book, to = on ? 1 : 0;
+    const jr = document.getElementById('journal-root');
+    if (jr) jr.style.opacity = String(to);
+    if (pondAnim && pondAnim.cancel) pondAnim.cancel();
+    pondAnim = null;
+    if (instant || reduced || !window.anime || typeof window.anime.animate !== 'function') { B.worldAlpha = to; return; }
+    if (Math.abs(B.worldAlpha - to) < 0.001) return;
+    const s = { a: B.worldAlpha };
+    pondAnim = window.anime.animate(s, {
+      a: to, duration: 420, ease: 'inOutQuad',
+      onUpdate: () => { B.worldAlpha = s.a; },
+      onComplete: () => { B.worldAlpha = to; pondAnim = null; },
+    });
+  }
+
   async function run(nav, meta) {
     const { route, params } = nav;
     const page = route.page;
@@ -30,6 +53,7 @@ export function createNavigator(deps) {
     // /work ↔ /projects). Never hand 0 to turn(): its step counter would never reach either end, so `playing`
     // would latch on, freezing the last frame and blocking every turn after it.
     const dir = (currentSpread == null || route.spread === currentSpread) ? 0 : (route.spread > currentSpread ? 1 : -1);
+    setPond(!scene || scene.pond !== false, meta.initial);   // starts with the fade, lands under the turn later
     if (!meta.initial) {
       // ---- the seam the page turn drops into ----
       // For now the pages just crossfade: #spread's own 220ms opacity transition carries them back in when

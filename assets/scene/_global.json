@@ -22,6 +22,75 @@
           "y": 2
         }
       }
+    },
+    {
+      "id": "ipod",
+      "kind": "image",
+      "src": "/assets/ipod/ipod-3g.png",
+      "a11y": {
+        "alt": "A 3rd-generation iPod resting on the journal"
+      },
+      "space": "book",
+      "z": 11,
+      "placements": {
+        "desktop": {
+          "x": 99.52,
+          "y": 34.3,
+          "w": 22.81,
+          "rot": 4.27
+        },
+        "mobile": {
+          "x": 20,
+          "y": 24,
+          "w": 9,
+          "rot": -6
+        }
+      }
+    },
+    {
+      "id": "pencil",
+      "kind": "image",
+      "src": "/assets/pencil/pencil.png",
+      "grab": true,
+      "a11y": {
+        "alt": "A mechanical pencil resting on the journal"
+      },
+      "space": "book",
+      "z": 12,
+      "placements": {
+        "desktop": {
+          "x": -17.38,
+          "y": -20.52,
+          "w": 33.23,
+          "rot": 350.24,
+          "hidden": false
+        },
+        "mobile": {
+          "x": 62,
+          "y": 46,
+          "w": 13,
+          "rot": 0
+        }
+      }
+    },
+    {
+      "id": "polaroid",
+      "kind": "image",
+      "src": "/assets/polaroid/polaroid.webp",
+      "grab": true,
+      "a11y": {
+        "alt": "A polaroid of Michael Kleyn, product engineer in San Francisco, set aside beside the journal"
+      },
+      "space": "book",
+      "z": 9,
+      "placements": {
+        "desktop": {
+          "x": -25,
+          "y": 22,
+          "w": 32.71,
+          "rot": 349.04
+        }
+      }
     }
   ]
 }
