@@ -17,9 +17,8 @@
   width: clamp(300px, 28vw, 420px);
   font-size: clamp(12.5px, 1.15vw, 17px);   /* the panel's em: every size below is relative to it */
   z-index: 13;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  display: block;
+  overflow: hidden;
+  display: flex;
   padding: 78px 1.7em 2em;
   background: none;
   box-sizing: border-box;
@@ -72,11 +71,13 @@
 
 /* the card's chrome, gone: no box, no border, no shadow, no grid */
 #designer.fish-panel .fd-card {
-  width: auto; max-height: none; overflow: visible;
+  display: flex; flex-direction: column;
+  flex: 1; min-height: 0;   /* min-height:0 is what lets .fd-body shrink and scroll inside the flex column */
+  width: auto; max-height: none; overflow: hidden;
   background: none; border: none; border-radius: 0; box-shadow: none;
   font-size: 0.88em;
 }
-#designer.fish-panel .fd-body { display: block; padding: 0; }
+#designer.fish-panel .fd-body { display: block; padding: 0; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
 #designer.fish-panel .fd-head { display: block; padding: 0; text-align: center; position: relative; }
 #designer.fish-panel .fd-head h2 { font-size: 2em; font-style: normal; font-weight: 600; line-height: 1; margin: 0; }
 #designer.fish-panel .fd-head .fd-sub { display: block; max-width: none; font-size: 1em; color: var(--pencil-2); margin-top: 1px; }
@@ -182,7 +183,8 @@
 
 /* ---------- the foot: a last rule, the count, the release ---------- */
 #designer.fish-panel .fd-foot {
-  border-top: none; margin-top: 12px; padding: 9px 0 0; gap: 10px; align-items: baseline;
+  flex: none;
+  border-top: none; margin-top: 0.7em; padding: 0.55em 0 0; gap: 0.6em; align-items: baseline;
   background: var(--rule-img) repeat-x left top;
 }
 #designer.fish-panel .fd-count { font-size: 1em; font-style: normal; color: var(--pencil-3); }
@@ -203,3 +205,9 @@
 /* the corner "Leave a fish" button is the bookmark's job on the site */
 #visitor-ui { display: none; }
 
+
+/* ---------- while the editor is open the header stops short of its column ----------
+   #site-header is a three-zone grid across the full width, so without this the lights toggle lands on top
+   of the panel — two small targets in one corner, and the moon over the editor instead of over the page.
+   Shortening it also re-centres the nav over the book, which is the half you are actually looking at. */
+:root.focus-journal #site-header { padding-right: calc(clamp(300px, 28vw, 420px) + 1.6rem); }
