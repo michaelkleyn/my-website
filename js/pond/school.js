@@ -242,6 +242,10 @@ School.prototype.step = function (dt) {
 
 School.prototype.draw = function () {
   var screen = this.ctx, dpr = this.dpr, book = Book.active();
+  // Nothing of the pond reaches the page (the journal is panned away, or a spread that has no pond):
+  // don't paint a world canvas that is about to be thrown away. compose() still runs — it draws the photo.
+  // Safe because draw() repaints the world from scratch every frame, so there is no stale state to return to.
+  if (book && Book.worldAlpha < 0.001) { this.ctx = screen; Book.compose(screen, this); return; }
   var ctx = book ? Book.worldCtx(this.W, this.H, dpr) : screen;
   this.ctx = ctx;   // drawSpine draws through this.ctx
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);

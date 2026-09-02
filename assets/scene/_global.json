@@ -3,27 +3,6 @@
   "version": 1,
   "nodes": [
     {
-      "id": "nav",
-      "kind": "content",
-      "target": "[data-node=\"nav\"]",
-      "space": "viewport",
-      "z": 20,
-      "placements": {
-        "desktop": {
-          "x": 50,
-          "y": 3
-        },
-        "tablet": {
-          "x": 50,
-          "y": 2.5
-        },
-        "mobile": {
-          "x": 50,
-          "y": 2
-        }
-      }
-    },
-    {
       "id": "ipod",
       "kind": "image",
       "src": "/assets/ipod/ipod-3g.png",
@@ -79,14 +58,14 @@
       "src": "/assets/polaroid/polaroid.webp",
       "grab": true,
       "a11y": {
-        "alt": "A polaroid of Michael Kleyn, product engineer in San Francisco, set aside beside the journal"
+        "alt": "A polaroid of Michael Kleyn, product engineer in San Francisco, tucked into the journal"
       },
       "space": "book",
       "z": 9,
       "placements": {
         "desktop": {
-          "x": -25,
-          "y": 22,
+          "x": 0.51,
+          "y": -13.47,
           "w": 32.71,
           "rot": 349.04
         }

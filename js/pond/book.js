@@ -192,10 +192,12 @@ export var Book = {
   compose: function (ctx, sc) {
     var dpr = sc.dpr, D = this.D, f = this.fit, wc = this.worldC, R = this.R, b = this.bbox;
     if (this.maskDirty) this.rebuildMask();
-    var wctx = wc.getContext('2d');
-    wctx.setTransform(dpr, 0, 0, dpr, 0, 0); wctx.globalAlpha = 1; wctx.globalCompositeOperation = 'destination-in';
-    wctx.drawImage(this.maskC, b[0] * R, b[1] * R, (b[2] - b[0]) * R, (b[3] - b[1]) * R, 0, 0, sc.W, sc.H);
-    wctx.globalCompositeOperation = 'source-over';
+    if (this.worldAlpha > 0.001) {   // no pond on the page: the world was never painted, so there is nothing to clip
+      var wctx = wc.getContext('2d');
+      wctx.setTransform(dpr, 0, 0, dpr, 0, 0); wctx.globalAlpha = 1; wctx.globalCompositeOperation = 'destination-in';
+      wctx.drawImage(this.maskC, b[0] * R, b[1] * R, (b[2] - b[0]) * R, (b[3] - b[1]) * R, 0, 0, sc.W, sc.H);
+      wctx.globalCompositeOperation = 'source-over';
+    }
     var cam = this.camera, cz = cam.zoom || 1;
     // dark mode: a lights-off photo of the same journal (opaque, black to its edges) + the water glows additively
     var dark = document.documentElement.dataset.theme === 'dark' && this.D.srcDark;

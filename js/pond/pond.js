@@ -45,11 +45,14 @@ export function createPond(opts) {
     var dt = Math.min(0.05, (now - last) / 1000 || 0.016);
     last = now;
     emit('frame', { now: now, dt: dt });
-    if (!paused) school.step(dt);
+    // Off the page (panned away, or a spread with no pond) the sim is invisible, so it does not run: the ink
+    // paint alone is ~12ms. The fish resume mid-stride when the journal comes back, which nobody can tell.
+    var shown = !Book.active() || Book.worldAlpha > 0.001;
+    if (!paused && shown) school.step(dt);
     if (Journal.ready) { if (Journal.obstacleDirty) Journal.rebuildObstacle(); Journal.tick(now); }
     if (Drawings.items.length) { if (school.atlas && !Painter.painting) Drawings.paintDirty(); Drawings.tick(now, dt); }
     if (school.residents.length) Residents.tick(now);
-    if (P.waterOn && !paused && school.atlas && !Painter.painting && now - Water.lastPaint > P.inkEvery) { Water.lastPaint = now; Water.paint(now); }
+    if (P.waterOn && !paused && shown && school.atlas && !Painter.painting && now - Water.lastPaint > P.inkEvery) { Water.lastPaint = now; Water.paint(now); }
     syncCameraDom();   // the DOM on the book and the photo under it, from one camera value, in one frame
     school.draw();
     frames++;

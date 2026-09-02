@@ -10,15 +10,19 @@
   --accent: #b0522f;
   --accent-2: #78c0e0;
   --rule: rgba(43, 58, 72, 0.28);
-  /* chrome = what sits over the tank's surround (nav, toggle); the spread sits on the photo pages, which stay light */
+  /* chrome = what sits on the ground (--paper): the nav, the toggle, and every panel of the rail. The ground
+     inverts with the theme, so chrome type must too. --ink is the other thing: ink on light paper — the photo's
+     pages and the modal card, both of which stay light in the dark. Do not conflate them. */
   --chrome-ink: var(--ink);
   --chrome-rule: var(--rule);
+  --chrome-accent: var(--accent);
   color-scheme: light;
 }
 :root[data-theme="dark"] {
   --paper: #000000;   /* keep in sync with the dark surround fill in js/pond/book.js */
   --chrome-ink: #e8e2d4;
   --chrome-rule: rgba(232, 226, 212, 0.35);
+  --chrome-accent: #e08d63;   /* the rust accent has no contrast on black */
   color-scheme: dark;
 }
 /* the lights are off: drawings/props sink into the dark; page text reads by the water's glow */
@@ -54,16 +58,30 @@ body {
 #book-space a, #book-space button, #book-space input, #book-space [data-node] { pointer-events: auto; }
 #book-space [data-node] { position: absolute; }   /* the compositor places these (content nodes) */
 
-/* ---------- the site header: a fixed layer over everything but the tools; the nav is placed in it by the compositor ---------- */
-#site-header { position: fixed; inset: 0; z-index: 15; pointer-events: none; }
-#site-header [data-node] { position: absolute; pointer-events: auto; }
+/* ---------- the site header: a real three-zone bar (mark · nav · lights), fixed over the rail.
+   It used to be placed by the compositor from a `nav` node in _global.json; that node emitted
+   position/left/top into #scene-style and would have fought this layout, so it is gone. ---------- */
+#site-header {
+  position: fixed;
+  left: 0; right: 0; top: 0;
+  z-index: 15;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 20px;
+  padding: 22px clamp(20px, 4vw, 56px);
+  pointer-events: none;
+}
+#site-header > * { pointer-events: auto; }
+#site-mark { justify-self: start; line-height: 0; color: var(--chrome-ink); }
+#site-mark svg { width: 52px; height: auto; }
 
-/* ---------- nav: hand-lettered tags, fixed to the window ---------- */
+/* ---------- nav: hand-lettered tags, centred in the bar ---------- */
 nav[data-node="nav"] {
   display: flex;
   align-items: baseline;
   gap: 26px;
-  transform: translateX(-50%);   /* the compositor places its centre: x = 50 is the middle of the window */
+  justify-self: center;
   white-space: nowrap;
   font-family: "Cormorant Garamond", Georgia, serif;
   font-size: 22px;
@@ -75,8 +93,8 @@ nav[data-node="nav"] a { color: inherit; text-decoration: none; border-bottom: 1
 nav[data-node="nav"] a:hover, nav[data-node="nav"] a:focus-visible { border-bottom-color: var(--chrome-rule); outline: none; }
 nav[data-node="nav"] a.is-active { border-bottom-color: var(--chrome-ink); }
 
-/* ---------- theme toggle: the drawstring sun/moon (js/theme-toggle.js), last item in the nav row ---------- */
-#theme-toggle { align-self: center; position: relative; top: -4px; color: var(--chrome-ink); line-height: 0; }   /* optical: the body sits low in its viewBox (string headroom) */
+/* ---------- theme toggle: the drawstring sun/moon (js/theme-toggle.js), the header's right zone ---------- */
+#theme-toggle { justify-self: end; position: relative; top: -4px; color: var(--chrome-ink); line-height: 0; }   /* optical: the body sits low in its viewBox (string headroom) */
 #theme-toggle button { background: none; border: none; padding: 2px; cursor: pointer; color: inherit; line-height: 0; border-radius: 6px; }
 #theme-toggle button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 #theme-toggle svg { width: 30px; height: 30px; overflow: visible; }
