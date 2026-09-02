@@ -47,7 +47,30 @@ export function createCamera(pond) {
     });
   }
 
-  return { to, set, toScreen, get current() { return pond.camera; } };
+  /** Slide the whole world sideways. The rail's panels are viewport-widths apart, which is a screen-space
+   *  quantity — `to()` maps photo-space {zoom,cx,cy} targets and is the wrong shape for it. x moves alone:
+   *  pond.setCamera only assigns the keys it is given, so zoom and y are left as they are. */
+  function panTo(x, o) {
+    o = o || {};
+    const cam = pond.camera;
+    if (reduced || o.duration === 0 || !window.anime || typeof window.anime.animate !== 'function') {
+      stop(); pond.setCamera({ x }); return Promise.resolve();
+    }
+    if (!running && Math.abs(cam.x - x) < 0.5) return Promise.resolve();
+    stop();
+    const state = { x: cam.x };
+    return new Promise((resolve) => {
+      const anim = window.anime.animate(state, {
+        x, duration: o.duration || 900, ease: o.ease || 'inOutCubic',
+        onUpdate: () => pond.setCamera({ x: state.x }),
+        onComplete: () => { running = null; pond.setCamera({ x: x }); resolve(); },
+      });
+      anim.settle = resolve;
+      running = anim;
+    });
+  }
+
+  return { to, set, panTo, toScreen, get current() { return pond.camera; } };
 }
 
 /** The camera target a scene declares for the current breakpoint. No camera — or an explicit null — means

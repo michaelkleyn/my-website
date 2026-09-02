@@ -2,48 +2,5 @@
   "page": "blog",
   "version": 1,
   "space": "book",
-  "pond": false,
-  "camera": {
-    "desktop": null,
-    "tablet": {
-      "zoom": 1.6,
-      "cx": 453,
-      "cy": 402
-    },
-    "mobile": {
-      "zoom": 1.6,
-      "cx": 453,
-      "cy": 402
-    }
-  },
-  "nodes": [
-    {
-      "id": "page-left",
-      "kind": "content",
-      "target": "[data-node=\"page-left\"]",
-      "space": "book",
-      "z": 10,
-      "placements": {
-        "desktop": {
-          "x": 12.24,
-          "y": 6,
-          "w": 34.57
-        }
-      }
-    },
-    {
-      "id": "page-right",
-      "kind": "content",
-      "target": "[data-node=\"page-right\"]",
-      "space": "book",
-      "z": 10,
-      "placements": {
-        "desktop": {
-          "x": 53.58,
-          "y": 6,
-          "w": 33.92
-        }
-      }
-    }
-  ]
+  "nodes": []
 }

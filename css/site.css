@@ -25,14 +25,11 @@
   --chrome-accent: #e08d63;   /* the rust accent has no contrast on black */
   color-scheme: dark;
 }
-/* the lights are off: drawings/props sink into the dark; page text reads by the water's glow */
+/* the lights are off: drawings/props sink into the dark */
 :root[data-theme="dark"] #journal-root { filter: brightness(0.5) saturate(0.85); }
 /* ...until the lamp lands: it relights the drawings (they sit mostly inside its radius — the
    far-corner seam is accepted for now) */
 :root[data-theme="dark"].lamp-on #journal-root { filter: brightness(0.68) saturate(0.9); transition-duration: 90ms; }   /* dark/lit mix matching LAMP_MIX in book.js */
-:root[data-theme="dark"] #spread [data-node] { color: #c9d2d8; }
-:root[data-theme="dark"] #spread .small { color: #93a1ab; }
-:root[data-theme="dark"] #spread a { color: #e08d63; border-bottom-color: rgba(224, 141, 99, 0.35); }
 
 html, body { height: 100%; }
 body {
@@ -116,32 +113,95 @@ nav[data-node="nav"] a.is-active { border-bottom-color: var(--chrome-ink); }
 :root.lamp-on #lamp { opacity: 1; }
 
 /* theme changes cross-fade fast and linear rather than snapping; the canvas does the same in book.js */
-body, nav[data-node="nav"], nav[data-node="nav"] a, #theme-toggle, #spread [data-node], #spread .small, #spread a {
+body, nav[data-node="nav"], nav[data-node="nav"] a, #theme-toggle, #site-mark, .panel-scroll, .panel a, .panel .small {
   transition-property: background-color, color, border-color;
   transition-duration: 0.18s;
   transition-timing-function: linear;
 }
 #journal-root { transition: filter 0.18s linear, opacity 500ms ease; }
 
-/* ---------- the spread: whatever the current page puts on the pages ---------- */
-#spread { position: absolute; inset: 0; transition: opacity 220ms ease; }
-#spread.is-leaving { opacity: 0; }
-/* A spread is two pages. The compositor gives these their left/top/width (assets/scene/<page>.json, % of the
-   1536×1024 photo); the height is the paper's, so copy that overruns gets cut at the page edge instead of
-   painting on the desk. 70.5% = 722px = the page bottom (y 783) less the 61px top margin. */
-#spread [data-node="page-left"], #spread [data-node="page-right"] { height: 70.5%; overflow: hidden; }
-#spread [data-node] { font-family: "Cormorant Garamond", Georgia, serif; color: var(--ink); }
-#spread h1 { font-family: "Cormorant Garamond", Georgia, serif; font-style: italic; font-weight: 600; font-size: 64px; line-height: 1; letter-spacing: -0.01em; margin: 0 0 14px; text-wrap: balance; }
-#spread h1:focus { outline: none; }
-#spread h2 { font-family: "Cormorant Garamond", Georgia, serif; font-weight: 600; font-size: 34px; line-height: 1.1; margin: 22px 0 8px; }
-#spread p { font-family: "Cormorant Garamond", Georgia, serif; font-size: 20px; line-height: 1.38; margin: 0 0 10px; max-width: 34em; }
-#spread a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(176, 82, 47, 0.35); }
-#spread a:hover { border-bottom-color: var(--accent); }
-#spread ul { padding-left: 1.1em; }
-#spread li { font-family: "Cormorant Garamond", Georgia, serif; font-size: 22px; line-height: 1.35; margin-bottom: 8px; }
-#spread .lede { font-size: 26px; }
-#spread .small { font-family: "IBM Plex Sans", sans-serif; font-size: 14px; color: var(--ink-2); }
-#spread .projects a > b { font-size: 26px; }
+/* ---------- the rail: one strip of viewport-wide panels, moved by the camera (js/site/rail.js) ----------
+   #track carries translateX(Book.camera.x) — the same value the canvas draws the photo with, in the same
+   frame — so the journal on panel 0 and the panels beside it never slide against each other. The panels are
+   transparent: the ground is the canvas, which fills the viewport with --paper every frame (js/pond/book.js).
+   The rail itself is click-through so the journal underneath stays grabbable; only .panel-scroll takes input,
+   and on the home panel it covers just the right half. */
+#rail { position: fixed; inset: 0; z-index: 12; overflow: hidden; pointer-events: none; }
+#track { display: flex; height: 100%; will-change: transform; }
+.panel { flex: 0 0 100vw; width: 100vw; height: 100%; display: grid; }
+.panel-scroll { height: 100%; overflow-y: auto; overscroll-behavior: contain; pointer-events: auto; padding: 96px clamp(20px, 4vw, 56px) 56px; }
+/* home: the journal has the left half, so the column and its input surface stay out of its way */
+.panel[data-panel="index"] { grid-template-columns: 46% 54%; }
+.panel[data-panel="index"] .panel-scroll { grid-column: 2; overflow: hidden; }
+.panel:not([data-panel="index"]) .panel-scroll { max-width: 1100px; width: 100%; justify-self: center; }
+
+/* ---------- panel type: screen-space, on the ground, so it takes the chrome colours ---------- */
+.panel-scroll { font-family: "Cormorant Garamond", Georgia, serif; color: var(--chrome-ink); }
+.panel h1 { font-family: "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif; font-weight: 600; font-size: clamp(38px, 4.4vw, 62px); line-height: 1.06; letter-spacing: -0.022em; margin: 0 0 20px; text-wrap: balance; }
+.panel h1:focus { outline: none; }
+.panel h2 { font-weight: 600; font-size: clamp(24px, 2.1vw, 32px); line-height: 1.15; margin: 30px 0 10px; }
+.panel p { font-size: clamp(17px, 1.35vw, 21px); line-height: 1.5; margin: 0 0 12px; max-width: 34em; }
+.panel a { color: var(--chrome-accent); text-decoration: none; border-bottom: 1px solid currentColor; }
+.panel a:hover { border-bottom-color: transparent; }
+.panel ul { padding-left: 1.1em; }
+.panel li { font-size: clamp(17px, 1.4vw, 22px); line-height: 1.4; margin-bottom: 8px; }
+.panel .lede { font-size: clamp(19px, 1.6vw, 25px); color: var(--chrome-ink); }
+.panel .small { font-family: "IBM Plex Sans", sans-serif; font-size: 14px; color: var(--chrome-ink); opacity: 0.62; }
+
+/* While the fish editor is open the camera zooms the journal; the strip has nothing to do with that move,
+   so it steps out rather than being scaled along with it. */
+#rail { transition: opacity 260ms ease; }
+:root.focus-journal #rail { opacity: 0; pointer-events: none; }
+
+/* ---------- the home panel ---------- */
+.home { display: flex; flex-direction: column; height: 100%; justify-content: center; gap: 4px; max-width: 640px; }
+.home .lede { max-width: 30em; margin-bottom: 22px; }
+.home-cta { display: flex; flex-wrap: wrap; gap: 12px; margin: 6px 0 40px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 10px;
+  font-family: "IBM Plex Sans", sans-serif; font-size: 15px; font-weight: 500; line-height: 1;
+  padding: 14px 20px; border-radius: 6px; border: 1px solid var(--chrome-ink);
+  text-decoration: none; white-space: nowrap;
+}
+/* `.panel a` sets the link colour and underline, and it outranks a bare `.btn-*`; scope these to .panel so a
+   button reads as a button rather than as a link that happens to have a box round it. */
+.panel .btn { border-bottom-color: transparent; }
+.panel .btn-solid { background: var(--chrome-ink); color: var(--paper); border-color: var(--chrome-ink); }
+.panel .btn-solid:hover { opacity: 0.85; }
+.panel .btn-quiet { background: none; color: var(--chrome-ink); border-color: var(--chrome-rule); }
+.panel .btn-quiet:hover { background: color-mix(in srgb, var(--chrome-ink) 8%, transparent); }
+
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; list-style: none; padding: 0; margin: 0; }
+.card {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+  padding: 18px 18px 16px; border: 1px solid var(--chrome-rule); border-radius: 8px;
+  font-size: 14px; margin: 0;
+}
+.card h2 { font-family: "Cormorant Garamond", Georgia, serif; font-size: 20px; margin: 2px 0 0; }
+.card p { font-size: 14px; line-height: 1.42; margin: 0 0 6px; max-width: none; }
+.card a { font-size: 14px; margin-top: auto; }
+.card-icon { width: 40px; height: 40px; border-radius: 50%; background: color-mix(in srgb, var(--chrome-ink) 10%, transparent); }
+
+.home-footnote { font-family: "Caveat", cursive; font-size: 20px; line-height: 1.35; opacity: 0.75; margin: 34px 0 0; }
+
+/* ---------- a phone: no journal, no rail — just the panels, stacked ----------
+   The pond is never booted here (js/site/main.js HANDHELD), so there is nothing running behind this. */
+@media (max-width: 768px) {
+  body { overflow: auto; }
+  #tank, #journal-root, #book-space, #lamp { display: none; }
+  #rail { position: static; overflow: visible; pointer-events: auto; }
+  #track { display: block; height: auto; transform: none; will-change: auto; }
+  .panel { flex: none; width: auto; height: auto; display: block; }
+  .panel + .panel { border-top: 1px solid var(--chrome-rule); }
+  .panel[data-panel="index"] { grid-template-columns: none; }
+  .panel[data-panel="index"] .panel-scroll { grid-column: auto; overflow: visible; }
+  .panel-scroll { height: auto; overflow: visible; max-width: none; padding: 88px 22px 56px; }
+  .home { height: auto; display: block; max-width: none; }
+  .cards { grid-template-columns: 1fr; }
+  #site-header { padding: 14px 18px; }
+  #site-mark svg { width: 40px; }
+  nav[data-node="nav"] { gap: 18px; font-size: 19px; }
+}
 
 /* ---------- 'Leave a fish': a brass bookmark whose tab slips between the pages ---------- */
 #bookmark-leave {
@@ -198,8 +258,8 @@ html:is(.site-ready, .site-failed) :is(#book-space, #tank, #journal-root) { opac
 html.site-failed::after { content: "The pond could not start — see the console."; position: fixed; left: 16px; bottom: 16px; font: 13px "IBM Plex Mono", monospace; color: var(--accent); }
 :is(a, button):focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
-  #spread, html.site-ready #book-space, .scene-node--reveal, #lamp, #journal-root,
-  body, nav[data-node="nav"], nav[data-node="nav"] a, #theme-toggle, #spread [data-node], #spread .small, #spread a { transition: none; }
+  #track, html.site-ready #book-space, .scene-node--reveal, #lamp, #journal-root,
+  body, nav[data-node="nav"], nav[data-node="nav"] a, #theme-toggle, #site-mark, .panel-scroll, .panel a { transition: none; }
   #book-space img.scene-img, #book-space img.scene-img.is-loaded { animation: none; opacity: 1; }
 }
 

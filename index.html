@@ -49,10 +49,15 @@
   </header>
 
   <div id="book-space">
-    <div id="spread" aria-live="polite"></div>
     <button id="bookmark-leave" type="button" data-leave-fish aria-label="Leave a fish">
       <span class="bm bm-tab"></span><span class="bm bm-main"></span>
     </button>
+  </div>
+
+  <!-- The rail: one long strip of panels. Panel 0 is the journal's desk; the sections lie to its right.
+       js/site/rail.js builds the panels from the route table and keeps the strip locked to the camera. -->
+  <div id="rail">
+    <div id="track" aria-live="polite"></div>
   </div>
 
   <script src="/js/vendor/p5.brush-2.2.2.js"></script>
