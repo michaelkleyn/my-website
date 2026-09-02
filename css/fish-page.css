@@ -91,7 +91,11 @@
 #designer.fish-panel .fd-head .fd-sub { display: block; max-width: none; font-size: 1em; color: var(--pencil-2); margin-top: 1px; }
 #designer.fish-panel .fd-x {
   position: absolute; right: -6px; top: -12px;
-  font-size: 1.3em; color: var(--pencil-3); padding: 4px 8px;
+  /* The glyph is U+2715, which a handwriting face is unlikely to carry — inheriting var(--hand) left it
+     falling back to whatever the reader's OS offers, so it drew differently from machine to machine.
+     Name a stack that has it. */
+  font-family: var(--sans);
+  font-size: 1.15em; color: var(--pencil-3); padding: 4px 8px;
 }
 #designer.fish-panel .fd-x:hover { color: var(--pencil); }
 
