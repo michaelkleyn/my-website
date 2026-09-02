@@ -61,10 +61,16 @@ export var Book = {
   maybeReady: function () { if (this.imgReady && this.dist && !this.ready) { this.ready = true; this.emit('ready'); } },
   active: function () { return this.ready && !!this.dist && P.bookOn; },
 
-  /** Fit the photo into the tank area (contain × zoom, shifted), and place the page spread as the world. */
+  /** Fit the photo into the tank area (contain × zoom, shifted), and place the page spread as the world.
+   *  Below `designW` the book stops responding to width: it keeps the size and the placement it had at that
+   *  width and slides left by the shortfall instead, so a narrowing window carries it out of view rather than
+   *  shrinking it and re-centring it under the content. Above designW — and in the lab, where designW is 0 —
+   *  this is the original formula exactly, so nothing about a tuned desktop layout moves. */
+  designW: 0,
   layout: function (areaW, areaH) {
-    var D = this.D, s = Math.min(areaW / D.W, areaH / D.H) * P.bookZoom;
-    var x = (areaW - D.W * s) / 2 + P.bookX * areaW, y = (areaH - D.H * s) / 2 + P.bookY * areaH;
+    var D = this.D, w = Math.max(areaW, this.designW || 0);
+    var s = Math.min(w / D.W, areaH / D.H) * P.bookZoom;
+    var x = (w - D.W * s) / 2 + P.bookX * w + (areaW - w), y = (areaH - D.H * s) / 2 + P.bookY * areaH;
     this.fit = { s: s, x: x, y: y };
     var b = this.bbox;
     this.world = { x: x + b[0] * s, y: y + b[1] * s, w: (b[2] - b[0]) * s, h: (b[3] - b[1]) * s };

@@ -25,11 +25,15 @@ const HANDHELD = window.matchMedia && window.matchMedia('(max-width: 768px)').ma
 
 async function start() {
   document.documentElement.classList.toggle('handheld', HANDHELD);
+  // Below this the journal and everything on it stop resizing and slide out of view instead; the
+  // compositor reads it too, so the objects stay glued to the book rather than drifting over it.
+  document.documentElement.dataset.designWidth = '1440';
   const pond = HANDHELD ? null : await bootPond({
     canvas: $('#tank'), journalRoot: $('#journal-root'), root: document.body,
     assetsBase: '/assets/pond/', visitors: true, edit,
     panel: { root: document.body, setInsets: true, hotkeys: false },
   });
+  if (pond) { pond.book.designW = +document.documentElement.dataset.designWidth; pond.resize(); }
   const bookSpace = pond && createBookSpace($('#book-space'), pond);
   const camera = pond && createCamera(pond);
   const modal = createModal(document.body, { onClose: () => { const cur = router.current(); if (cur && cur.route.open === 'post') router.go('/blog', { replace: true }); } });

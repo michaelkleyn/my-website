@@ -188,6 +188,15 @@
 
   // Linearly interpolate a node's placement at a given viewport width, clamping
   // to the nearest keyframe beyond the smallest/largest anchor width.
+  // Book-space nodes are authored against the journal, and the journal stops responding to width below the
+  // site's design width (js/pond/book.js designW). Interpolate them at the same clamped width or they drift
+  // across a book that is no longer moving — the pencil rotating toward its mobile placement while the page
+  // under it holds still. Zero (the lab, /v2/) leaves every node on the live viewport width, as before.
+  function designWidth() { return +(document.documentElement.dataset.designWidth || 0) || 0; }
+  function interpWidth(node, width) {
+    return spaceOf(node) === 'book' ? Math.max(width, designWidth()) : width;
+  }
+
   function interpolatedPlacement(node, width) {
     var frames = nodeKeyframes(node);
     if (frames.length === 0) return null;
@@ -802,7 +811,7 @@
       if (nodeIsFluid(node)) {
         // One interpolated rule for the current width, refreshed on resize.
         // No media query — the value itself glides between breakpoints.
-        var pf = interpolatedPlacement(node, width);
+        var pf = interpolatedPlacement(node, interpWidth(node, width));
         if (pf) base.push(sel + '{' + placementCss(pf, node.kind, node) + '}');
       } else {
         var pDesktop = resolvePlacement(node, 'desktop');
