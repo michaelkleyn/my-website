@@ -10,10 +10,18 @@
      book's tilt or scale, the iPod and pencil can't stack over it, and the ✕ sits in clear air. Under the
      header (15) so the lights toggle stays reachable; over the rail (12). */
   position: fixed;
-  /* left:auto matters: css/pond.css gives #designer `inset: 0` for the lab's floating card, and a box
-     with both left and right set is over-constrained — left wins, and the panel lands against the
-     wrong edge. Right/top/bottom alone are not enough to undo it. */
+  /* css/pond.css:46 styles #designer as the lab's floating card and every one of its declarations has to be
+     undone here, not just the ones that look relevant:
+       inset:0        -> a box with left AND width AND right is over-constrained; LTR drops `right` and the
+                         panel lands against the wrong edge, so left must be explicitly auto.
+       align-items    -> `center` leaves the card at its content height instead of the panel's, so the
+                         internal scroll never engages and the card overhangs both ends. Only bites while
+                         this rule says display:flex — which it now does, so it is live.
+       justify-content-> same rule, same reason: reset it rather than rely on flex:1 masking it.
+     Checked against pond.css each time the display type changes here; an audit made under `display: block`
+     does not survive the switch to flex. */
   right: 0; top: 0; bottom: 0; left: auto;
+  align-items: stretch; justify-content: normal;
   width: clamp(300px, 28vw, 420px);
   font-size: clamp(12.5px, 1.15vw, 17px);   /* the panel's em: every size below is relative to it */
   z-index: 13;
