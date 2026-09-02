@@ -15,7 +15,7 @@ var LAMP_MIX = 0.34;
 
 export var Book = {
   D: null, ready: false, img: null, imgReady: false,
-  camera: { zoom: 1, x: 0, y: 0 },   // runtime screen-space transform (navigation), never part of the config
+  camera: { zoom: 1, x: 0, y: 0, rot: 0 },   // runtime screen-space transform (navigation), never part of the config
   worldAlpha: 1,   // how much of the pond reaches the page: the section spreads fade it to 0 and get the bare photo
 
   MW: 0, MH: 0, R: 0.5,       // mask working resolution: R × the photo
@@ -70,10 +70,18 @@ export var Book = {
     this.world = { x: x + b[0] * s, y: y + b[1] * s, w: (b[2] - b[0]) * s, h: (b[3] - b[1]) * s };
     this.spineX = D.spine + P.bookSpineShift;
   },
-  /** The tilt (P.bookRot) is an OUTER operation on the fit×camera placement, about the photo's on-screen
-   *  centre. Outer because that is the one way the canvas CTM and the CSS transform can be written
-   *  independently and still compose identically — the photo, the pond and everything on the pages have to
-   *  agree to the pixel, and they are drawn by two different renderers. */
+  /** How far the book is turned on screen, in degrees. Two parts, the same split as zoom: P.bookRot is where
+   *  it lies on the desk (design state, the panel's Rotate slider) and camera.rot is the runtime turn
+   *  (navigation, never config) — the fish editor sets camera.rot = -bookRot so the page comes up square to
+   *  read. Straightening it by animating P.bookRot instead would be a page-mask rebuild and a school resize
+   *  on every frame of the tween (js/pond/pond.js, book:'layout'), and would write to the user's own config.
+   *
+   *  The turn is an OUTER operation on the fit×camera placement, about the photo's on-screen centre. Outer
+   *  because that is the one way the canvas CTM and the CSS transform can be written independently and still
+   *  compose identically — the photo, the pond and everything on the pages have to agree to the pixel, and
+   *  they are drawn by two different renderers. */
+  deskRot: function () { return P.bookRot || 0; },
+  tilt: function () { return (P.bookRot || 0) + (this.camera.rot || 0); },
   centre: function () {
     var f = this.fit, c = this.camera, D = this.D, z = c.zoom || 1, s = f.s * z;
     return [f.x * z + c.x + D.W * s / 2, f.y * z + c.y + D.H * s / 2];
@@ -81,7 +89,7 @@ export var Book = {
   /** Turn a screen point about the photo's centre. `unspin` takes the tilt back out — the first step of every
    *  inverse; `spin` puts it in, for anything mapping photo px forward to the screen. */
   turn: function (x, y, sign) {
-    var t = (P.bookRot || 0) * sign;
+    var t = this.tilt() * sign;
     if (!t) return [x, y];
     var m = this.centre(), a = t * Math.PI / 180, cs = Math.cos(a), sn = Math.sin(a);
     var dx = x - m[0], dy = y - m[1];
@@ -99,7 +107,7 @@ export var Book = {
   /** The CSS the DOM layers wear so they land exactly where the canvas draws the photo. transform-origin is
    *  0 0 on both, so the tilt is written out longhand: to the centre, turn, back, then the placement. */
   cssTransform: function () {
-    var sf = this.screenFit(), t = P.bookRot || 0;
+    var sf = this.screenFit(), t = this.tilt();
     var base = 'translate(' + sf.x + 'px,' + sf.y + 'px) scale(' + sf.s + ')';
     if (!t) return base;
     var m = this.centre();
@@ -107,7 +115,7 @@ export var Book = {
   },
   /** Turn the canvas about the same centre, in the space the camera CTM has already set up. */
   spinCtx: function (ctx) {
-    var t = P.bookRot || 0;
+    var t = this.tilt();
     if (!t) return;
     var f = this.fit, D = this.D, rx = f.x + D.W * f.s / 2, ry = f.y + D.H * f.s / 2;
     ctx.translate(rx, ry); ctx.rotate(t * Math.PI / 180); ctx.translate(-rx, -ry);

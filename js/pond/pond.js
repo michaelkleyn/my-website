@@ -269,7 +269,7 @@ export function createPond(opts) {
     /** The runtime camera (navigation): a screen-space translate+scale over photo, pond and journal object. */
     get camera() { return Book.camera; },
     setCamera: function (c) {
-      var cam = Book.camera; if (c) { if (c.zoom != null) cam.zoom = Math.max(0.05, c.zoom); if (c.x != null) cam.x = c.x; if (c.y != null) cam.y = c.y; }
+      var cam = Book.camera; if (c) { if (c.zoom != null) cam.zoom = Math.max(0.05, c.zoom); if (c.x != null) cam.x = c.x; if (c.y != null) cam.y = c.y; if (c.rot != null) cam.rot = c.rot; }
       camDirty = true;   // applied in frame(), alongside the draw — see syncCameraDom
       return cam;
     },

@@ -92,7 +92,10 @@ function mountFishPage(pond, camera, bookSpace) {
     document.documentElement.classList.add('focus-journal');   // the strip steps out of the way
     // An S-curve, not outCubic: leaning in over the page should start from a standstill. outCubic opens at
     // full speed, and a camera that is already moving on frame one reads as a lurch of the objects on it.
-    camera.to({ zoom: pageZoom(), cx: (r[0] + r[2]) / 2, cy: (r[1] + r[3]) / 2 }, { duration: 900, ease: 'inOutCubic' })
+    // rot cancels the desk tilt, so the page comes up square to write on — and squaring it is also what
+    // makes the framing land, since the tilt turns about the photo's centre, which at this zoom is off-screen.
+    camera.to({ zoom: pageZoom(), cx: (r[0] + r[2]) / 2, cy: (r[1] + r[3]) / 2, rot: -pond.book.deskRot() },
+              { duration: 900, ease: 'inOutCubic' })
       .then(() => pond.designer.changed(true));   // paint the fish once the page has arrived
   });
   pond.designer.on('close', () => {
