@@ -15,6 +15,7 @@ export function createNavigator(deps) {
    *  (js/pond/school.js, js/pond/pond.js). #journal-root is DOM over the pond rather than part of the world,
    *  so it rides along on the 500ms opacity transition it already carries in css/site.css. */
   function pondByPan() {
+    if (!pond) return;   // handheld: no journal was ever booted
     const w = window.innerWidth || 1;
     const a = Math.max(0, Math.min(1, 1 + pond.camera.x / w));   // camera.x is 0 on panel 0, -w on panel 1
     pond.book.worldAlpha = a;
@@ -28,12 +29,16 @@ export function createNavigator(deps) {
     if (typeof window.__layoutEditor !== 'undefined' && window.__layoutEditor && window.__layoutEditor.dirty && !meta.initial) {
       if (!window.confirm('Leave this page? Unsaved layout changes will be lost.')) return;
     }
+    // The nav stays live while the fish editor is open, on purpose: clicking a section is a way out of it.
+    // hide() starts its own restore, and rail.goTo's panTo settles zoom/rot/y as well as x, so whichever
+    // lands last leaves the camera flat rather than stranded part-way.
+    if (pond && pond.designer && pond.designer.open) pond.designer.hide();
     document.title = route.title || document.title;
     document.querySelectorAll('nav [data-route]').forEach((a) => { a.classList.toggle('is-active', a.dataset.route === page); if (a.dataset.route === page) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
 
-    const off = pond.on('camera', pondByPan);   // follow the pan frame by frame, not just at the ends
+    const off = pond ? pond.on('camera', pondByPan) : null;   // follow the pan frame by frame, not just at the ends
     try { await rail.goTo(page, { instant: meta.initial }); }
-    finally { off(); pondByPan(); }
+    finally { if (off) off(); pondByPan(); }
 
     if (onPage) onPage(nav);
     // preventScroll matters on a rail: focusing an element in an off-screen panel would otherwise yank the

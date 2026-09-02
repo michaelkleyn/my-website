@@ -18,7 +18,8 @@ export function createCamera(pond) {
     if (!t) return { zoom: 1, x: 0, y: 0, rot: 0 };   // null target = the base fit (bookX/bookY/bookZoom place the book)
     const f = pond.book.fit, a = area();
     const zoom = t.zoom || 1, cx = t.cx != null ? t.cx : 768, cy = t.cy != null ? t.cy : 512;
-    return { zoom, x: a.w / 2 - (f.x + cx * f.s) * zoom, y: a.h / 2 - (f.y + cy * f.s) * zoom, rot: t.rot || 0 };
+    // dx/dy nudge the framing off dead centre — the fish editor shifts the book left to clear its column.
+    return { zoom, x: a.w / 2 - (f.x + cx * f.s) * zoom + (t.dx || 0), y: a.h / 2 - (f.y + cy * f.s) * zoom + (t.dy || 0), rot: t.rot || 0 };
   }
 
   /** Stop the running tween AND settle its promise. anime's cancel() never fires onComplete, so a bare
@@ -51,22 +52,23 @@ export function createCamera(pond) {
   }
 
   /** Slide the whole world sideways. The rail's panels are viewport-widths apart, which is a screen-space
-   *  quantity — `to()` maps photo-space {zoom,cx,cy} targets and is the wrong shape for it. x moves alone:
-   *  pond.setCamera only assigns the keys it is given, so zoom and y are left as they are. */
+   *  quantity — `to()` maps photo-space {zoom,cx,cy} targets and is the wrong shape for it. It settles the
+   *  WHOLE resting state (flat, unturned, at panX), not just x, so a pan that interrupts the fish editor's
+   *  restore finishes it rather than stranding zoom and rot wherever the cancelled tween stopped. */
   function panTo(x, o) {
     o = o || {};
-    const cam = pond.camera;
+    const cam = pond.camera, flat = { zoom: 1, x, y: 0, rot: 0 };
     if (reduced || o.duration === 0 || !window.anime || typeof window.anime.animate !== 'function') {
-      stop(); pond.setCamera({ x }); return Promise.resolve();
+      stop(); pond.setCamera(flat); return Promise.resolve();
     }
-    if (!running && Math.abs(cam.x - x) < 0.5) return Promise.resolve();
+    if (!running && near(flat, cam)) return Promise.resolve();
     stop();
-    const state = { x: cam.x };
+    const state = { zoom: cam.zoom, x: cam.x, y: cam.y, rot: cam.rot || 0 };
     return new Promise((resolve) => {
       const anim = window.anime.animate(state, {
-        x, duration: o.duration || 900, ease: o.ease || 'inOutCubic',
-        onUpdate: () => pond.setCamera({ x: state.x }),
-        onComplete: () => { running = null; pond.setCamera({ x: x }); resolve(); },
+        zoom: 1, x, y: 0, rot: 0, duration: o.duration || 900, ease: o.ease || 'inOutCubic',
+        onUpdate: () => pond.setCamera(state),
+        onComplete: () => { running = null; pond.setCamera(flat); resolve(); },
       });
       anim.settle = resolve;
       running = anim;

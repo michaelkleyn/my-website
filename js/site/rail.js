@@ -83,7 +83,8 @@ export function createRail(opts) {
 
     window.addEventListener('wheel', (e) => {
       // Two other things own the wheel: the iPod's own menu (js/ipod/ipod.js) and any open card's scroller.
-      if (e.target.closest && e.target.closest('#ipod-rig, .modal-card, .fd-card')) return;
+      if (e.target.closest && e.target.closest('#ipod-rig, .modal-card, #designer')) return;
+      if (document.documentElement.classList.contains('focus-journal')) return;   // the editor has the view
       const cur = panels.get(pages[index]);
       if (!cur) return;
       const sc = cur.scroll, dy = e.deltaY;
@@ -105,6 +106,7 @@ export function createRail(opts) {
 
     window.addEventListener('keydown', (e) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      if (document.documentElement.classList.contains('focus-journal')) return;
       if (/^(INPUT|TEXTAREA|SELECT)$/.test((e.target && e.target.tagName) || '')) return;
       const next = e.key === 'ArrowRight' ? step(1) : e.key === 'ArrowLeft' ? step(-1) : null;
       if (!next) return;
