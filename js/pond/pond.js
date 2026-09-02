@@ -137,7 +137,7 @@ export function createPond(opts) {
     if (Book.active()) { journalRoot.style.width = Book.D.W + 'px'; journalRoot.style.height = Book.D.H + 'px'; }
     else { journalRoot.style.width = journalRoot.style.height = ''; }
     journalRoot.style.transformOrigin = '0 0';
-    journalRoot.style.transform = 'translate(' + sf.x + 'px,' + sf.y + 'px) scale(' + sf.s + ')';
+    journalRoot.style.transform = Book.cssTransform();   // fit × camera × tilt, the same turn the canvas takes
   }
   function applyJournalMask() {
     if (!journalRoot) return;

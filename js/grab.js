@@ -43,9 +43,11 @@
 
     function apply() {
       raf = null;
-      // same % delta onto every breakpoint keyframe keeps fluid interpolation coherent
-      var dx = sr.pxToPct(lx - sx, 'x', node);
-      var dy = sr.pxToPct(ly - sy, 'y', node);
+      // same % delta onto every breakpoint keyframe keeps fluid interpolation coherent.
+      // spaceDelta, not pxToPct: it undoes the host's rotation too, so a drag still follows the pointer
+      // when the journal is tilted (P.bookRot).
+      var d = sr.spaceDelta(lx - sx, ly - sy, node);
+      var dx = d[0], dy = d[1];
       for (var b in orig) {
         p[b].x = clamp(orig[b].x + dx);
         p[b].y = clamp(orig[b].y + dy);

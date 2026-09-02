@@ -70,9 +70,48 @@ export var Book = {
     this.world = { x: x + b[0] * s, y: y + b[1] * s, w: (b[2] - b[0]) * s, h: (b[3] - b[1]) * s };
     this.spineX = D.spine + P.bookSpineShift;
   },
-  toPhoto: function (x, y) { var f = this.fit, c = this.camera; x = (x - c.x) / c.zoom; y = (y - c.y) / c.zoom; return [(x - f.x) / f.s, (y - f.y) / f.s]; },
+  /** The tilt (P.bookRot) is an OUTER operation on the fit×camera placement, about the photo's on-screen
+   *  centre. Outer because that is the one way the canvas CTM and the CSS transform can be written
+   *  independently and still compose identically — the photo, the pond and everything on the pages have to
+   *  agree to the pixel, and they are drawn by two different renderers. */
+  centre: function () {
+    var f = this.fit, c = this.camera, D = this.D, z = c.zoom || 1, s = f.s * z;
+    return [f.x * z + c.x + D.W * s / 2, f.y * z + c.y + D.H * s / 2];
+  },
+  /** Turn a screen point about the photo's centre. `unspin` takes the tilt back out — the first step of every
+   *  inverse; `spin` puts it in, for anything mapping photo px forward to the screen. */
+  turn: function (x, y, sign) {
+    var t = (P.bookRot || 0) * sign;
+    if (!t) return [x, y];
+    var m = this.centre(), a = t * Math.PI / 180, cs = Math.cos(a), sn = Math.sin(a);
+    var dx = x - m[0], dy = y - m[1];
+    return [m[0] + dx * cs - dy * sn, m[1] + dx * sn + dy * cs];
+  },
+  unspin: function (x, y) { return this.turn(x, y, -1); },
+  spin: function (x, y) { return this.turn(x, y, 1); },
+  toPhoto: function (x, y) {
+    var p = this.unspin(x, y), f = this.fit, c = this.camera;
+    var x2 = (p[0] - c.x) / c.zoom, y2 = (p[1] - c.y) / c.zoom;
+    return [(x2 - f.x) / f.s, (y2 - f.y) / f.s];
+  },
   /** the photo's on-screen fit with the camera applied: what #book-space should be transformed to */
   screenFit: function () { var f = this.fit, c = this.camera; return { s: f.s * c.zoom, x: f.x * c.zoom + c.x, y: f.y * c.zoom + c.y }; },
+  /** The CSS the DOM layers wear so they land exactly where the canvas draws the photo. transform-origin is
+   *  0 0 on both, so the tilt is written out longhand: to the centre, turn, back, then the placement. */
+  cssTransform: function () {
+    var sf = this.screenFit(), t = P.bookRot || 0;
+    var base = 'translate(' + sf.x + 'px,' + sf.y + 'px) scale(' + sf.s + ')';
+    if (!t) return base;
+    var m = this.centre();
+    return 'translate(' + m[0] + 'px,' + m[1] + 'px) rotate(' + t + 'deg) translate(' + (-m[0]) + 'px,' + (-m[1]) + 'px) ' + base;
+  },
+  /** Turn the canvas about the same centre, in the space the camera CTM has already set up. */
+  spinCtx: function (ctx) {
+    var t = P.bookRot || 0;
+    if (!t) return;
+    var f = this.fit, D = this.D, rx = f.x + D.W * f.s / 2, ry = f.y + D.H * f.s / 2;
+    ctx.translate(rx, ry); ctx.rotate(t * Math.PI / 180); ctx.translate(-rx, -ry);
+  },
   /** The composed page mask as a CSS mask-image data URL (alpha = where the pond shows), in photo space. */
   maskUrl: function () { if (this.maskDirty) this.rebuildMask(); return this.maskC ? this.maskC.toDataURL() : ''; },
   /** The inverse (alpha = where there is NO page): for things that slide UNDER the paper, like the bookmark's tongue. */
@@ -154,6 +193,7 @@ export var Book = {
     ctx.fillStyle = dark ? '#000000' : P.paper;
     ctx.fillRect(0, 0, sc.cw, sc.ch);
     ctx.setTransform(dpr * cz, 0, 0, dpr * cz, dpr * cam.x, dpr * cam.y);   // the camera: photo, pond and overlays move as one
+    this.spinCtx(ctx);   // and the tilt, about the photo's centre — the DOM layers wear the same turn in CSS
     // down-right shadow matching the iPod's (css/ipod.css .ipod-shadow); offsets are CTM-independent so it holds at any zoom
     ctx.shadowColor = 'rgba(20, 16, 8, 0.3)';
     ctx.shadowOffsetX = 6 * dpr; ctx.shadowOffsetY = 7 * dpr; ctx.shadowBlur = 8 * dpr;
@@ -247,6 +287,7 @@ export var Book = {
       ctx.globalAlpha = 1;
     }
     ctx.setTransform(dpr * cz, 0, 0, dpr * cz, dpr * cam.x, dpr * cam.y);
+    this.spinCtx(ctx);
     if (P.bookShowMask || this.editing) { ctx.globalAlpha = 0.38; ctx.drawImage(this.tintC, f.x, f.y, D.W * f.s, D.H * f.s); ctx.globalAlpha = 1; }
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     if (this.editing && this.brushPos) {

@@ -108,6 +108,21 @@
     return (pct / 100) * r.height;
   }
 
+  // A drag delta in screen px → % of the host, with the host's whole transform undone — scale and any
+  // rotation. pxToPct divides by getBoundingClientRect, which is the AABB: tilt the host and that box grows,
+  // so a drag would be both mis-scaled and sent off at an angle. Inverting the matrix's linear part fixes both.
+  function spaceDelta(dx, dy, node) {
+    var host = spaceOf(node) === 'book' ? spaceHost() : null;
+    if (!host) return [(dx / window.innerWidth) * 100, (dy / window.innerHeight) * 100];
+    var css = getComputedStyle(host).transform, m;
+    try { m = (!css || css === 'none') ? new DOMMatrixReadOnly() : new DOMMatrixReadOnly(css); }
+    catch (e) { m = new DOMMatrixReadOnly(); }
+    var det = m.a * m.d - m.b * m.c;
+    if (!det || !host.offsetWidth || !host.offsetHeight) return [0, 0];
+    var lx = (dx * m.d - dy * m.c) / det, ly = (dy * m.a - dx * m.b) / det;
+    return [(lx / host.offsetWidth) * 100, (ly / host.offsetHeight) * 100];
+  }
+
   // ---- placement resolution ----------------------------------------------
 
   // Resolve the placement to USE for a given bucket, with desktop as the
@@ -935,6 +950,7 @@
     spaceOf: spaceOf,
     spaceRect: spaceRect,
     pxToPct: pxToPct,
+    spaceDelta: spaceDelta,
     pctToPx: pctToPx,
     isEditEnvironment: isEditEnvironment,
     // extras used by the editor (not part of the minimal contract):

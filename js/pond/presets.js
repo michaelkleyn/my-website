@@ -53,7 +53,7 @@ export var DEFAULTS = {
   // visitors: the "leave a fish" card. Designs live in the pond store; the pond paints them here with the same brushes.
   visitorsOn: true, visitorCap: 30, visitorHover: true,
   // book: the pond drawn on the pages of a journal photo (multiply), clipped to an editable page mask
-  bookOn: true, bookZoom: 1.1, bookX: 0, bookY: 0, bookSpineShift: 0, bookSpineWidth: 80, bookSpineSoft: 30, bookInset: 8, bookFeather: 6, bookShowMask: false,
+  bookOn: true, bookZoom: 1.1, bookX: 0, bookY: 0, bookRot: 0, bookSpineShift: 0, bookSpineWidth: 80, bookSpineSoft: 30, bookInset: 8, bookFeather: 6, bookShowMask: false,
   bookmarkX: 115, bookmarkY: 60, bookmarkW: 300, bookmarkRot: 0,
   bookBrushSize: 60, bookBrushSoft: 0.5, bookMask: '',
 };

@@ -49,6 +49,7 @@ School.prototype.resize = function () {
 /** screen px → world px (book mode: world = photo px, so undo the camera, then the fit) */
 School.prototype.toWorld = function (x, y) {
   var c = Book.camera || { zoom: 1, x: 0, y: 0 };
+  if (Book.active()) { var u = Book.unspin(x, y); x = u[0]; y = u[1]; }   // the tilt is outermost, so it comes off first
   x = (x - c.x) / c.zoom; y = (y - c.y) / c.zoom;
   if (Book.active()) { var f = Book.fit; x = (x - f.x) / f.s; y = (y - f.y) / f.s; }
   return [x - this.ox, y - this.oy];

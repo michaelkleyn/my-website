@@ -11,7 +11,7 @@ export function createBookSpace(el, pond) {
 
   function apply() {
     const f = pond.screenFit;
-    const t = 'translate(' + f.x.toFixed(2) + 'px,' + f.y.toFixed(2) + 'px) scale(' + f.s.toFixed(5) + ')';
+    const t = pond.book.cssTransform();   // fit × camera × tilt — the same string #journal-root wears
     if (t === last) return;
     last = t;
     el.style.transform = t;
@@ -22,8 +22,8 @@ export function createBookSpace(el, pond) {
   apply();
   return {
     el, apply,
-    /** photo px → screen px */
-    toScreen(px, py) { const f = pond.screenFit; return [f.x + px * f.s, f.y + py * f.s]; },
+    /** photo px → screen px, tilt included */
+    toScreen(px, py) { const f = pond.screenFit; return pond.book.spin(f.x + px * f.s, f.y + py * f.s); },
     destroy() { offResize(); offCamera(); },
   };
 }

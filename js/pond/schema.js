@@ -90,6 +90,7 @@ export var SCHEMA = {
     { k: 'bookZoom', l: 'Zoom', t: 'range', min: 0.5, max: 2.5, step: 0.01, book: 'layout' },
     { k: 'bookX', l: 'Shift x', t: 'range', min: -0.5, max: 0.5, step: 0.005, book: 'layout' },
     { k: 'bookY', l: 'Shift y', t: 'range', min: -0.5, max: 0.5, step: 0.005, book: 'layout' },
+    { k: 'bookRot', l: 'Rotate', t: 'range', min: -20, max: 20, step: 0.5, book: 'layout', tip: 'tilt the journal on the desk, about its centre' },
     { sub: 'Bookmark' },
     { k: 'bookmarkX', l: 'Left', t: 'range', min: 0, max: 1536, step: 1, bookmark: 1, tip: 'photo px — keep the tab tip left of the page edge (~141)' },
     { k: 'bookmarkY', l: 'Top', t: 'range', min: 0, max: 1024, step: 1, bookmark: 1 },
