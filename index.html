@@ -15,8 +15,11 @@
   <link rel="stylesheet" href="/css/objects.css">
   <link rel="stylesheet" href="/css/fish-page.css">
   <script>
-    // The scene renderer reads the page key from the URL; SPA routes like /blog/<slug> map to their first segment.
-    (function () { var seg = (location.pathname.split('/').filter(Boolean)[0] || 'index').toLowerCase().replace(/\.html?$/, ''); document.documentElement.dataset.scenePage = seg || 'index'; })();
+    // One scene for the whole site. Everything the compositor places (the iPod, the pencil, the polaroid)
+    // lies on the journal, and the journal is panel 0 of the rail — it does not change when you pan to a
+    // section, so neither does the scene. Deriving this from the URL meant a direct load of /work merged
+    // _global.json with an empty work.json and lost every placement authored in index.json.
+    document.documentElement.dataset.scenePage = 'index';
     // Theme: saved choice wins, else the OS preference; applied before first paint.
     // Clicks, persistence, themechange and the lamp live in js/theme-toggle.js (ART-984).
     (function () {
