@@ -40,7 +40,10 @@ async function start() {
 
   if (pond) {
     pond.on('camera', rail.apply);
-    pond.on('resize', () => { rail.reseat(); navigator.pondByPan(); });
+    pond.on('resize', () => {
+      if (document.documentElement.classList.contains('focus-journal')) return;   // the editor re-frames itself
+      rail.reseat(); navigator.pondByPan();
+    });
     rail.apply();
   }
   await (renderer ? renderer.ready : Promise.resolve());
@@ -100,6 +103,7 @@ function mountFishPage(pond, camera) {
     camera.to(frame(), { duration: 900, ease: 'inOutCubic' })
       .then(() => pond.designer.changed(true));   // paint the fish once the page has arrived
   });
+  pond.on('resize', () => { if (pond.designer.open) camera.to(frame(), { duration: 0 }); });
   pond.designer.on('close', () => {
     document.documentElement.classList.remove('focus-journal');
     // Back to the base fit, which is exactly panel 0 — the bookmark lives on the journal, so the editor can

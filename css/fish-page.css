@@ -14,12 +14,13 @@
      with both left and right set is over-constrained — left wins, and the panel lands against the
      wrong edge. Right/top/bottom alone are not enough to undo it. */
   right: 0; top: 0; bottom: 0; left: auto;
-  width: clamp(330px, 27vw, 430px);
+  width: clamp(300px, 28vw, 420px);
+  font-size: clamp(12.5px, 1.15vw, 17px);   /* the panel's em: every size below is relative to it */
   z-index: 13;
   overflow-y: auto;
   overscroll-behavior: contain;
   display: block;
-  padding: 78px 30px 34px;
+  padding: 78px 1.7em 2em;
   background: none;
   box-sizing: border-box;
   --pencil: #3f4a52;
@@ -53,7 +54,7 @@
   content: "";
   position: fixed;
   inset: 0 0 0 auto;
-  width: clamp(330px, 27vw, 430px);
+  width: clamp(300px, 28vw, 420px);
   z-index: -1;
   pointer-events: none;
   backdrop-filter: blur(6px);
@@ -73,33 +74,33 @@
 #designer.fish-panel .fd-card {
   width: auto; max-height: none; overflow: visible;
   background: none; border: none; border-radius: 0; box-shadow: none;
-  font-size: 15px;
+  font-size: 0.88em;
 }
 #designer.fish-panel .fd-body { display: block; padding: 0; }
 #designer.fish-panel .fd-head { display: block; padding: 0; text-align: center; position: relative; }
-#designer.fish-panel .fd-head h2 { font-size: 34px; font-style: normal; font-weight: 600; line-height: 1; margin: 0; }
-#designer.fish-panel .fd-head .fd-sub { display: block; max-width: none; font-size: 17px; color: var(--pencil-2); margin-top: 1px; }
+#designer.fish-panel .fd-head h2 { font-size: 2em; font-style: normal; font-weight: 600; line-height: 1; margin: 0; }
+#designer.fish-panel .fd-head .fd-sub { display: block; max-width: none; font-size: 1em; color: var(--pencil-2); margin-top: 1px; }
 #designer.fish-panel .fd-x {
   position: absolute; right: -6px; top: -12px;
-  font-size: 22px; color: var(--pencil-3); padding: 4px 8px;
+  font-size: 1.3em; color: var(--pencil-3); padding: 4px 8px;
 }
 #designer.fish-panel .fd-x:hover { color: var(--pencil); }
 
 /* ---------- the fish: painted on the paper, no frame ---------- */
 #designer.fish-panel .fd-preview {
-  height: 132px; margin-top: 6px;
+  height: 7.8em; margin-top: 0.35em;
   border: none; border-radius: 0; overflow: visible;
   /* designer.js sets `.fd-preview { background: P.paper }` inline for the lab's boxed preview;
      on the page the paper is the photo underneath. */
   background: none !important;
 }
 #designer.fish-panel .fd-preview canvas { max-width: 100%; max-height: 100%; }
-#designer.fish-panel .fd-painting { right: 0; bottom: -2px; font-family: var(--hand); font-size: 15px; color: var(--pencil-3); }
+#designer.fish-panel .fd-painting { right: 0; bottom: -2px; font-family: var(--hand); font-size: 0.88em; color: var(--pencil-3); }
 
 /* name it, and paint it again — the specimen's label, under its painting */
 #designer.fish-panel .fd-under { align-items: baseline; gap: 14px; margin-top: 2px; }
 #designer.fish-panel .fd-name {
-  font-size: 27px; font-style: normal; font-weight: 500; color: var(--pencil);
+  font-size: 1.6em; font-style: normal; font-weight: 500; color: var(--pencil);
   border-bottom: 1px solid var(--pencil-3); padding: 0 4px 2px;
 }
 #designer.fish-panel .fd-name::placeholder { color: var(--pencil-3); }
@@ -109,7 +110,7 @@
 #designer.fish-panel .fd-section {
   display: flex; align-items: center; gap: 9px;
   margin: 8px 0 1px;
-  font-size: 20px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--pencil-2);
+  font-size: 1.18em; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--pencil-2);
 }
 #designer.fish-panel .fd-section::after {
   content: ""; flex: 1; height: 6px;
@@ -117,10 +118,10 @@
 }
 
 /* ---------- choices: circled, not filled ---------- */
-#designer.fish-panel .fd-chips { gap: 4px 14px; }
+#designer.fish-panel .fd-chips { gap: 0.25em 0.8em; }
 #designer.fish-panel .fd-chip {
   position: relative;
-  font-size: 17px; font-weight: 500; line-height: 1;
+  font-size: 1em; font-weight: 500; line-height: 1;
   padding: 4px 7px 5px; border: none; border-radius: 0; background: none; color: var(--pencil-2);
 }
 #designer.fish-panel .fd-chip:hover { color: var(--pencil); }
@@ -134,10 +135,10 @@
 /* ---------- sliders: a pencil tick on a dotted line, two to a row ----------
    Two-up is what buys room for the koi pattern's extra sliders without the page scrolling. */
 #designer.fish-panel #fd-controls .fd-ctl {
-  display: inline-grid; grid-template-columns: 76px 1fr; gap: 6px;
+  display: inline-grid; grid-template-columns: 4.5em 1fr; gap: 6px;
   width: 100%; box-sizing: border-box; padding: 0; vertical-align: middle;
 }
-#designer.fish-panel .fd-ctl label { font-size: 18px; line-height: 1.15; color: var(--pencil-2); }
+#designer.fish-panel .fd-ctl label { font-size: 1.06em; line-height: 1.15; color: var(--pencil-2); }
 #designer.fish-panel .fd-ctl input[type="range"] {
   -webkit-appearance: none; appearance: none; width: 100%; height: 16px; background: none; margin: 0;
 }
@@ -163,9 +164,9 @@
 #designer.fish-panel #fd-controls .fd-ctl:has(.fd-swatches) {
   display: grid; grid-template-columns: 1fr; width: 100%; padding: 3px 0 6px; align-items: center;
 }
-#designer.fish-panel .fd-swatches { gap: 8px; }
+#designer.fish-panel .fd-swatches { gap: 0.45em; }
 #designer.fish-panel .fd-swatch {
-  position: relative; width: 19px; height: 19px; border: none; box-shadow: none;
+  position: relative; width: 1.12em; height: 1.12em; border: none; box-shadow: none;
   /* a dab, not a chip: no two the same shape */
   border-radius: 47% 53% 56% 44% / 52% 46% 54% 48%;
   transform: rotate(-6deg);
@@ -176,7 +177,7 @@
   background: var(--ring-img) no-repeat center / 100% 100%;
 }
 #designer.fish-panel .fd-swatches input[type="color"] {
-  width: 22px; height: 20px; border: 1px dashed var(--pencil-3); border-radius: 3px; margin-left: 2px;
+  width: 1.3em; height: 1.18em; border: 1px dashed var(--pencil-3); border-radius: 3px; margin-left: 2px;
 }
 
 /* ---------- the foot: a last rule, the count, the release ---------- */
@@ -184,16 +185,16 @@
   border-top: none; margin-top: 12px; padding: 9px 0 0; gap: 10px; align-items: baseline;
   background: var(--rule-img) repeat-x left top;
 }
-#designer.fish-panel .fd-count { font-size: 17px; font-style: normal; color: var(--pencil-3); }
-#designer.fish-panel .fd-err { font-family: var(--hand); font-size: 17px; color: var(--dab-ring); }
+#designer.fish-panel .fd-count { font-size: 1em; font-style: normal; color: var(--pencil-3); }
+#designer.fish-panel .fd-err { font-family: var(--hand); font-size: 1em; color: var(--dab-ring); }
 #designer.fish-panel #my-fish-note {
   flex-basis: 100%; order: 3;
   background: none; border: none; padding: 0; max-width: none; text-align: left;
-  font-family: var(--hand); font-style: normal; font-size: 17px; color: var(--pencil-2);
+  font-family: var(--hand); font-style: normal; font-size: 1em; color: var(--pencil-2);
 }
 #designer.fish-panel #my-fish-note button { font: inherit; color: var(--dab-ring); }
 #designer.fish-panel .fd-release {
-  font-size: 22px; font-style: normal; font-weight: 600; line-height: 1;
+  font-size: 1.3em; font-style: normal; font-weight: 600; line-height: 1;
   color: var(--dab-ring); background: var(--ring-img) no-repeat center / 100% 100%;
   border: none; border-radius: 0; box-shadow: none; padding: 9px 20px 11px;
 }
