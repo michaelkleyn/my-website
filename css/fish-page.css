@@ -10,7 +10,10 @@
      book's tilt or scale, the iPod and pencil can't stack over it, and the ✕ sits in clear air. Under the
      header (15) so the lights toggle stays reachable; over the rail (12). */
   position: fixed;
-  right: 0; top: 0; bottom: 0;
+  /* left:auto matters: css/pond.css gives #designer `inset: 0` for the lab's floating card, and a box
+     with both left and right set is over-constrained — left wins, and the panel lands against the
+     wrong edge. Right/top/bottom alone are not enough to undo it. */
+  right: 0; top: 0; bottom: 0; left: auto;
   width: clamp(330px, 27vw, 430px);
   z-index: 13;
   overflow-y: auto;
