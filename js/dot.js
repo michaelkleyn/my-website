@@ -2,7 +2,7 @@
 // the trail thinning out behind, and a fresh blot lands.
 (function () {
   var nav = document.querySelector('.nav');
-  var links = Array.from(nav.querySelectorAll('a'));
+  var links = Array.from(nav.querySelectorAll(':scope > a'));   // top-level links only; a sublist's items are not blot stops
   var sections = links.map(function (a) { return document.querySelector(a.hash); });
   var COLOR = '#fe5252', R = 6, LAG = 0.4, DUR = 180, RAIL = 46;   // rail: dot centre sits RAIL px off the widest link
   var dpr = Math.min(devicePixelRatio || 1, 2), S = dpr * 2;   // brush paints at 2x for texture, overlay at dpr
@@ -118,5 +118,6 @@
   mark(idx(location.hash)); settle(idx(location.hash));
   addEventListener('hashchange', function () { var i = idx(location.hash); mark(i); travel(i); });
   addEventListener('resize', function () { cancelAnimationFrame(anim); size(); settle(cur); });
+  nav.addEventListener('transitionend', function (e) { if (e.target.classList.contains('sub')) { size(); settle(cur); } });   // a sublist opened: the links below it moved
 
 })();

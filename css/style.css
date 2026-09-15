@@ -63,6 +63,20 @@ main { grid-column: 2; grid-row: 1; }
   .name:hover::after { clip-path: circle(21px at var(--kx, 50%) var(--ky, 50%)); }
   .nav a:hover::before { clip-path: circle(11px at var(--kx, 50%) var(--ky, 50%)); }   /* the dot's own radius */
 }
+.nav .sub {   /* a section's sub-items, shown when one is open. Opens on load: the rows grow in, then a rail draws down their right edge */
+  list-style: none; margin: 0; padding: 0 0.75rem 0 0; position: relative; align-self: stretch;
+  display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--slow) var(--ease-soft);
+  @starting-style { grid-template-rows: 0fr; }
+}
+.nav .sub > li { overflow: hidden; display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; }
+.nav .sub a { font-size: 1.05rem; font-weight: 500; color: var(--ink-soft); }
+.nav .sub a[aria-current="page"] { color: var(--ink); }
+.nav .sub::after {   /* the rail: draws top to bottom once the rows are in */
+  content: ""; position: absolute; top: 0.2rem; bottom: 0.2rem; right: 0; width: 2px; border-radius: 1px; background: var(--accent);
+  transform: scaleY(1); transform-origin: top; transition: transform var(--slow) var(--ease-soft) calc(var(--slow) * 0.6);
+  @starting-style { transform: scaleY(0); }
+}
+
 .nav a::after {   /* the hover underline: grows out from the left over one quick beat */
   content: ""; position: absolute; left: 0; right: 0; bottom: -3px; height: 3px; border-radius: 2px; background: var(--accent);
   transform: scaleX(0); transform-origin: left; transition: transform var(--quick) var(--ease);
