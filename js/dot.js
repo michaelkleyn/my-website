@@ -4,7 +4,7 @@
   var nav = document.querySelector('.nav');
   var links = Array.from(nav.querySelectorAll('a'));
   var sections = links.map(function (a) { return document.querySelector(a.hash); });
-  var COLOR = '#fe5252', R = 7, LAG = 0.4, DUR = 180, RAIL = 58;   // rail: dot centre sits RAIL px off the widest link
+  var COLOR = '#fe5252', R = 6, LAG = 0.4, DUR = 180, RAIL = 46;   // rail: dot centre sits RAIL px off the widest link
   var dpr = Math.min(devicePixelRatio || 1, 2), S = dpr * 2;   // brush paints at 2x for texture, overlay at dpr
 
   function idx(hash) { return Math.max(0, links.findIndex(function (a) { return a.hash === hash; })); }

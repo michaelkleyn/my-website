@@ -55,10 +55,10 @@
     fvx += ((px - fx) * K - fvx * D) * dt; fvy += ((py - fy) * K - fvy * D) * dt; fx += fvx * dt; fy += fvy * dt;
     // the nearest link pulls on the dot (window.linkPull from glow.js): a smoothed lean of up to 26px toward it, added to the
     // spring gap so the egg forms toward the link even when the pointer is still
-    var P = window.linkPull || { x: 0, y: 0, n: 0 }; plx += (-P.x * P.n * 30 - plx) * 0.15 * dt; ply += (-P.y * P.n * 30 - ply) * 0.15 * dt;   // negated: the tail points at the link, the round head faces away
+    var P = window.linkPull || { x: 0, y: 0, n: 0 }; plx += (-P.x * P.n * 24 - plx) * 0.15 * dt; ply += (-P.y * P.n * 24 - ply) * 0.15 * dt;   // negated: the tail points at the link, the round head faces away
     var dx = px - fx + plx, dy = py - fy + ply, gap = Math.hypot(dx, dy), closing = (lastGap - gap) / dt; lastGap = gap;
     // strain: the spring gap (speed) on its own scale, plus the lean on its own, so the lean is a clear egg even when still
-    var stretch = Math.max(0, Math.min(0.5, Math.hypot(px - fx, py - fy) / 160) - 0.03) + 0.3 * Math.min(1, Math.hypot(plx, ply) / 30);
+    var stretch = Math.max(0, Math.min(0.5, Math.hypot(px - fx, py - fy) / 128) - 0.03) + 0.3 * Math.min(1, Math.hypot(plx, ply) / 24);
     sq = Math.max(sq * Math.pow(0.85, dt), Math.min(0.3, (closing - 4) / 30));   // the gap closing fast is braking: a squash that peaks, then decays over ~10 frames
     s += Math.max(-0.12 * dt, Math.min(0.12 * dt, stretch - sq - s));   // slew-limited: a dead stop squashes over a few frames instead of popping
     var q = -0.4 * s;
@@ -72,7 +72,7 @@
       el.style.rotate = Math.atan2(dy, dx) + 'rad';
       el.style.scale = (1 + s) + ' ' + (1 + q);
       el.style.borderRadius = (50 + t) + '% ' + (50 - t) + '% ' + (50 - t) + '% ' + (50 + t) + '% / 50%';
-      el.style.transform = 'translate(-50%, -50%) translateX(' + (-0.3 * t) + 'px)';   // local px, before scale: t% of the 30px box
+      el.style.transform = 'translate(-50%, -50%) translateX(' + (-0.24 * t) + 'px)';   // local px, before scale: t% of the 24px box
     }
     requestAnimationFrame(frame);
   })(0);

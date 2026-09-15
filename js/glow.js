@@ -5,7 +5,7 @@
 // link is pulling on it (window.linkPull, read by cursor.js).
 (function () {
   if (!matchMedia('(hover: hover)').matches) return;
-  var REACH = 160, LEAN = 80, EDGE = 44;   // px outside the box at which the edge starts to answer / the cursor starts to lean; px inside an edge at which the ring rises
+  var REACH = 128, LEAN = 64, EDGE = 35;   // px outside the box at which the edge starts to answer / the cursor starts to lean; px inside an edge at which the ring rises
   var rows = Array.prototype.map.call(document.querySelectorAll('.rows a, .hello'), function (a) {
     var glow = document.createElement('span'), goo = document.createElement('span');
     glow.className = 'glow'; goo.className = 'goo'; glow.appendChild(goo); a.appendChild(glow);

@@ -7,6 +7,8 @@
   --string: #b9a78b;
 }
 
+html { font-size: 80%; }   /* the design was tuned at 80% browser zoom; everything is rem, so this is that zoom */
+
 * { box-sizing: border-box; }
 
 
@@ -58,8 +60,8 @@ main { grid-column: 2; grid-row: 1; }
   clip-path: circle(0 at var(--kx, 50%) var(--ky, 50%)); transition: clip-path var(--quick) var(--ease);
 }
 @media (hover: hover) {
-  .name:hover::after { clip-path: circle(26px at var(--kx, 50%) var(--ky, 50%)); }
-  .nav a:hover::before { clip-path: circle(14px at var(--kx, 50%) var(--ky, 50%)); }   /* the dot's own radius */
+  .name:hover::after { clip-path: circle(21px at var(--kx, 50%) var(--ky, 50%)); }
+  .nav a:hover::before { clip-path: circle(11px at var(--kx, 50%) var(--ky, 50%)); }   /* the dot's own radius */
 }
 .nav a::after {   /* the hover underline: grows out from the left over one quick beat */
   content: ""; position: absolute; left: 0; right: 0; bottom: -3px; height: 3px; border-radius: 2px; background: var(--accent);
@@ -140,7 +142,7 @@ h1 {
   transition: opacity var(--quick) var(--ease), --spread var(--quick) var(--ease);
 }
 .goo::before {   /* the cursor's halo, inside only: the same ink as the ring, so the two merge when they touch */
-  content: ""; position: absolute; width: 40px; height: 40px; border-radius: 50%; background: var(--accent);
+  content: ""; position: absolute; width: 32px; height: 32px; border-radius: 50%; background: var(--accent);
   left: var(--mx, 50%); top: var(--my, 50%); transform: translate(-50%, -50%);
   opacity: 0; transition: opacity var(--quick) var(--ease);
 }
@@ -176,15 +178,15 @@ h1 {
   .cursor {
     position: fixed; left: 0; top: 0; z-index: 9999; pointer-events: none; will-change: transform; transform: translate(-50%, -50%);
     transform-origin: 0 0;   /* so rotate and scale pivot on the centred point, not the box centre: otherwise scale shifts the dot off the pointer */
-    width: 30px; height: 30px; border-radius: 50%;
-    background: rgb(254 82 82 / 0.85); box-shadow: 0 0 10px 2px rgb(254 82 82 / 0.45); filter: blur(1px);
+    width: 24px; height: 24px; border-radius: 50%;
+    background: rgb(254 82 82 / 0.85); box-shadow: 0 0 8px 2px rgb(254 82 82 / 0.45); filter: blur(1px);
     transition: width var(--quick) var(--ease), height var(--quick) var(--ease), opacity var(--quick) var(--ease), filter var(--quick) var(--ease);   /* border-radius is driven per frame by cursor.js, so it must not ease */
   }
-  .cursor.bar { width: 7px; height: var(--bar-h, 30px); border-radius: 3px; }
-  .cursor.big { width: 54px; height: 54px; }   /* over the name */
-  .cursor.soft { width: 40px; height: 40px; opacity: 0.3; filter: blur(5px); }
+  .cursor.bar { width: 6px; height: var(--bar-h, 24px); border-radius: 3px; }
+  .cursor.big { width: 43px; height: 43px; }   /* over the name */
+  .cursor.soft { width: 32px; height: 32px; opacity: 0.3; filter: blur(4px); }
   .cursor.gone {   /* over the hello link: the dot swells and blurs away into the box's glow over the same beat the glow fades in */
-    width: 70px; height: 70px; opacity: 0; filter: blur(14px);
+    width: 56px; height: 56px; opacity: 0; filter: blur(11px);
     transition: width var(--mid) var(--ease), height var(--mid) var(--ease), opacity var(--mid) var(--ease), filter var(--mid) var(--ease);
   }   /* inside a row link: absorbed into the halo, not landed on it */
   .cursor.hidden { opacity: 0; }
