@@ -76,6 +76,8 @@ main { grid-column: 2; grid-row: 1; }
   transform: scaleY(1); transform-origin: top; transition: transform var(--slow) var(--ease-soft) calc(var(--slow) * 0.6);
   @starting-style { transform: scaleY(0); }
 }
+.nav .sub.closing { grid-template-rows: 0fr; transition: grid-template-rows 0.35s var(--ease) 0.15s; }   /* leaving: the rail retracts bottom to top, then the rows fold */
+.nav .sub.closing::after { transform: scaleY(0); transition: transform 0.2s var(--ease); }
 
 .nav a::after {   /* the hover underline: grows out from the left over one quick beat */
   content: ""; position: absolute; left: 0; right: 0; bottom: -3px; height: 3px; border-radius: 2px; background: var(--accent);
