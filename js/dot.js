@@ -119,17 +119,5 @@
   addEventListener('hashchange', function () { var i = idx(location.hash); mark(i); travel(i); });
   addEventListener('resize', function () { cancelAnimationFrame(anim); size(); settle(cur); });
   nav.addEventListener('transitionend', function (e) { if (e.target.classList.contains('sub')) { size(); settle(cur); } });   // a sublist opened: the links below it moved
-  // leaving a page with an open sublist: fold it first, then follow the link
-  var sub = nav.querySelector('.sub');
-  if (sub) document.querySelectorAll('.nav > a, .name').forEach(function (a) {
-    a.addEventListener('click', function (e) {
-      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button) return;   // new-tab clicks go straight through
-      e.preventDefault(); if (sub.classList.contains('closing')) return;
-      var gone = false, go = function () { if (!gone) { gone = true; location.href = a.href; } };
-      sub.classList.add('closing');
-      sub.addEventListener('transitionend', function (ev) { if (ev.propertyName === 'grid-template-rows') go(); });
-      setTimeout(go, 700);   // in case the transition never fires
-    });
-  });
 
 })();
