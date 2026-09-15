@@ -72,7 +72,7 @@ main { grid-column: 2; grid-row: 1; }
 .nav .sub a { font-size: 1.05rem; font-weight: 500; color: var(--ink-soft); }
 .nav .sub a[aria-current="page"] { color: var(--ink); }
 .nav .sub::after {   /* the rail: draws top to bottom once the rows are in */
-  content: ""; position: absolute; top: 0.2rem; bottom: 0.2rem; right: 0; width: 2px; border-radius: 1px; background: var(--accent);
+  content: ""; position: absolute; top: 0.2rem; bottom: 0.2rem; right: 0; width: 2px; border-radius: 1px; background: var(--ink);
   transform: scaleY(1); transform-origin: top; transition: transform var(--slow) var(--ease-soft) calc(var(--slow) * 0.6);
   @starting-style { transform: scaleY(0); }
 }
