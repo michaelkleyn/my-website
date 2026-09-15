@@ -128,7 +128,7 @@
       var gone = false, go = function () { if (!gone) { gone = true; location.href = a.href; } };
       sub.classList.add('closing');
       sub.addEventListener('transitionend', function (ev) { if (ev.propertyName === 'grid-template-rows') go(); });
-      setTimeout(go, 700);   // in case the transition never fires
+      setTimeout(go, 400);   // in case the transition never fires
     });
   });
 
