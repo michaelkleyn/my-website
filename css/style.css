@@ -186,7 +186,7 @@ html.sub-settled .nav .sub a[aria-current="page"]::after { transition: none; }  
   right: 0;
   width: 2px;
   border-radius: 1px;
-  background: var(--ink);
+  background: var(--rule);   /* the lighter blue of the row rules */
   transform: scaleY(1);
   transform-origin: top;
   transition: transform var(--slow) var(--ease-soft);
