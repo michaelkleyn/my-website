@@ -6,6 +6,10 @@
     <title>Mori &middot; Michael Kleyn</title>
     <meta name="description" content="Mori: Orchestrating many coding agents, like real-time strategy." />
     <link rel="stylesheet" href="../css/style.css" />
+    <script>
+      // arriving from another Work subpage: the sublist is already open, so skip its opening animation
+      try { if (/^\/(headliner|mori|claude-timeline|tmux-companion|opus-os)\/$/.test(new URL(document.referrer).pathname) && new URL(document.referrer).origin === location.origin) document.documentElement.classList.add('sub-settled'); } catch (e) {}
+    </script>
   </head>
   <body>
     <div class="page">

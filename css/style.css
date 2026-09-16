@@ -154,6 +154,12 @@ main {
 .nav .sub a[aria-current="page"] {
   --c: var(--ink);
 }
+.nav .sub a::before { inset: 0.05rem 0.4rem; }   /* the knockout copy sits on the text, inside the pill padding */
+.nav .sub a::after { left: 0.4rem; right: 0.4rem; bottom: -1px; height: 2px; }
+.nav .sub a[aria-current="page"]::after { transform: scaleX(1); }   /* the page we are on stays underlined */
+/* arriving from a sibling subpage (html.sub-settled, set in the page head): the list is already open, no replay */
+html.sub-settled .nav .sub, html.sub-settled .nav .sub::after { transition: none; }
+html.sub-settled .nav .sub a { animation: none; }
 .nav .sub li:nth-child(1) a { animation-delay: 0.7s; }
 .nav .sub li:nth-child(2) a { animation-delay: 0.82s; }
 .nav .sub li:nth-child(3) a { animation-delay: 0.94s; }
