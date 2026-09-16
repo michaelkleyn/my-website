@@ -227,7 +227,7 @@ h1 {
 
 .lede {
   font-size: 1.3125rem;
-  margin: 0 0 3.5rem;
+  margin: 0 0 2.5rem;
 }
 
 .rows {
@@ -246,7 +246,7 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.375rem 0 1.5rem;
+  padding: 1.125rem 0 1.25rem;
 }
 
 .rows h2 {
@@ -509,7 +509,7 @@ h1 {
 }
 
 .hello {
-  margin-top: 7.5rem;
+  margin-top: 3.75rem;
   width: fit-content;
   position: relative;
   isolation: isolate;
