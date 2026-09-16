@@ -118,9 +118,9 @@ main {
 }
 
 .nav .sub {
-  /* a section's sub-items, shown when one is open. Opens on load: the rows grow in and the rail draws down the right
-     edge; then a wash of pale coral comes over the block and the titles surface out of it one by one. The wash clears
-     from the outside in: block first, then the pill around each title, then a glow hugging the letters */
+  /* a section's sub-items, shown when one is open. Opens on load: the rows grow in as pale coral bars and the rail draws
+     down the right edge; then the titles surface out of their bars one by one, each bar clearing to a glow that hugs the
+     letters, then to nothing */
   --wash: #f4dfd9;
   position: relative;
   align-self: stretch;
@@ -141,8 +141,6 @@ main {
   flex-direction: column;
   align-items: flex-end;
   gap: 0.1rem;
-  border-radius: 0.5rem;
-  animation: sub-wash 1.3s var(--ease-soft) 0.65s both;   /* after the rail */
 }
 .nav .sub a {
   font-size: 1.05rem;
@@ -162,12 +160,7 @@ main {
 .nav .sub li:nth-child(4) a { animation-delay: 1.06s; }
 .nav .sub li:nth-child(5) a { animation-delay: 1.18s; }
 .nav .sub li:nth-child(n + 6) a { animation-delay: 1.3s; }
-@keyframes sub-wash {   /* the block: cream -> pale coral -> cream, clearing before the titles' own layers do */
-  0% { background-color: transparent; }
-  25%, 50% { background-color: var(--wash); }
-  100% { background-color: transparent; }
-}
-@keyframes sub-ink {   /* born in the wash, invisible; surfaces to ink; the pill clears, then the glow around the letters */
+@keyframes sub-ink {   /* born inside its bar, invisible; surfaces to ink; the bar clears, then the glow around the letters */
   0% { color: var(--wash); background-color: var(--wash); text-shadow: 0 0 6px var(--wash), 0 0 2px var(--wash); }
   35% { color: var(--c); background-color: var(--wash); text-shadow: 0 0 6px var(--wash), 0 0 2px var(--wash); }
   70% { color: var(--c); background-color: transparent; text-shadow: 0 0 6px var(--wash), 0 0 2px var(--wash); }
