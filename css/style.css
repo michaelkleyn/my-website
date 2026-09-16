@@ -212,7 +212,7 @@ main {
 
 /* ---- main ---- */
 main {
-  padding-top: 12.75rem;
+  padding-top: 10.3rem; /* the h1's cap line sits level with the Work link */
   display: flex;
   flex-direction: column;
 }
