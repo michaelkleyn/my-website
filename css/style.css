@@ -7,10 +7,15 @@
   --string: #b9a78b;
 }
 
-html { font-size: 80%; }   /* the design was tuned at 80% browser zoom; everything is rem, so this is that zoom */
+html {
+  font-size: 80%;
+}
 
-* { box-sizing: border-box; }
+/* the design was tuned at 80% browser zoom; everything is rem, so this is that zoom */
 
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
@@ -18,14 +23,29 @@ body {
   background-color: var(--paper);
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.35 0 0 0 0 0.3 0 0 0 0 0.2 0 0 0 0.09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   color: var(--ink);
-  font: 400 1.0625rem/1.5 -apple-system, BlinkMacSystemFont, "Inter", "Helvetica Neue", Arial, sans-serif;
+  font:
+    400 1.0625rem/1.5 -apple-system,
+    BlinkMacSystemFont,
+    "Inter",
+    "Helvetica Neue",
+    Arial,
+    sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
-::selection { background: var(--accent); color: var(--paper); }
+::selection {
+  background: var(--accent);
+  color: var(--paper);
+}
 
-a { color: inherit; text-decoration: none; }
-a:hover { color: var(--ink-soft); }
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--ink-soft);
+}
 
 .page {
   display: grid;
@@ -35,8 +55,17 @@ a:hover { color: var(--ink-soft); }
 }
 
 /* ---- sidebar ---- */
-.side { grid-column: 3; justify-self: end; text-align: right; padding-top: 0.25rem; }
-main { grid-column: 2; grid-row: 1; }
+.side {
+  grid-column: 3;
+  justify-self: end;
+  text-align: right;
+  padding-top: 0.25rem;
+}
+
+main {
+  grid-column: 2;
+  grid-row: 1;
+}
 
 .name {
   position: relative;
@@ -47,7 +76,13 @@ main { grid-column: 2; grid-row: 1; }
   margin: 0 0 7.5rem;
 }
 
-.nav { position: relative; display: flex; flex-direction: column; align-items: flex-end; gap: 0.5rem; }
+.nav {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
 
 .nav a {
   position: relative;
@@ -55,33 +90,106 @@ main { grid-column: 2; grid-row: 1; }
   font-weight: 500;
   width: fit-content;
 }
-.name::after, .nav a::before {   /* a paper-coloured copy of the text, clipped to a circle under the cursor: the letters inside the dot read white */
-  content: attr(data-text); position: absolute; inset: 0; color: var(--paper); pointer-events: none; z-index: 10000;   /* above the cursor, so the letters show through it */
-  clip-path: circle(0 at var(--kx, 50%) var(--ky, 50%)); transition: clip-path var(--quick) var(--ease);
-}
-@media (hover: hover) {
-  .name:hover::after { clip-path: circle(21px at var(--kx, 50%) var(--ky, 50%)); }
-  .nav a:hover::before { clip-path: circle(11px at var(--kx, 50%) var(--ky, 50%)); }   /* the dot's own radius */
-}
-.nav .sub {   /* a section's sub-items, shown when one is open. Opens on load: the rows grow in, then a rail draws down their right edge */
-  list-style: none; margin: 0; padding: 0 0.75rem 0 0; position: relative; align-self: stretch;
-  display: grid; grid-template-rows: 1fr; transition: grid-template-rows var(--slow) var(--ease-soft);
-  @starting-style { grid-template-rows: 0fr; }
-}
-.nav .sub > li { overflow: hidden; display: flex; flex-direction: column; align-items: flex-end; gap: 0.25rem; }
-.nav .sub a { font-size: 1.05rem; font-weight: 500; color: var(--ink-soft); }
-.nav .sub a[aria-current="page"] { color: var(--ink); }
-.nav .sub::after {   /* the rail: draws top to bottom once the rows are in */
-  content: ""; position: absolute; top: 0.2rem; bottom: 0.2rem; right: 0; width: 2px; border-radius: 1px; background: var(--ink);
-  transform: scaleY(1); transform-origin: top; transition: transform var(--slow) var(--ease-soft) calc(var(--slow) * 0.6);
-  @starting-style { transform: scaleY(0); }
+
+.name::after,
+.nav a::before {
+  /* a paper-coloured copy of the text, clipped to a circle under the cursor: the letters inside the dot read white */
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  color: var(--paper);
+  pointer-events: none;
+  z-index: 10000;
+  /* above the cursor, so the letters show through it */
+  clip-path: circle(0 at var(--kx, 50%) var(--ky, 50%));
+  transition: clip-path var(--quick) var(--ease);
 }
 
-.nav a::after {   /* the hover underline: grows out from the left over one quick beat */
-  content: ""; position: absolute; left: 0; right: 0; bottom: -3px; height: 3px; border-radius: 2px; background: var(--accent);
-  transform: scaleX(0); transform-origin: left; transition: transform var(--quick) var(--ease);
+@media (hover: hover) {
+  .name:hover::after {
+    clip-path: circle(21px at var(--kx, 50%) var(--ky, 50%));
+  }
+
+  .nav a:hover::before {
+    clip-path: circle(11px at var(--kx, 50%) var(--ky, 50%));
+  }
+
+  /* the dot's own radius */
 }
-@media (hover: hover) { .nav a:hover::after { transform: scaleX(1); } }
+
+.nav .sub {
+  /* a section's sub-items, shown when one is open. Opens on load: the rows grow in, then a rail draws down their right edge */
+  list-style: none;
+  margin: 0;
+  padding: 0 0.75rem 0 0;
+  position: relative;
+  align-self: stretch;
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--slow) var(--ease-soft);
+
+  @starting-style {
+    grid-template-rows: 0fr;
+  }
+}
+
+.nav .sub>li {
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.25rem;
+}
+
+.nav .sub a {
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.nav .sub a[aria-current="page"] {
+  color: var(--ink);
+}
+
+.nav .sub::after {
+  /* the rail: draws top to bottom once the rows are in */
+  content: "";
+  position: absolute;
+  top: 0.2rem;
+  bottom: 0.2rem;
+  right: 0;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--ink);
+  transform: scaleY(1);
+  transform-origin: top;
+  transition: transform var(--slow) var(--ease-soft) calc(var(--slow) * 0.6);
+
+  @starting-style {
+    transform: scaleY(0);
+  }
+}
+
+.nav a::after {
+  /* the hover underline: grows out from the left over one quick beat */
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--quick) var(--ease);
+}
+
+@media (hover: hover) {
+  .nav a:hover::after {
+    transform: scaleX(1);
+  }
+}
 
 .nav:not(.has-brush) a[aria-current="page"]::before {
   content: "";
@@ -95,10 +203,19 @@ main { grid-column: 2; grid-row: 1; }
   transform: translateY(-50%);
 }
 
-.dot { position: absolute; left: 0; top: 0; pointer-events: none; }
+.dot {
+  position: absolute;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+}
 
 /* ---- main ---- */
-main { padding-top: 12.75rem; display: flex; flex-direction: column; }
+main {
+  padding-top: 12.75rem;
+  display: flex;
+  flex-direction: column;
+}
 
 h1 {
   font-size: 2rem;
@@ -108,11 +225,21 @@ h1 {
   margin: 0 0 0.5rem;
 }
 
-.lede { font-size: 1.3125rem; margin: 0 0 3.5rem; }
+.lede {
+  font-size: 1.3125rem;
+  margin: 0 0 3.5rem;
+}
 
-.rows { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--rule); }
+.rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--rule);
+}
 
-.rows li { border-bottom: 1px solid var(--rule); }
+.rows li {
+  border-bottom: 1px solid var(--rule);
+}
 
 .rows a {
   display: flex;
@@ -122,115 +249,348 @@ h1 {
   padding: 1.375rem 0 1.5rem;
 }
 
-.rows h2 { font-size: 1.375rem; font-weight: 500; margin: 0 0 0.125rem; }
-.rows p { font-size: 1rem; margin: 0; }
-.rows .arrow { font-size: 1.5rem; line-height: 1; transition: transform 0.15s; }
-.rows a:hover .arrow { transform: translateX(0.25rem); }
+.rows h2 {
+  font-size: 1.375rem;
+  font-weight: 500;
+  margin: 0 0 0.125rem;
+}
+
+.rows p {
+  font-size: 1rem;
+  margin: 0;
+}
+
+.rows .arrow {
+  font-size: 1.5rem;
+  line-height: 1;
+  transition: transform 0.15s;
+}
+
+.rows a:hover .arrow {
+  transform: translateX(0.25rem);
+}
 
 /* ---- pointer highlight on the row links (built by js/glow.js) ----
    One material, one easing. The cursor leans first; the row's nearest edge answers; on entry the cursor softens into a
    halo and the fill flows out from it like ink; the ring rises out of the fill; leaving drains in half the time. */
-@property --wipe { syntax: "<length>"; inherits: true; initial-value: 0px; }      /* the ink's radius from the entry point; on .glow so every layer reads it */
-@property --spread { syntax: "<number>"; inherits: true; initial-value: 1; }      /* how far the ring reaches along the edge */
-@property --near { syntax: "<number>"; inherits: true; initial-value: 0; }        /* 0 far .. 1 at the box */
-:root { --ease: cubic-bezier(0.33, 1, 0.68, 1); --ease-soft: cubic-bezier(0.25, 0.46, 0.45, 0.94); --quick: 0.15s; --mid: 0.3s; --slow: 0.55s; }   /* ease-out cubic for quick things, ease-out quad for the slow ink so its travel stays visible */
-.rows a { position: relative; isolation: isolate; }
-.glow {   /* the row's own bounds: rule to rule, with half a rem of side overhang that reads as padding */
-  position: absolute; inset: 0 -0.5rem; z-index: -1; pointer-events: none;
-  border-radius: 1rem; corner-shape: squircle;
-  --wipe: -140px;   /* parked fully off; --far (glow.js) is the distance from the entry point to the box's far corner */
-  transition: --wipe calc(var(--slow) / 2) var(--ease);   /* leaving: drains toward the exit point in half the time */
+@property --wipe {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
 }
-.glow::before {   /* the fill: ink flowing out from the entry point (--ex/--ey), soft-edged like every other coral edge */
-  content: ""; position: absolute; inset: 0; border-radius: inherit; corner-shape: inherit;
+
+/* the ink's radius from the entry point; on .glow so every layer reads it */
+@property --spread {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 1;
+}
+
+/* how far the ring reaches along the edge */
+@property --near {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+/* 0 far .. 1 at the box */
+:root {
+  --ease: cubic-bezier(0.33, 1, 0.68, 1);
+  --ease-soft: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --quick: 0.15s;
+  --mid: 0.3s;
+  --slow: 0.55s;
+}
+
+/* ease-out cubic for quick things, ease-out quad for the slow ink so its travel stays visible */
+.rows a {
+  position: relative;
+  isolation: isolate;
+}
+
+.glow {
+  /* the row's own bounds: rule to rule, with half a rem of side overhang that reads as padding */
+  position: absolute;
+  inset: 0 -0.5rem;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 1rem;
+  corner-shape: squircle;
+  --wipe: -140px;
+  /* parked fully off; --far (glow.js) is the distance from the entry point to the box's far corner */
+  transition: --wipe calc(var(--slow) / 2) var(--ease);
+  /* leaving: drains toward the exit point in half the time */
+}
+
+.glow::before {
+  /* the fill: ink flowing out from the entry point (--ex/--ey), soft-edged like every other coral edge */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  corner-shape: inherit;
   background: radial-gradient(circle at var(--ex, 50%) var(--ey, 50%),
-    rgb(254 82 82 / 0.1) 0, rgb(254 82 82 / 0.1) var(--wipe), rgb(254 82 82 / 0.16) calc(var(--wipe) + 40px), transparent calc(var(--wipe) + 140px));
+      rgb(254 82 82 / 0.1) 0,
+      rgb(254 82 82 / 0.1) var(--wipe),
+      rgb(254 82 82 / 0.16) calc(var(--wipe) + 40px),
+      transparent calc(var(--wipe) + 140px));
   filter: blur(2px);
 }
-.goo {   /* edge ring + cursor halo, fused by the goo filter */
-  position: absolute; inset: 0; overflow: hidden; border-radius: inherit; corner-shape: inherit;
-  --spread: 0.35; --near: 0;   /* glow.js: short and faint on approach, full inside */
-  --f: calc(0.7 + 0.3 * var(--near));   /* field strength: a weaker field survives the goo threshold as a thinner ring */
+
+.goo {
+  /* edge ring + cursor halo, fused by the goo filter */
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  corner-shape: inherit;
+  --spread: 0.35;
+  --near: 0;
+  /* glow.js: short and faint on approach, full inside */
+  --f: calc(0.7 + 0.3 * var(--near));
+  /* field strength: a weaker field survives the goo threshold as a thinner ring */
   opacity: var(--ring-o, 0);
-  filter: url(#goo); will-change: filter;   /* own GPU layer: the blur runs on the GPU, not in paint */
-  transition: opacity var(--quick) var(--ease), --spread var(--quick) var(--ease);
+  filter: url(#goo);
+  will-change: filter;
+  /* own GPU layer: the blur runs on the GPU, not in paint */
+  transition:
+    opacity var(--quick) var(--ease),
+    --spread var(--quick) var(--ease);
 }
-.goo::before {   /* the cursor's halo, inside only: the same ink as the ring, so the two merge when they touch */
-  content: ""; position: absolute; width: 32px; height: 32px; border-radius: 50%; background: var(--accent);
-  left: var(--mx, 50%); top: var(--my, 50%); transform: translate(-50%, -50%);
-  opacity: 0; transition: opacity var(--quick) var(--ease);
+
+.goo::before {
+  /* the cursor's halo, inside only: the same ink as the ring, so the two merge when they touch */
+  content: "";
+  position: absolute;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  left: var(--mx, 50%);
+  top: var(--my, 50%);
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  transition: opacity var(--quick) var(--ease);
 }
-.goo::after {   /* the edge ring. A coral field decays away from the cursor; the band mask hugs the outer edge and fades inward, so
+
+.goo::after {
+  /* the edge ring. A coral field decays away from the cursor; the band mask hugs the outer edge and fades inward, so
                     the goo threshold cuts it deeper where the field is strong: thick at the cursor, tapering smoothly along the edge.
                     Inside, a second mask limits the ring to where the ink has reached, so it rises out of the fill */
-  content: ""; position: absolute; inset: 0; border-radius: inherit; corner-shape: inherit;
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  corner-shape: inherit;
   background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%),
-    color-mix(in srgb, var(--accent) calc(var(--f) * 100%), transparent) 0,
-    color-mix(in srgb, var(--accent) calc(var(--f) * 85%), transparent) calc(60px * var(--spread)),
-    color-mix(in srgb, var(--accent) calc(var(--f) * 70%), transparent) calc(140px * var(--spread)),
-    color-mix(in srgb, var(--accent) calc(var(--f) * 58%), transparent) calc(240px * var(--spread)),
-    color-mix(in srgb, var(--accent) calc(var(--f) * 48%), transparent) calc(360px * var(--spread)),
-    color-mix(in srgb, var(--accent) calc(var(--f) * 40%), transparent) calc(480px * var(--spread)),
-    color-mix(in srgb, var(--accent) calc(var(--f) * 30%), transparent) calc(600px * var(--spread)), transparent calc(800px * var(--spread)));
-  --band: linear-gradient(to bottom, #000 2px, transparent 22px), linear-gradient(to top, #000 2px, transparent 22px),
-          linear-gradient(to right, #000 2px, transparent 22px), linear-gradient(to left, #000 2px, transparent 22px);
-  -webkit-mask: var(--band); mask: var(--band);
+      color-mix(in srgb, var(--accent) calc(var(--f) * 100%), transparent) 0,
+      color-mix(in srgb, var(--accent) calc(var(--f) * 85%), transparent) calc(60px * var(--spread)),
+      color-mix(in srgb, var(--accent) calc(var(--f) * 70%), transparent) calc(140px * var(--spread)),
+      color-mix(in srgb, var(--accent) calc(var(--f) * 58%), transparent) calc(240px * var(--spread)),
+      color-mix(in srgb, var(--accent) calc(var(--f) * 48%), transparent) calc(360px * var(--spread)),
+      color-mix(in srgb, var(--accent) calc(var(--f) * 40%), transparent) calc(480px * var(--spread)),
+      color-mix(in srgb, var(--accent) calc(var(--f) * 30%), transparent) calc(600px * var(--spread)),
+      transparent calc(800px * var(--spread)));
+  --band:
+    linear-gradient(to bottom, #000 2px, transparent 22px),
+    linear-gradient(to top, #000 2px, transparent 22px),
+    linear-gradient(to right, #000 2px, transparent 22px),
+    linear-gradient(to left, #000 2px, transparent 22px);
+  -webkit-mask: var(--band);
+  mask: var(--band);
 }
+
 @media (hover: hover) {
-  .rows a:hover .glow, .rows a:focus-visible .glow { --wipe: var(--far, 700px); transition: --wipe var(--slow) var(--ease-soft); }   /* arriving: the ink flows out to the far corner */
-  .rows a:hover .goo, .rows a:focus-visible .goo {   /* ring and halo exist only where the ink has reached, so the ring rises out of the fill */
-    transition: opacity var(--quick) var(--ease), --spread var(--slow) var(--ease-soft);
-    -webkit-mask: radial-gradient(circle at var(--ex, 50%) var(--ey, 50%), #000 var(--wipe), transparent calc(var(--wipe) + 60px));
-    mask: radial-gradient(circle at var(--ex, 50%) var(--ey, 50%), #000 var(--wipe), transparent calc(var(--wipe) + 60px));
+
+  .rows a:hover .glow,
+  .rows a:focus-visible .glow {
+    --wipe: var(--far, 700px);
+    transition: --wipe var(--slow) var(--ease-soft);
   }
-  .rows a:hover .goo::before, .rows a:focus-visible .goo::before { opacity: 1; }
+
+  /* arriving: the ink flows out to the far corner */
+  .rows a:hover .goo,
+  .rows a:focus-visible .goo {
+    /* ring and halo exist only where the ink has reached, so the ring rises out of the fill */
+    transition:
+      opacity var(--quick) var(--ease),
+      --spread var(--slow) var(--ease-soft);
+    -webkit-mask: radial-gradient(circle at var(--ex, 50%) var(--ey, 50%),
+        #000 var(--wipe),
+        transparent calc(var(--wipe) + 60px));
+    mask: radial-gradient(circle at var(--ex, 50%) var(--ey, 50%),
+        #000 var(--wipe),
+        transparent calc(var(--wipe) + 60px));
+  }
+
+  .rows a:hover .goo::before,
+  .rows a:focus-visible .goo::before {
+    opacity: 1;
+  }
 }
 
 /* ---- the cursor: a soft coral dot that tightens into a bar over readable text (built by js/cursor.js) ---- */
 @media (hover: hover) {
-  html.has-cursor, html.has-cursor a { cursor: none; }
-  .cursor {
-    position: fixed; left: 0; top: 0; z-index: 9999; pointer-events: none; will-change: transform; transform: translate(-50%, -50%);
-    transform-origin: 0 0;   /* so rotate and scale pivot on the centred point, not the box centre: otherwise scale shifts the dot off the pointer */
-    width: 24px; height: 24px; border-radius: 50%;
-    background: rgb(254 82 82 / 0.85); box-shadow: 0 0 8px 2px rgb(254 82 82 / 0.45); filter: blur(1px);
-    transition: width var(--quick) var(--ease), height var(--quick) var(--ease), opacity var(--quick) var(--ease), filter var(--quick) var(--ease);   /* border-radius is driven per frame by cursor.js, so it must not ease */
+
+  html.has-cursor,
+  html.has-cursor a {
+    cursor: none;
   }
-  .cursor.bar { width: 6px; height: var(--bar-h, 24px); border-radius: 3px; }
-  .cursor.big { width: 43px; height: 43px; }   /* over the name */
-  .cursor.soft { width: 32px; height: 32px; opacity: 0.3; filter: blur(4px); }
-  .cursor.gone {   /* over the hello link: the dot swells and blurs away into the box's glow over the same beat the glow fades in */
-    width: 56px; height: 56px; opacity: 0; filter: blur(11px);
-    transition: width var(--mid) var(--ease), height var(--mid) var(--ease), opacity var(--mid) var(--ease), filter var(--mid) var(--ease);
-  }   /* inside a row link: absorbed into the halo, not landed on it */
-  .cursor.hidden { opacity: 0; }
+
+  .cursor {
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 9999;
+    pointer-events: none;
+    will-change: transform;
+    transform: translate(-50%, -50%);
+    transform-origin: 0 0;
+    /* so rotate and scale pivot on the centred point, not the box centre: otherwise scale shifts the dot off the pointer */
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgb(254 82 82 / 0.85);
+    box-shadow: 0 0 8px 2px rgb(254 82 82 / 0.45);
+    filter: blur(1px);
+    transition:
+      width var(--quick) var(--ease),
+      height var(--quick) var(--ease),
+      opacity var(--quick) var(--ease),
+      filter var(--quick) var(--ease);
+    /* border-radius is driven per frame by cursor.js, so it must not ease */
+  }
+
+  .cursor.bar {
+    width: 6px;
+    height: var(--bar-h, 24px);
+    border-radius: 3px;
+  }
+
+  .cursor.big {
+    width: 43px;
+    height: 43px;
+  }
+
+  /* over the name */
+  .cursor.soft {
+    width: 32px;
+    height: 32px;
+    opacity: 0.3;
+    filter: blur(4px);
+  }
+
+  .cursor.gone {
+    /* over the hello link: the dot swells and blurs away into the box's glow over the same beat the glow fades in */
+    width: 56px;
+    height: 56px;
+    opacity: 0;
+    filter: blur(11px);
+    transition:
+      width var(--mid) var(--ease),
+      height var(--mid) var(--ease),
+      opacity var(--mid) var(--ease),
+      filter var(--mid) var(--ease);
+  }
+
+  /* inside a row link: absorbed into the halo, not landed on it */
+  .cursor.hidden {
+    opacity: 0;
+  }
 }
 
-.prose p { margin: 0 0 1.25rem; }
-.prose p a { text-decoration: underline; text-underline-offset: 0.2em; }
+.prose p {
+  margin: 0 0 1.25rem;
+}
 
-.hello { margin-top: 7.5rem; width: fit-content; position: relative; isolation: isolate; padding: 0.5rem 0.75rem; margin-left: -0.75rem; }
+.prose p a {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.hello {
+  margin-top: 7.5rem;
+  width: fit-content;
+  position: relative;
+  isolation: isolate;
+  padding: 0.5rem 0.75rem;
+  margin-left: -0.75rem;
+}
 
 /* ---- say hello: the row treatment at a small scale. On approach the same soft ring, with bare paper inside; on entry the ring goes, the cursor is gone, and a soft glow inside the tinted box carries it ---- */
-.hello .glow { inset: 0; border-radius: 0.75rem; }
-.hello .glow::before {   /* the cursor: a wide soft glow at the pointer, declining to bare paper, over a faint even tint */
-  background:
-    radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgb(254 82 82 / 0.5) 0, rgb(254 82 82 / 0.28) 30px, rgb(254 82 82 / 0.08) 70px, transparent 110px),
-    rgb(254 82 82 / 0.06);
-  filter: none; opacity: 0; transition: opacity var(--mid) var(--ease);   /* same beat as the dot dissolving into it */
+.hello .glow {
+  inset: 0;
+  border-radius: 0.75rem;
 }
-.hello .goo { transition: opacity var(--quick) var(--ease); }   /* same soft ring as the rows */
-.hello .goo::before { display: none; }   /* no hard halo: the glow on the fill layer is the cursor */
+
+.hello .glow::before {
+  /* the cursor: a wide soft glow at the pointer, declining to bare paper, over a faint even tint */
+  background:
+    radial-gradient(circle at var(--mx, 50%) var(--my, 50%),
+      rgb(254 82 82 / 0.5) 0,
+      rgb(254 82 82 / 0.28) 30px,
+      rgb(254 82 82 / 0.08) 70px,
+      transparent 110px),
+    rgb(254 82 82 / 0.06);
+  filter: none;
+  opacity: 0;
+  transition: opacity var(--mid) var(--ease);
+  /* same beat as the dot dissolving into it */
+}
+
+.hello .goo {
+  transition: opacity var(--quick) var(--ease);
+}
+
+/* same soft ring as the rows */
+.hello .goo::before {
+  display: none;
+}
+
+/* no hard halo: the glow on the fill layer is the cursor */
 @media (hover: hover) {
-  .hello:hover .glow, .hello:focus-visible .glow { transition: none; }
-  .hello:hover .glow::before, .hello:focus-visible .glow::before { opacity: 1; }
-  .hello:hover .goo, .hello:focus-visible .goo { opacity: 0; transition: opacity var(--mid) var(--ease); }   /* inside: no ring, just the glow */
+
+  .hello:hover .glow,
+  .hello:focus-visible .glow {
+    transition: none;
+  }
+
+  .hello:hover .glow::before,
+  .hello:focus-visible .glow::before {
+    opacity: 1;
+  }
+
+  .hello:hover .goo,
+  .hello:focus-visible .goo {
+    opacity: 0;
+    transition: opacity var(--mid) var(--ease);
+  }
+
+  /* inside: no ring, just the glow */
 }
 
 @media (max-width: 960px) {
-  .page { grid-template-columns: 1fr; padding: 2rem 1.5rem 3rem; gap: 3rem; }
-  .side, main { grid-column: 1; grid-row: auto; }
-  .name { margin-bottom: 2rem; }
-  main { padding-top: 0; }
-  .hello { margin-top: 4rem; }
+  .page {
+    grid-template-columns: 1fr;
+    padding: 2rem 1.5rem 3rem;
+    gap: 3rem;
+  }
+
+  .side,
+  main {
+    grid-column: 1;
+    grid-row: auto;
+  }
+
+  .name {
+    margin-bottom: 2rem;
+  }
+
+  main {
+    padding-top: 0;
+  }
+
+  .hello {
+    margin-top: 4rem;
+  }
 }
