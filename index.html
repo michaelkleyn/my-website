@@ -170,12 +170,14 @@
       </main>
 
       <aside class="panel" aria-live="polite">
-        <!-- the project panel: opens beside the rows when one is chosen. A rule draws its frame as the rows park (css: .frame) -->
+        <!-- the project panel: opens beside the rows when one is chosen (on a phone, inside the row, unfolding like an
+             accordion: .fold is the part that folds). A rule draws its frame as the rows park (css: .frame) -->
         <div class="frame" aria-hidden="true">
           <i class="tone top"></i><i class="tone right"></i><i class="tone bottom"></i><i class="tone left"></i><i class="tone wave"></i>
           <i class="e t"></i><i class="e r"></i><i class="e b"></i><i class="e l"></i>
           <b class="c tr"></b><b class="c br"></b><b class="c bl"></b><b class="c tl"></b>
         </div>
+        <div class="fold">
 
         <section class="proj prose" data-project="headliner" hidden>
           <header>
@@ -272,6 +274,7 @@
           <iframe src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/end-of-empire/abi&color=%23fe5252&inverse=false&auto_play=false&show_user=true" width="100%" height="166" frameborder="no" scrolling="no" allow="autoplay" loading="lazy" title="abi, on SoundCloud"></iframe>
           <a class="hello" href="https://soundcloud.com/end-of-empire/abi" target="_blank" rel="noopener">Listen on SoundCloud &nearr;</a>
         </section>
+        </div>
       </aside>
     </div>
   </div>

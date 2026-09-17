@@ -791,14 +791,25 @@ html.parked .frame .c { animation: frame-corner var(--dur) linear var(--at) forw
 }
 
 @media (max-width: 960px) {
-  .page {
-    grid-template-columns: 1fr;
-    padding: 2rem 1.5rem 3rem;
-    gap: 3rem;
+  html {
+    font-size: 100%;   /* the 80% is a desktop zoom; on a phone the type wants its full size */
   }
 
+  .page,
+  html.parked .page {
+    grid-template-columns: 1fr;   /* one column, parked or not: the parked desktop tracks must not apply here */
+    padding: 1.5rem 1.25rem 3rem;
+    gap: 2.5rem;
+  }
+
+  /* the header: name on the left, the nav on the right, on one line */
   .side {
     position: static;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding-top: 0;
   }
 
   .side,
@@ -808,7 +819,15 @@ html.parked .frame .c { animation: frame-corner var(--dur) linear var(--at) forw
   }
 
   .name {
-    margin-bottom: 2rem;
+    margin: 0;
+    font-size: 1.375rem;
+  }
+
+  .nav {
+    gap: 0.25rem;
+  }
+  .nav a {
+    font-size: 1.125rem;
   }
 
   main {
@@ -816,9 +835,10 @@ html.parked .frame .c { animation: frame-corner var(--dur) linear var(--at) forw
   }
 
   .hello {
-    margin-top: 4rem;
+    margin-top: 3rem;
   }
 
+  /* the stage stacks: rows, then the panel below them when a project is open (stage.js scrolls it into view) */
   .stage {
     flex-direction: column;
   }
@@ -840,7 +860,33 @@ html.parked .frame .c { animation: frame-corner var(--dur) linear var(--at) forw
     top: 3rem;
   }
 
+  .proj {
+    padding: 1.25rem 1rem;
+  }
+
   html:not(.parked) .panel {
     display: none;
+  }
+
+  /* inside a row (stage.js moves it there): an accordion. The panel is a one-row grid whose row goes from nothing to
+     its content's height on the settle, the fold clipping what doesn't fit yet; shut again on the way out. A little
+     room under the link, and the frame clear of the row's rule */
+  .rows li .panel {
+    display: grid;
+    grid-template-rows: 0fr;
+    padding: 0;
+    transition: grid-template-rows 0.2s var(--ease), padding 0.2s var(--ease), opacity 0.2s var(--ease);   /* shut: quick */
+  }
+  html.parked .rows li .panel {
+    grid-template-rows: 1fr;
+    padding: 1rem 0 1.5rem;
+    transition: grid-template-rows var(--settle) var(--land), padding var(--settle) var(--land), opacity var(--mid) var(--ease);   /* open: the settle */
+  }
+  .rows li .fold {
+    min-height: 0;
+    overflow: hidden;
+  }
+  .rows li .frame {
+    inset: 1rem 0 1.5rem;
   }
 }
