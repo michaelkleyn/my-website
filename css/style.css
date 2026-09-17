@@ -330,6 +330,57 @@ html.parked .panel {
   pointer-events: none;
   --arm: 7px;   /* the corner piece's reach; the edges stop this short of the corner */
 }
+/* the tint: a screen of halftone dots, a faint ink screen at the printer's 15deg, like a riso tint. It comes in with
+   the frame: a band of dots trails each edge as it draws, a beat behind the line, then once the last corner settles
+   the whole panel screens in, the dots growing from nothing on a front that sweeps top-left to bottom-right.
+   Four copies of one dot layer for the bands, full-size and identically placed so their grids register, each clipped
+   to its strip; they hand over to the fill (the tiled .wave, driven by js/tone.js) at the end */
+.frame .tone {
+  position: absolute;
+  inset: 1px;
+  overflow: hidden;
+  --r: 0.9px;   /* dot radius */
+  --band: 2.5rem;
+}
+.frame .tone:not(.wave)::before {
+  content: "";
+  position: absolute;
+  inset: -50%;
+  transform: rotate(15deg);
+  background-image: radial-gradient(circle, rgb(29 74 158 / 0.13) var(--r), transparent calc(var(--r) + 0.4px));
+  background-size: 5px 5px;
+}
+/* the bands: each clipped to a strip inside its edge, fading inward, revealed along the edge on the edge's own timing, 0.1s behind */
+.frame .tone.top    { clip-path: inset(0 100% calc(100% - var(--band)) 0); --to: inset(0 0 calc(100% - var(--band)) 0); mask-image: linear-gradient(to bottom, #000, transparent var(--band)); --dur: var(--settle); --at: 0.1s;  --ef: var(--land); }
+.frame .tone.right  { clip-path: inset(100% 0 0 calc(100% - var(--band))); --to: inset(0 0 0 calc(100% - var(--band))); mask-image: linear-gradient(to left, #000, transparent var(--band));   --dur: 0.35s; --at: 0.8s;  --ef: var(--ease-soft); }
+.frame .tone.bottom { clip-path: inset(calc(100% - var(--band)) 0 0 100%); --to: inset(calc(100% - var(--band)) 0 0 0); mask-image: linear-gradient(to top, #000, transparent var(--band));    --dur: 0.55s; --at: 1.15s; --ef: var(--ease-soft); }
+.frame .tone.left   { clip-path: inset(0 calc(100% - var(--band)) 100% 0); --to: inset(0 calc(100% - var(--band)) 0 0); mask-image: linear-gradient(to right, #000, transparent var(--band));  --dur: 0.3s;  --at: 1.7s;  --ef: var(--ease-soft); }
+html.parked .frame .tone.top,
+html.parked .frame .tone.right,
+html.parked .frame .tone.bottom,
+html.parked .frame .tone.left {
+  animation: tone-edge var(--dur) var(--ef) var(--at) forwards, tone-out 0.5s var(--ease) 1.6s forwards;
+}
+@keyframes tone-edge {
+  to { clip-path: var(--to); }
+}
+@keyframes tone-out {
+  to { opacity: 0; }
+}
+/* the fill and the water (js/tone.js): a stack of rows, each a 10px strip of the dot grid. tone.js sets each row's
+   reveal, dot radius and ink per frame: the dots raster up row by row, each row the other way, and on reaching the
+   top a wave runs back down, off the walls, and settles */
+.frame .tone.wave .grid {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-auto-rows: 10px;
+}
+.frame .tone.wave i {
+  background-image: radial-gradient(circle, rgb(29 74 158 / var(--a, 0.13)) var(--r, 0px), transparent calc(var(--r, 0px) + 0.4px));
+  background-size: 5px 5px;
+  mask-image: linear-gradient(var(--dir, to right), #000 calc(var(--p, 0%) - 6%), transparent var(--p, 0%));   /* the raster's reveal along the row */
+}
 .frame .e {
   position: absolute;
   background: var(--rule);
@@ -391,6 +442,13 @@ html.parked .frame .c { animation: frame-corner var(--dur) linear var(--at) forw
   syntax: "<number>";
   inherits: true;
   initial-value: 1;
+}
+
+/* the panel tint's dot radius */
+@property --r {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 0px;
 }
 
 /* the hello outline's drawn arc */
