@@ -1,23 +1,28 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Michael Kleyn</title>
-    <meta name="description" content="Software engineer and artist. Building Headliner, software for live music finance." />
-    <link rel="stylesheet" href="css/style.css" />
-  </head>
-  <body>
-    <div class="page">
-      <aside class="side">
-        <a class="name" href="#work" data-text="Michael Kleyn">Michael Kleyn</a>
-        <nav class="nav">
-          <a href="#work" aria-current="page" data-text="Work">Work</a>
-          <a href="#writing" data-text="Writing">Writing</a>
-          <a href="#about" data-text="About">About</a>
-        </nav>
-      </aside>
 
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Michael Kleyn</title>
+  <meta name="description"
+    content="Software engineer and artist. Building Headliner, software for live music finance." />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+  <div class="page">
+    <aside class="side">
+      <span class="name" data-text="Michael Kleyn">Michael Kleyn</span>
+      <nav class="nav">
+        <a href="#work" aria-current="page" data-text="Work">Work</a>
+        <a href="#writing" data-text="Writing">Writing</a>
+        <a href="#art" data-text="Art">Art</a>
+        <a href="#about" data-text="About">About</a>
+      </nav>
+    </aside>
+
+    <div class="stage">
       <main>
         <section id="work">
           <h1>Software engineer and artist.</h1>
@@ -25,32 +30,47 @@
 
           <ul class="rows">
             <li>
-              <a href="headliner/">
-                <span><h2>Headliner</h2><p>Budgeting for concerts and tours.</p></span>
+              <a href="#headliner">
+                <span>
+                  <h2>Headliner</h2>
+                  <p>Budgeting for concerts and tours.</p>
+                </span>
                 <span class="arrow" aria-hidden="true">&rarr;</span>
               </a>
             </li>
             <li>
-              <a href="mori/">
-                <span><h2>Mori</h2><p>Orchestrating many coding agents, like real-time strategy.</p></span>
+              <a href="#mori">
+                <span>
+                  <h2>Mori 森</h2>
+                  <p>Orchestrating many coding agents, like real-time strategy.</p>
+                </span>
                 <span class="arrow" aria-hidden="true">&rarr;</span>
               </a>
             </li>
             <li>
-              <a href="claude-timeline/">
-                <span><h2>Claude Timeline</h2><p>A git-style tree of your Claude Code conversations, with forking.</p></span>
+              <a href="#claude-timeline">
+                <span>
+                  <h2>Claude Timeline</h2>
+                  <p>A git-style tree of your Claude Code conversations, with forking.</p>
+                </span>
                 <span class="arrow" aria-hidden="true">&rarr;</span>
               </a>
             </li>
             <li>
-              <a href="tmux-companion/">
-                <span><h2>tmux-companion</h2><p>Answer blocked terminal agents from your phone.</p></span>
+              <a href="#tmux-companion">
+                <span>
+                  <h2>tmux-companion</h2>
+                  <p>Answer blocked terminal agents from your phone.</p>
+                </span>
                 <span class="arrow" aria-hidden="true">&rarr;</span>
               </a>
             </li>
             <li>
-              <a href="opus-os/">
-                <span><h2>Opus-OS</h2><p>A local, self-organizing system for living with AI assistants.</p></span>
+              <a href="#opus-os">
+                <span>
+                  <h2>Opus-OS</h2>
+                  <p>A local, self-organizing system for living with AI assistants.</p>
+                </span>
                 <span class="arrow" aria-hidden="true">&rarr;</span>
               </a>
             </li>
@@ -64,7 +84,45 @@
           <ul class="rows">
             <li>
               <a href="https://michaelkleyn.notion.site">
-                <span><h2>Notes</h2><p>Everything I&rsquo;ve written so far lives on Notion.</p></span>
+                <span>
+                  <h2>Notes</h2>
+                  <p>Everything I&rsquo;ve written so far lives on Notion.</p>
+                </span>
+                <span class="arrow" aria-hidden="true">&rarr;</span>
+              </a>
+            </li>
+          </ul>
+        </section>
+
+        <section id="art" hidden>
+          <h1>Art</h1>
+          <p class="lede">Drawings, music, and experiments.</p>
+
+          <ul class="rows">
+            <li>
+              <a href="#mind-the-bend">
+                <span>
+                  <h2>Mind the Bend</h2>
+                  <p>&ldquo;taken for&rdquo;, the first song of a folk, electronica, rock, shoegaze project.</p>
+                </span>
+                <span class="arrow" aria-hidden="true">&rarr;</span>
+              </a>
+            </li>
+            <li>
+              <a href="#end-of-empire">
+                <span>
+                  <h2>end of empire</h2>
+                  <p>An EP about being in San Francisco during this AI cycle. Overzealous, distant, and focused.</p>
+                </span>
+                <span class="arrow" aria-hidden="true">&rarr;</span>
+              </a>
+            </li>
+            <li>
+              <a href="#abi">
+                <span>
+                  <h2>abi</h2>
+                  <p>Messing around with 80 bpm tunes.</p>
+                </span>
                 <span class="arrow" aria-hidden="true">&rarr;</span>
               </a>
             </li>
@@ -73,43 +131,163 @@
 
         <section id="about" class="prose" hidden>
           <h1>Hi, my name is Michael.</h1>
-          <p class="lede">Software engineer, artist, and machine learning enthusiast in San Francisco.</p>
-          <p>
-            I come from the small, rural town of South Bend, WA. I moved to the city in 2010 at 18 to live and work in
-            an art collective. At 26 I started to code, out of an interest in the intersection of digital synthesizers
-            and machine learning models, and at 28 went to college for a degree in Mathematics.
+          <p class="lede">
+            Software engineer, artist, and machine learning enthusiast in San Francisco.
           </p>
           <p>
-            After graduating I dove into contract work and found I loved the variety. My software has helped manage
-            large-scale tours for artists like The Weeknd and improve cancer diagnostics at UCSF. Today I&rsquo;m building
-            Headliner, software for live music finance.
+            I'm part of a rare bunch of people who have gone to art school for Animation and then
+            went back to school for Applied Mathematics.
           </p>
           <p>
-            In my free time I investigate different modalities of human-computer interaction: novel audio synthesizers,
-            fine-tuning ML models, and whatever extends what people can do.
+            I come from the small, rural town of South Bend, WA. I made it out and traveled to San
+            Francisco to attend school and live in an art collective. Soon after I started to
+            code, out of an interest in the intersection of digital synthesizers and machine
+            learning models, and that lead me to eventually decided to get a degree in
+            Mathematics.
           </p>
           <p>
-            <a href="https://github.com/michaelkleyn">GitHub</a> ·
-            <a href="https://www.linkedin.com/in/mkleyn/">LinkedIn</a> ·
-            <a href="https://x.com/kleynmichael">X</a> ·
-            <a href="assets/Michael-Kleyn-Resume.pdf">Resume</a>
+            I've written a lot of music. It has been one of my greatest teachers. It's taught me
+            how one develops taste by trying new ideas quickly. It's how I approach almost
+            everything in life. Start something, anything, and throw as many ideas out as you can.
+            Only keep what sticks, and trust your gut when you know it isn't right.
+          </p>
+          <p>
+            Lately (in my freetime) I've been experimenting making different AI harnesess,
+            thinking about Evals and new data sets, exploring new modalities of human/computer
+            interaction, and of course making art.
+          </p>
+          <p>You can find me here:</p>
+          <p class="reach">
+            <a class="hello" href="mailto:michaelkleyn@gmail.com">Say hello &nearr;</a>
+            <a class="hello" href="https://x.com/kleynmichael" target="_blank" rel="noopener">X &nearr;</a>
+            <a class="hello" href="https://www.linkedin.com/in/mkleyn/" target="_blank" rel="noopener">LinkedIn &nearr;</a>
+            <a class="hello" href="assets/Michael-Kleyn-Resume.pdf" target="_blank" rel="noopener">Resume &nearr;</a>
+            <a class="hello" href="https://github.com/michaelkleyn" target="_blank" rel="noopener">GitHub &nearr;</a>
           </p>
         </section>
 
         <a class="hello" href="mailto:michaelkleyn@gmail.com">Say hello &nearr;</a>
       </main>
-    </div>
 
-    <svg width="0" height="0" aria-hidden="true" style="position: absolute">
-      <filter id="goo" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
-        <feGaussianBlur stdDeviation="6" />
-        <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 16 -6" />
-        <feGaussianBlur stdDeviation="3" />
-      </filter>
-    </svg>
-    <script src="js/p5.brush.js"></script>
-    <script src="js/dot.js"></script>
-    <script src="js/glow.js"></script>
-    <script src="js/cursor.js"></script>
-  </body>
+      <aside class="panel" aria-live="polite">
+        <!-- the project panel: opens beside the rows when one is chosen. A rule draws its frame as the rows park (css: .frame) -->
+        <div class="frame" aria-hidden="true">
+          <i class="e t"></i><i class="e r"></i><i class="e b"></i><i class="e l"></i>
+          <b class="c tr"></b><b class="c br"></b><b class="c bl"></b><b class="c tl"></b>
+        </div>
+
+        <section class="proj prose" data-project="headliner" hidden>
+          <header>
+            <h1>Headliner</h1>
+            <p class="lede">Budgeting for concerts and tours.</p>
+          </header>
+          <p>
+            <!-- What Headliner is, who it is for, and why it exists. -->
+          </p>
+          <!-- Design components go here. -->
+          <a class="hello" href="https://headliner.rocks" target="_blank" rel="noopener">Visit Headliner &nearr;</a>
+        </section>
+
+        <section class="proj prose" data-project="mori" hidden>
+          <header>
+            <h1>Mori 森</h1>
+            <p class="lede">Orchestrating many coding agents, like real-time strategy.</p>
+          </header>
+          <p>
+            <!-- What Mori is, who it is for, and why it exists. -->
+          </p>
+          <!-- Design components go here. -->
+        </section>
+
+        <section class="proj prose" data-project="claude-timeline" hidden>
+          <header>
+            <h1>Claude Timeline</h1>
+            <p class="lede">A git-style tree of your Claude Code conversations, with forking.</p>
+          </header>
+          <p>
+            <!-- What Claude Timeline is, who it is for, and why it exists. -->
+          </p>
+          <!-- Design components go here. -->
+        </section>
+
+        <section class="proj prose" data-project="tmux-companion" hidden>
+          <header>
+            <h1>tmux-companion</h1>
+            <p class="lede">Answer blocked terminal agents from your phone.</p>
+          </header>
+          <p>
+            <!-- What tmux-companion is, who it is for, and why it exists. -->
+          </p>
+          <!-- Design components go here. -->
+        </section>
+
+        <section class="proj prose" data-project="opus-os" hidden>
+          <header>
+            <h1>Opus-OS</h1>
+            <p class="lede">A local, self-organizing system for living with AI assistants.</p>
+          </header>
+          <p>
+            <!-- What Opus-OS is, who it is for, and why it exists. -->
+          </p>
+          <!-- Design components go here. -->
+        </section>
+        <!-- art -->
+
+        <section class="proj prose" data-project="mind-the-bend" hidden>
+          <header>
+            <h1>Mind the Bend</h1>
+            <p class="lede">&ldquo;taken for&rdquo;, the first song of a folk, electronica, rock, shoegaze project.</p>
+          </header>
+          <p>
+            <!-- What Mind the Bend is and why it exists. -->
+          </p>
+          <!-- Media goes here: add loading="lazy" to images, preload="none" to audio and video. -->
+          <iframe src="https://open.spotify.com/embed/track/2SWcH1F79I9ShSYqzYKyUe" width="100%" height="152" frameborder="0" allow="clipboard-write; encrypted-media; fullscreen; picture-in-picture" loading="lazy" title="taken for, on Spotify"></iframe>
+          <a class="hello" href="https://open.spotify.com/track/2SWcH1F79I9ShSYqzYKyUe" target="_blank" rel="noopener">Listen on Spotify &nearr;</a>
+        </section>
+
+        <section class="proj prose" data-project="end-of-empire" hidden>
+          <header>
+            <h1>end of empire</h1>
+            <p class="lede">An EP about being in San Francisco during this AI cycle. Overzealous, distant, and focused.</p>
+          </header>
+          <p>
+            <!-- What end of empire is and why it exists. -->
+          </p>
+          <!-- Media goes here: add loading="lazy" to images, preload="none" to audio and video. -->
+          <iframe src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/end-of-empire/sets/the-beginning-ep-rough-mix&color=%23fe5252&inverse=false&auto_play=false&show_user=true" width="100%" height="300" frameborder="no" scrolling="no" allow="autoplay" loading="lazy" title="end of empire, on SoundCloud"></iframe>
+          <a class="hello" href="https://soundcloud.com/end-of-empire/sets/the-beginning-ep-rough-mix" target="_blank" rel="noopener">Listen on SoundCloud &nearr;</a>
+        </section>
+
+        <section class="proj prose" data-project="abi" hidden>
+          <header>
+            <h1>abi</h1>
+            <p class="lede">Messing around with 80 bpm tunes.</p>
+          </header>
+          <p>
+            <!-- What abi is and why it exists. -->
+          </p>
+          <!-- Media goes here: add loading="lazy" to images, preload="none" to audio and video. -->
+          <iframe src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/end-of-empire/abi&color=%23fe5252&inverse=false&auto_play=false&show_user=true" width="100%" height="166" frameborder="no" scrolling="no" allow="autoplay" loading="lazy" title="abi, on SoundCloud"></iframe>
+          <a class="hello" href="https://soundcloud.com/end-of-empire/abi" target="_blank" rel="noopener">Listen on SoundCloud &nearr;</a>
+        </section>
+      </aside>
+    </div>
+  </div>
+
+  <svg width="0" height="0" aria-hidden="true" style="position: absolute">
+    <filter id="goo" x="-20%" y="-20%" width="140%" height="140%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="6" />
+      <feColorMatrix values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 16 -6" />
+      <feGaussianBlur stdDeviation="3" />
+    </filter>
+  </svg>
+  <script src="js/p5.brush.js"></script>
+  <script src="js/dot.js"></script>
+  <script src="js/rows.js"></script>
+  <script src="js/stage.js"></script>
+  <script src="js/glow.js"></script>
+  <script src="js/cursor.js"></script>
+</body>
+
 </html>

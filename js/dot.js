@@ -2,12 +2,19 @@
 // the trail thinning out behind, and a fresh blot lands.
 (function () {
   var nav = document.querySelector('.nav');
-  var links = Array.from(nav.querySelectorAll(':scope > a'));   // top-level links only; a sublist's items are not blot stops
+  var links = Array.from(nav.querySelectorAll('a'));
   var sections = links.map(function (a) { return document.querySelector(a.hash); });
   var COLOR = '#fe5252', R = 6, LAG = 0.4, DUR = 180, RAIL = 46;   // rail: dot centre sits RAIL px off the widest link
   var dpr = Math.min(devicePixelRatio || 1, 2), S = dpr * 2;   // brush paints at 2x for texture, overlay at dpr
 
-  function idx(hash) { return Math.max(0, links.findIndex(function (a) { return a.hash === hash; })); }
+  function idx(hash) {
+    var i = links.findIndex(function (a) { return a.hash === hash; });
+    if (i < 0) {   // a row's hash (a project, a piece of art): the section that row lives in
+      var row = hash && document.querySelector('.rows a[href="' + hash + '"]');
+      i = row ? sections.indexOf(row.closest('section')) : -1;
+    }
+    return Math.max(0, i);
+  }
   function mark(i) {
     links.forEach(function (a, j) { if (j === i) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
     sections.forEach(function (s, j) { if (s) s.hidden = j !== i; });   // subpages share the nav but not the sections
@@ -20,7 +27,7 @@
   function size() {
     // the rail hugs the widest link, not the nav box (the nav is as wide as the name)
     var edge = Math.min.apply(null, links.map(function (a) { return a.offsetLeft; }));
-    ow = nav.offsetWidth + 60; oh = nav.offsetHeight; dotX = edge - RAIL + 60;   // overlay hangs 60px past the nav's left edge
+    ow = nav.offsetWidth + 72; oh = nav.offsetHeight + 12; dotX = edge - RAIL + 60;   // overlay hangs 60px past the nav's left edge, and 12px past its right and bottom for the underlines' bleed
     overlay.style.left = '-60px';
     overlay.width = ow * dpr; overlay.height = oh * dpr;
     overlay.style.width = ow + 'px'; overlay.style.height = oh + 'px';
@@ -112,12 +119,41 @@
     })(t0);
   }
 
-  overlay.className = 'dot';
-  nav.classList.add('has-brush'); nav.appendChild(overlay);
-  size(); brush.angleMode && brush.angleMode(brush.DEGREES);
+  // ---- the hover underline: the same marker, drawn under the link left to right, lifted right to left ----
+  var under = document.createElement('canvas'), uctx, strokes = [], hover = -1, reveal = 0, uanim = null;
+  function underlines() {
+    under.width = overlay.width; under.height = overlay.height; under.style.cssText = overlay.style.cssText;
+    uctx = under.getContext('2d'); uctx.scale(dpr, dpr);
+    strokes = links.map(function (a) {   // one hand-drawn stroke per link, a little wobble in the line, painted once
+      var x0 = a.offsetLeft + 60, x1 = x0 + a.offsetWidth, y = a.offsetTop + a.offsetHeight + 1, pts = [];
+      for (var k = 0; k <= 4; k++) pts.push([x0 + (x1 - x0) * k / 4, y + (k === 0 || k === 4 ? 0 : (Math.random() - 0.5) * 2)]);
+      return { x0: x0, w: x1 - x0, img: strokeAlong(pts) };
+    });
+  }
+  function drawUnder() {
+    uctx.clearRect(0, 0, ow, oh);
+    if (hover < 0 || reveal <= 0) return;
+    var st = strokes[hover];
+    var t = 1 - Math.pow(1 - reveal, 3);   // ease-out: the pen moves fast off the mark and slows into the end of the word
+    uctx.save(); uctx.beginPath(); uctx.rect(st.x0 - 6, 0, (st.w + 12) * t, oh); uctx.clip();
+    uctx.globalAlpha = 1; uctx.drawImage(st.img, 0, 0, gl.width, gl.height, 0, 0, ow, oh); uctx.restore();
+  }
+  function underFrame() {   // reveal runs to 1 while hovered (a pen drawing left to right), back to 0 when not (lifted, quicker)
+    var to = hover < 0 ? 0 : 1, step = 16.7 / (to ? 320 : 160);
+    reveal = to > reveal ? Math.min(to, reveal + step) : Math.max(to, reveal - step);
+    drawUnder();
+    if (reveal !== to) uanim = requestAnimationFrame(underFrame); else uanim = null;
+  }
+  links.forEach(function (a, i) {
+    a.addEventListener('pointerenter', function () { hover = i; if (!uanim) uanim = requestAnimationFrame(underFrame); });
+    a.addEventListener('pointerleave', function () { if (hover === i) { hover = -1; if (!uanim) uanim = requestAnimationFrame(underFrame); } });
+  });
+
+  overlay.className = under.className = 'dot';
+  nav.classList.add('has-brush'); nav.appendChild(overlay); nav.appendChild(under);
+  size(); underlines(); brush.angleMode && brush.angleMode(brush.DEGREES);
   mark(idx(location.hash)); settle(idx(location.hash));
   addEventListener('hashchange', function () { var i = idx(location.hash); mark(i); travel(i); });
-  addEventListener('resize', function () { cancelAnimationFrame(anim); size(); settle(cur); });
-  nav.addEventListener('transitionend', function (e) { if (e.target.classList.contains('sub')) { size(); settle(cur); } });   // a sublist opened: the links below it moved
+  addEventListener('resize', function () { cancelAnimationFrame(anim); size(); settle(cur); underlines(); drawUnder(); });
 
 })();

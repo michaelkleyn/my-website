@@ -20,6 +20,7 @@
     return false;
   }
   addEventListener('pointerover', function (e) {
+    if (e.target.tagName === 'IFRAME') { el.classList.add('gone'); away = true; return; }   // an embedded player owns the pointer inside it: the dot swells away into the player, as into the hello box, and the player's own cursor takes over
     var t = e.target.closest(TEXT), link = e.target.closest('a');
     if (t && !link) { text = t; range.selectNodeContents(text); el.style.setProperty('--bar-h', parseFloat(getComputedStyle(text).fontSize) * 1.15 + 'px'); }
     else if (!link && e.target.closest('.prose') && text) { /* the gap between blocks of the prose: keep the last block's lines, so the bar can hold across it */ }
@@ -29,10 +30,10 @@
     el.classList.toggle('soft', !!e.target.closest('.rows a'));   // inside a row link the dot softens into the row's halo
     el.classList.toggle('gone', !!e.target.closest('.hello'));    // inside the hello link the dot is gone: the box's halo is the cursor
   });
-  var px = 0, py = 0, fx = 0, fy = 0, fvx = 0, fvy = 0, lastGap = 0, s = 0, sq = 0, plx = 0, ply = 0, last = 0;
+  var px = 0, py = 0, fx = 0, fy = 0, fvx = 0, fvy = 0, lastGap = 0, s = 0, sq = 0, plx = 0, ply = 0, last = 0, away = false;
   addEventListener('pointermove', function (e) {
     px = e.clientX; py = e.clientY;
-    if (el.classList.contains('hidden')) { fx = px; fy = py; fvx = fvy = 0; }   // (re)entering the window: no lunge from wherever the follower was
+    if (el.classList.contains('hidden') || away) { fx = px; fy = py; fvx = fvy = 0; away = false; }   // (re)entering the window, or back from a player: no lunge from wherever the follower was
     el.style.translate = px + 'px ' + py + 'px';
     el.classList.remove('hidden');
     if (knock) { var kr = knock.getBoundingClientRect(); knock.style.setProperty('--kx', (px - kr.left) + 'px'); knock.style.setProperty('--ky', (py - kr.top) + 'px'); }

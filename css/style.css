@@ -52,19 +52,49 @@ a:hover {
   grid-template-columns: 1fr minmax(0, 36.5rem) minmax(20rem, 1.3fr);
   padding: 3.75rem 4rem 4rem;
   min-height: 100vh;
+  position: relative;
 }
 
 /* ---- sidebar ---- */
 .side {
-  grid-column: 3;
-  justify-self: end;
+  /* pinned to the page's corner, outside the grid: the columns can re-settle without moving the header a pixel.
+     The third track only reserves its room */
+  position: absolute;
+  top: 3.75rem;
+  right: 4rem;
   text-align: right;
   padding-top: 0.25rem;
 }
 
-main {
+.stage {
+  /* the rows and, beside them, the project panel. Choosing a project parks the rows to the left: the gutter track
+     closes and this track widens on one ease-out glide, the panel filling the room that opens */
   grid-column: 2;
   grid-row: 1;
+  display: flex;
+  align-items: stretch;   /* the panel stands as tall as the rows column ... */
+  align-self: start;      /* ... and no taller: the page's single grid row would otherwise stretch it to the viewport */
+}
+main {
+  flex: 0 1 36.5rem;
+  min-width: 0;
+}
+.panel {
+  /* the gap between rows and panel opens with the panel, so at rest the rows keep their full width */
+  margin-left: 0;
+  transition: margin-left var(--settle) var(--land), opacity var(--mid) var(--ease);
+}
+html.parked .panel {
+  margin-left: 3rem;
+}
+.page {
+  transition: grid-template-columns var(--settle) var(--land);
+}
+html.parked .page {
+  /* parked: the panel takes the room, the sidebar keeps only its 20rem. The stage's cap is exactly the room there is, so
+     the whole curve is spent on real travel: with a cap wider than the page the track hit its ceiling a quarter of the way
+     in and the rest of the ease ran on nothing, which read as a snap */
+  grid-template-columns: 0fr minmax(0, calc(100% - 20rem)) minmax(20rem, 0.5fr);
 }
 
 .name {
@@ -74,6 +104,7 @@ main {
   font-weight: 500;
   letter-spacing: -0.01em;
   margin: 0 0 7.5rem;
+  user-select: none;
 }
 
 .nav {
@@ -82,6 +113,7 @@ main {
   flex-direction: column;
   align-items: flex-end;
   gap: 0.5rem;
+  user-select: none;
 }
 
 .nav a {
@@ -117,84 +149,6 @@ main {
   /* the dot's own radius */
 }
 
-.nav .sub {
-  /* a section's sub-items, shown when one is open. Opens on load: the rows grow in as pale coral bars and the rail draws
-     down the right edge; then the titles surface out of their bars one by one, each bar clearing to a glow that hugs the
-     letters, then to nothing */
-  --wash: #f4dfd9;
-  position: relative;
-  align-self: stretch;
-  padding-right: 0.75rem;
-  display: grid;
-  grid-template-rows: 1fr;
-  transition: grid-template-rows var(--slow) var(--ease-soft);
-  @starting-style {
-    grid-template-rows: 0fr;
-  }
-}
-.nav .sub ul {
-  list-style: none;
-  margin: 0;
-  padding: 0.2rem 0.1rem;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 0.1rem;
-}
-.nav .sub a {
-  font-size: 1.05rem;
-  font-weight: 500;
-  padding: 0.05rem 0.4rem;
-  border-radius: 0.35rem;
-  --c: var(--ink-soft);
-  color: var(--c);
-  animation: sub-ink 1.3s var(--ease-soft) both;
-}
-.nav .sub a[aria-current="page"] {
-  --c: var(--ink);
-}
-.nav .sub a::before { inset: 0.05rem 0.4rem; }   /* the knockout copy sits on the text, inside the pill padding */
-.nav .sub a::after { left: 0.4rem; right: 0.4rem; bottom: -1px; height: 2px; }
-.nav .sub a[aria-current="page"]::after {   /* the page we are on stays underlined; after an opening, it draws once the titles have settled */
-  transform: scaleX(1);
-  transition: transform var(--quick) var(--ease) 2.2s;
-  @starting-style { transform: scaleX(0); }
-}
-/* arriving from a sibling subpage (html.sub-settled, set in the page head): the list is already open, no replay */
-html.sub-settled .nav .sub, html.sub-settled .nav .sub::after { transition: none; }
-html.sub-settled .nav .sub a { animation: none; }
-html.sub-settled .nav .sub a[aria-current="page"]::after { transition: none; }   /* already open: the underline is simply there */
-.nav .sub li:nth-child(1) a { animation-delay: 0.7s; }
-.nav .sub li:nth-child(2) a { animation-delay: 0.82s; }
-.nav .sub li:nth-child(3) a { animation-delay: 0.94s; }
-.nav .sub li:nth-child(4) a { animation-delay: 1.06s; }
-.nav .sub li:nth-child(5) a { animation-delay: 1.18s; }
-.nav .sub li:nth-child(n + 6) a { animation-delay: 1.3s; }
-@keyframes sub-ink {   /* born inside its bar, invisible; surfaces to ink; the bar clears, then the glow around the letters */
-  0% { color: var(--wash); background-color: var(--wash); text-shadow: 0 0 6px var(--wash), 0 0 2px var(--wash); }
-  35% { color: var(--c); background-color: var(--wash); text-shadow: 0 0 6px var(--wash), 0 0 2px var(--wash); }
-  70% { color: var(--c); background-color: transparent; text-shadow: 0 0 6px var(--wash), 0 0 2px var(--wash); }
-  100% { color: var(--c); background-color: transparent; text-shadow: 0 0 6px transparent, 0 0 2px transparent; }
-}
-.nav .sub::after {
-  /* the rail: draws top to bottom as the rows grow */
-  content: "";
-  position: absolute;
-  top: 0.2rem;
-  bottom: 0.2rem;
-  right: 0;
-  width: 2px;
-  border-radius: 1px;
-  background: var(--rule);   /* the lighter blue of the row rules */
-  transform: scaleY(1);
-  transform-origin: top;
-  transition: transform var(--slow) var(--ease-soft);
-  @starting-style {
-    transform: scaleY(0);
-  }
-}
-
 .nav a::after {
   /* the hover underline: grows out from the left over one quick beat */
   content: "";
@@ -213,6 +167,10 @@ html.sub-settled .nav .sub a[aria-current="page"]::after { transition: none; }  
 @media (hover: hover) {
   .nav a:hover::after {
     transform: scaleX(1);
+  }
+
+  .nav.has-brush a::after {
+    display: none;   /* with the brush, dot.js draws the underline as a marker stroke instead */
   }
 }
 
@@ -259,11 +217,42 @@ h1 {
   list-style: none;
   margin: 0;
   padding: 0;
-  border-top: 1px solid var(--rule);
+  position: relative;
 }
 
 .rows li {
   border-bottom: 1px solid var(--rule);
+}
+.rows li:first-child {
+  border-top: 1px solid var(--rule);
+}
+
+/* more than five rows (set by js/rows.js): the list scrolls, its scrollbar a thin bar of rule-blue in the left gutter.
+   rtl puts a scrollbar on the left; the rows themselves go back to ltr. The list is widened into the gutters so the bar
+   sits outside the rows' line and the rows' halos aren't clipped by the scroll box */
+.rows.scroll {
+  overflow-y: auto;
+  direction: rtl;
+  margin: 0 -0.5rem 0 -1rem;
+  padding: 0 0.5rem 0 calc(1rem - 3px);
+}
+.rows.scroll > li {
+  direction: ltr;
+}
+.rows.scroll::-webkit-scrollbar {
+  width: 3px;
+}
+.rows.scroll::-webkit-scrollbar-thumb {
+  background: rgb(127 151 199 / 0.45);   /* --rule, lightened */
+}
+.rows.scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+@supports not selector(::-webkit-scrollbar) {
+  .rows.scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(127 151 199 / 0.45) transparent;
+  }
 }
 
 .rows a {
@@ -272,6 +261,7 @@ h1 {
   justify-content: space-between;
   gap: 1rem;
   padding: 1.125rem 0 1.25rem;
+  user-select: none;
 }
 
 .rows h2 {
@@ -295,6 +285,98 @@ h1 {
   transform: translateX(0.25rem);
 }
 
+/* ---- the project panel ---- */
+.panel {
+  flex: 1 1 0;
+  min-width: 0;
+  position: relative;
+  padding-top: 10.3rem;   /* level with the rows' h1 */
+  opacity: 0;
+}
+html.parked .panel {
+  opacity: 1;
+}
+.proj {
+  opacity: 0;
+  padding: 1.75rem 2rem;   /* inside the frame */
+}
+.proj.on {
+  opacity: 1;
+}
+.proj .hello {
+  margin-top: 2.5rem;
+}
+.proj img {
+  display: block;
+  width: 100%;
+  height: auto;
+  margin: 0 0 1.25rem;
+}
+/* the project fades in once the rows have settled (--lead, set by stage.js); at once when switching projects */
+.panel.play .proj.on { animation: panel-proj var(--slow) var(--ease-soft) var(--lead, 0s) both; }
+@keyframes panel-proj {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* ---- the panel's frame: a rule drawn round the panel as the rows park ----
+   The top edge draws left to right with the settle. At each corner the line meets a corner piece: it shows as a right
+   angle, then spins, its other two arms coming out, into a plus that seesaws to rest as an x. Each edge in turn, each
+   corner spinning fewer times than the last, the line running out of pace. Keyed off html.parked, so it draws once
+   per park and not when switching projects. */
+.frame {
+  position: absolute;
+  inset: 10.3rem 0 0;
+  pointer-events: none;
+  --arm: 7px;   /* the corner piece's reach; the edges stop this short of the corner */
+}
+.frame .e {
+  position: absolute;
+  background: var(--rule);
+  transform-origin: 0 0;
+}
+.frame .t { top: 0; left: var(--arm); right: var(--arm); height: 1px; transform: scaleX(0); --dur: var(--settle); --at: 0s; --ef: var(--land); }
+.frame .r { top: var(--arm); bottom: var(--arm); right: 0; width: 1px; transform: scaleY(0); --dur: 0.35s; --at: 0.7s; --ef: var(--ease-soft); }
+.frame .b { bottom: 0; left: var(--arm); right: var(--arm); height: 1px; transform-origin: 100% 0; transform: scaleX(0); --dur: 0.55s; --at: 1.05s; --ef: var(--ease-soft); }
+.frame .l { top: var(--arm); bottom: var(--arm); left: 0; width: 1px; transform-origin: 0 100%; transform: scaleY(0); --dur: 0.3s; --at: 1.6s; --ef: var(--ease-soft); }
+html.parked .frame .e { animation: frame-edge var(--dur) var(--ef) var(--at) forwards; }
+@keyframes frame-edge {
+  to { transform: none; }
+}
+.frame .c {
+  position: absolute;
+  width: calc(var(--arm) * 2);
+  height: calc(var(--arm) * 2);
+  margin: calc(var(--arm) * -1);   /* centred on the corner */
+  opacity: 0;
+  transform: rotate(var(--base));
+  /* an L: the two arms that continue the edges. --base turns it to face each corner; the plus underneath is symmetric */
+  clip-path: polygon(0 0, calc(50% + 1px) 0, calc(50% + 1px) calc(50% - 1px), 100% calc(50% - 1px), 100% 100%, 0 100%);
+}
+.frame .c::before,
+.frame .c::after {
+  content: "";
+  position: absolute;
+  background: var(--rule);
+}
+.frame .c::before { left: 0; right: 0; top: calc(50% - 0.5px); height: 1px; }
+.frame .c::after { top: 0; bottom: 0; left: calc(50% - 0.5px); width: 1px; }
+.frame .tr { top: 0; right: 0; --base: 0deg; --turns: 3; --dur: 1.3s; --at: 0.7s; }
+.frame .br { bottom: 0; right: 0; --base: 90deg; --turns: 2; --dur: 1s; --at: 1.05s; }
+.frame .bl { bottom: 0; left: 0; --base: 180deg; --turns: 1; --dur: 0.8s; --at: 1.6s; }
+.frame .tl { top: 0; left: 0; --base: 270deg; --turns: 0.5; --dur: 0.6s; --at: 1.9s; }
+html.parked .frame .c { animation: frame-corner var(--dur) linear var(--at) forwards; }
+@keyframes frame-corner {
+  /* --turns full spins plus the 45deg to an x, overshot and seesawed back */
+  0% { opacity: 1; transform: rotate(var(--base)); animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1); }
+  12% { clip-path: polygon(0 0, 100% 0, 100% 0, 100% 0, 100% 100%, 0 100%); }
+  62% { transform: rotate(calc(var(--base) + var(--turns) * 360deg + 45deg + 34deg)); animation-timing-function: ease-in-out; }
+  76% { transform: rotate(calc(var(--base) + var(--turns) * 360deg + 45deg - 16deg)); animation-timing-function: ease-in-out; }
+  88% { transform: rotate(calc(var(--base) + var(--turns) * 360deg + 45deg + 7deg)); animation-timing-function: ease-in-out; }
+  95% { transform: rotate(calc(var(--base) + var(--turns) * 360deg + 45deg - 2deg)); animation-timing-function: ease-in-out; }
+  100% { opacity: 1; transform: rotate(calc(var(--base) + var(--turns) * 360deg + 45deg)); clip-path: polygon(0 0, 100% 0, 100% 0, 100% 0, 100% 100%, 0 100%); }
+}
+
 /* ---- pointer highlight on the row links (built by js/glow.js) ----
    One material, one easing. The cursor leans first; the row's nearest edge answers; on entry the cursor softens into a
    halo and the fill flows out from it like ink; the ring rises out of the fill; leaving drains in half the time. */
@@ -311,6 +393,13 @@ h1 {
   initial-value: 1;
 }
 
+/* the hello outline's drawn arc */
+@property --sweep {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
 /* how far the ring reaches along the edge */
 @property --near {
   syntax: "<number>";
@@ -325,6 +414,8 @@ h1 {
   --quick: 0.15s;
   --mid: 0.3s;
   --slow: 0.55s;
+  --settle: 0.7s;
+  --land: cubic-bezier(0.7, 0, 0.2, 1);   /* sigmoid: steep in, long soft out; a settle, not a slide */
 }
 
 /* ease-out cubic for quick things, ease-out quad for the slow ink so its travel stays visible */
@@ -528,9 +619,22 @@ h1 {
   margin: 0 0 1.25rem;
 }
 
-.prose p a {
+.prose p a:not(.hello) {
   text-decoration: underline;
   text-underline-offset: 0.2em;
+}
+
+/* the reach-me links: a row of hello boxes */
+.reach {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 1.5rem;   /* each box pulls left by its own padding, so this leaves 0.75rem of paper between boxes */
+}
+.reach .hello {
+  margin-top: 0;
+}
+#about:not([hidden]) ~ .hello {
+  display: none;   /* on About the say-hello sits in the row above */
 }
 
 .hello {
@@ -540,6 +644,7 @@ h1 {
   isolation: isolate;
   padding: 0.5rem 0.75rem;
   margin-left: -0.75rem;
+  user-select: none;
 }
 
 /* ---- say hello: the row treatment at a small scale. On approach the same soft ring, with bare paper inside; on entry the ring goes, the cursor is gone, and a soft glow inside the tinted box carries it ---- */
@@ -552,11 +657,11 @@ h1 {
   /* the cursor: a wide soft glow at the pointer, declining to bare paper, over a faint even tint */
   background:
     radial-gradient(circle at var(--mx, 50%) var(--my, 50%),
-      rgb(254 82 82 / 0.5) 0,
-      rgb(254 82 82 / 0.28) 30px,
-      rgb(254 82 82 / 0.08) 70px,
+      rgb(254 82 82 / 0.28) 0,
+      rgb(254 82 82 / 0.14) 30px,
+      rgb(254 82 82 / 0.045) 70px,
       transparent 110px),
-    rgb(254 82 82 / 0.06);
+    rgb(254 82 82 / 0.045);
   filter: none;
   opacity: 0;
   transition: opacity var(--mid) var(--ease);
@@ -591,7 +696,40 @@ h1 {
     transition: opacity var(--mid) var(--ease);
   }
 
-  /* inside: no ring, just the glow */
+  /* inside: no ring, just the glow, and a thread of ink round the edge: a 1px outline, palest where the pointer
+     is and deepening to the softer ink round the box, so moving about shifts the depth along it. On entry it
+     draws round both ways from the point of entry (--from, set by glow.js) and meets at the far side; on exit it
+     unwinds back to the point of exit */
+  .hello .glow::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    corner-shape: inherit;   /* the same squircle as the fill */
+    padding: 1px;   /* the ink, masked to the edge, then to the drawn arc */
+    background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%),
+      rgb(127 151 199 / 0.35) 0,
+      rgb(127 151 199 / 0.6) 36px,
+      var(--rule) 90px,
+      var(--ink-soft) 100%);
+    mask:
+      conic-gradient(from calc(var(--from, 0deg) - var(--sweep) / 2) at var(--ex, 50%) var(--ey, 50%), #000 var(--sweep), transparent 0),
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: intersect, exclude;
+    --sweep: 0deg;
+    transition: --sweep var(--slow) var(--ease);   /* out: unwinds at once */
+  }
+  .hello:hover .glow::after,
+  .hello:focus-visible .glow::after {
+    --sweep: 360deg;
+    transition-delay: 0.2s;   /* in: a beat's pause, so a pointer passing through doesn't set it off */
+  }
+  /* the say-hello label's letters, each its own box (js/glow.js), drifting toward the pointer */
+  .hello .l {
+    display: inline-block;
+    transition: translate var(--mid) var(--ease);
+  }
 }
 
 @media (max-width: 960px) {
@@ -601,8 +739,12 @@ h1 {
     gap: 3rem;
   }
 
+  .side {
+    position: static;
+  }
+
   .side,
-  main {
+  .stage {
     grid-column: 1;
     grid-row: auto;
   }
@@ -617,5 +759,30 @@ h1 {
 
   .hello {
     margin-top: 4rem;
+  }
+
+  .stage {
+    flex-direction: column;
+  }
+
+  main {
+    flex: none;
+    width: 100%;
+  }
+
+  .panel,
+  html.parked .panel {
+    flex: none;
+    width: 100%;
+    margin-left: 0;
+    padding-top: 3rem;
+  }
+
+  .frame {
+    top: 3rem;
+  }
+
+  html:not(.parked) .panel {
+    display: none;
   }
 }

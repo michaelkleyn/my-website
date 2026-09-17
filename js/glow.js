@@ -7,16 +7,30 @@
   if (!matchMedia('(hover: hover)').matches) return;
   var REACH = 128, LEAN = 64, EDGE = 35;   // px outside the box at which the edge starts to answer / the cursor starts to lean; px inside an edge at which the ring rises
   var rows = Array.prototype.map.call(document.querySelectorAll('.rows a, .hello'), function (a) {
-    var glow = document.createElement('span'), goo = document.createElement('span');
+    var glow = document.createElement('span'), goo = document.createElement('span'), hello = a.matches('.hello');
+    var drifts = hello && a.matches('[href^="mailto:"]');   // only the say-hello link drifts
+    if (drifts) a.innerHTML = a.textContent.replace(/hello/, function (w) { return w.replace(/./g, '<span class="l">$&</span>'); });   // "hello", each letter its own box, so it can drift under the pointer; "Say" and the arrow hold still
     glow.className = 'glow'; goo.className = 'goo'; glow.appendChild(goo); a.appendChild(glow);
     function anchor(e) {   // the ink flows out from the point of entry, and drains toward the point of exit
       var r = glow.getBoundingClientRect(), x = Math.max(0, Math.min(r.width, e.clientX - r.left)), y = Math.max(0, Math.min(r.height, e.clientY - r.top));
       glow.style.setProperty('--ex', x + 'px'); glow.style.setProperty('--ey', y + 'px');
       glow.style.setProperty('--far', Math.hypot(Math.max(x, r.width - x), Math.max(y, r.height - y)) + 'px');   // to the far corner: the whole sweep is visible travel
+      glow.style.setProperty('--from', Math.atan2(x - r.width / 2, r.height / 2 - y) + 'rad');   // the outward direction at the point of entry (css angles: 0 up, clockwise): the hello outline draws round from there
     }
     a.addEventListener('pointerenter', anchor); a.addEventListener('pointerleave', anchor);
-    return { glow: glow, goo: goo, pull: !a.matches('.hello') };   // the hello link gets the glow but not the cursor lean
+    return { glow: glow, goo: goo, pull: !hello, letters: drifts ? Array.from(a.querySelectorAll('.l')) : [], drifting: false };   // the hello link gets the glow but not the cursor lean
   });
+  // inside the say-hello box the letters drift sideways toward the pointer, the nearest most: a couple of px, eased by CSS so it trails a little
+  function drift(row, e, on) {
+    if (!row.letters.length || (!on && !row.drifting)) return;
+    row.drifting = on;
+    row.letters.forEach(function (l) {
+      if (!on) { l.style.translate = ''; return; }
+      var r = l.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+      var d = Math.hypot(dx, dy) || 1, w = Math.exp(-(d / 40) * (d / 40));
+      l.style.translate = (2.2 * w * dx / d).toFixed(2) + 'px';
+    });
+  }
   window.linkPull = { x: 0, y: 0, n: 0 };
   addEventListener('pointermove', function (e) {
     var best = null;
@@ -37,6 +51,7 @@
       s.setProperty('--near', near.toFixed(3));
       s.setProperty('--ring-o', (i.inside ? 0.06 + 0.22 * i.edge : 0.14 * Math.pow(near, 1.5)).toFixed(3));   // approach: a light glow trailing the lean; inside: faint mid-row, full at an edge
       s.setProperty('--spread', i.inside ? '0.5' : '0.35');                                              // the ring stays near the cursor (eased in CSS)
+      if (!i.row.pull) drift(i.row, e, i.inside);
     });
     // the cursor leans on approach; no pull once inside. Shorter perimeter than the glow: the lean starts at LEAN px out
     var n = best && best.d > 0 ? Math.max(0, 1 - best.d / LEAN) : 0;   // linear, so the lean is the first thing to move
