@@ -890,3 +890,110 @@ html.parked .frame .c { animation: frame-corner var(--dur) linear var(--at) forw
     inset: 1rem 0 1.5rem;
   }
 }
+
+/* ---- the Headliner panel: its recording and its decisions ---- */
+.proj .lede {
+  margin-bottom: 1.5rem;
+}
+.proj .facts {
+  font-size: 1rem;
+  margin-top: 1.5rem;
+}
+.rec {
+  margin: 0 0 1.75rem;
+  outline: none;
+}
+.rec .view {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+}
+.rec video,
+.rec canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* at rest the halftone covers the video; resolving fades the dots out over the picture */
+.rec canvas {
+  transition: opacity var(--slow) var(--ease-soft);
+}
+.rec.on canvas {
+  opacity: 0;
+}
+/* the screen rasters in with the panel: a wipe down from the top, after the frame has drawn */
+.panel.play .rec canvas {
+  animation: rec-screen var(--slow) var(--ease-soft) calc(var(--lead, 0s) + 0.9s) backwards;
+}
+@keyframes rec-screen {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0); }
+}
+/* reduced motion: the poster itself, no screen, no play */
+.rec.still canvas {
+  display: none;
+}
+.rec figcaption {
+  font-size: 0.875rem;
+  margin-top: 0.5rem;
+  color: var(--ink-soft);
+}
+.calls {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.calls li {
+  border-top: 1px solid var(--rule);
+  padding: 0.875rem 0 0.25rem;
+}
+.calls h2 {
+  font-size: 1.125rem;
+  font-weight: 500;
+  margin: 0 0 0.25rem;
+}
+.calls p {
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+}
+
+/* ---- the panel's box, two treatments (?box=grow, the default, or ?box=frame; js/panel.js sets html[data-box]) ---- */
+@media (min-width: 961px) {
+  /* the sidebar rides with the viewport once a project is open, and the list holds its place */
+  html[data-box].parked .side {
+    position: fixed;
+  }
+  html[data-box].parked main {
+    position: sticky;
+    top: 3.75rem;
+    align-self: flex-start;
+  }
+  /* grow: the box is as tall as its content and the page scrolls (the default flow above). The list and nav stay put. */
+
+  /* frame: the box is the viewport less the page's margins; the content scrolls inside it and its bottom edge fades */
+  html[data-box="frame"].parked .panel {
+    position: sticky;
+    top: 3.75rem;
+    align-self: flex-start;
+    height: calc(100vh - 3.75rem - 4rem);
+    display: flex;
+    flex-direction: column;
+  }
+  html[data-box="frame"] .panel .fold {
+    flex: 1 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+  html[data-box="frame"] .panel .fold::-webkit-scrollbar {
+    display: none;
+  }
+  html[data-box="frame"] .panel .fold.more {
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 4rem), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 4rem), transparent);
+  }
+}
