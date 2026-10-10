@@ -182,12 +182,45 @@
         <section class="proj prose" data-project="headliner" hidden>
           <header>
             <h1>Headliner</h1>
-            <p class="lede">Budgeting for concerts and tours.</p>
+            <p class="lede">Budgeting for concerts and tours, with AI agents that propose edits and people who approve them.</p>
           </header>
-          <p>
-            <!-- What Headliner is, who it is for, and why it exists. -->
+          <!-- MICHAEL: why it exists. Drafted from the repo's own problem statement; yours to edit. -->
+          <p data-draft="michael">
+            Tour budgets live in spreadsheets that several people edit at once, and the numbers are money people trust.
+            Headliner moves them into one shared app where an AI agent can suggest changes but only a person can accept them.
           </p>
-          <!-- Design components go here. -->
+          <!-- The recording: seeded data only. PLACEHOLDER poster and clip (assets/headliner/); swap in the real capture.
+               Rests as a halftone of the poster (js/panel.js); hover or tap resolves it to the video and plays it.
+               ?reveal=1 forces the revealed state. -->
+          <figure class="rec" tabindex="0">
+            <div class="view">
+              <video muted loop playsinline preload="none" poster="assets/headliner/poster.png">
+                <source src="assets/headliner/placeholder.webm" type="video/webm" />
+              </video>
+              <canvas aria-hidden="true"></canvas>
+            </div>
+            <figcaption>An agent proposes edits to a budget; a person accepts one and rejects another. Seeded data.</figcaption>
+          </figure>
+          <ol class="calls">
+            <li>
+              <h2>A grid of my own, not AG Grid</h2>
+              <p>I wrote my own spreadsheet so the AI&rsquo;s suggestions could live inside it. It cost months of extra work, and bought a pending change that sits on its cell with accept and reject, and no per-developer licences.</p>
+            </li>
+            <li>
+              <h2>People always win</h2>
+              <p>If a person edits a cell the AI had suggested a change for, the suggestion is dropped, and the server refuses any approval it did not issue. More plumbing, in exchange for no silent or forged writes to financial data.</p>
+            </li>
+            <li>
+              <h2>The simpler realtime, then paying for it</h2>
+              <p>I deleted my own WebSocket server for managed realtime, knowing it meant last-write-wins, then fixed each cost in turn: echo dedup, stale-write guards, a written contract.</p>
+            </li>
+          </ol>
+          <!-- MICHAEL: snippet slot. The brief's pick is the 'a human write rejects any AI proposal' check
+               (mutation-dispatcher, about 17 lines). Not included: the code text was not in the brief, and the repo is private. -->
+          <p class="facts" data-draft="michael">
+            Next.js, React, TanStack Table, Supabase, Anthropic SDK, Bun, Vercel. In production with a design-partner tour management firm.
+            Designed and built with agents: I designed the grid, the approval model and the realtime tradeoffs. The repo is private.
+          </p>
           <a class="hello" href="https://headliner.rocks" target="_blank" rel="noopener">Visit Headliner &nearr;</a>
         </section>
 
@@ -293,6 +326,7 @@
   <script src="js/tone.js"></script>
   <script src="js/glow.js"></script>
   <script src="js/cursor.js"></script>
+  <script src="js/panel.js"></script>
 </body>
 
 </html>
