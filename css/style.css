@@ -892,7 +892,7 @@ html.parked .frame .c { animation: frame-corner var(--dur) linear var(--at) forw
 }
 
 /* ---- the Headliner panel: its recording and its decisions ---- */
-.proj .lede {
+.proj[data-project="headliner"] .lede {
   margin-bottom: 1.5rem;
 }
 .proj .facts {
