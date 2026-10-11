@@ -961,21 +961,18 @@ html.parked .frame .c { animation: frame-corner var(--dur) linear var(--at) forw
   margin: 0 0 0.75rem;
 }
 
-/* ---- the panel's box, two treatments (?box=grow, the default, or ?box=frame; js/panel.js sets html[data-box]) ---- */
+/* ---- the panel's box: the frame. The sidebar rides with the viewport once a project is open and the list holds its place;
+   the panel is the viewport less the page's margins, its content scrolls inside it and the bottom edge fades while there is more ---- */
 @media (min-width: 961px) {
-  /* the sidebar rides with the viewport once a project is open, and the list holds its place */
-  html[data-box].parked .side {
+  html.parked .side {
     position: fixed;
   }
-  html[data-box].parked main {
+  html.parked main {
     position: sticky;
     top: 3.75rem;
     align-self: flex-start;
   }
-  /* grow: the box is as tall as its content and the page scrolls (the default flow above). The list and nav stay put. */
-
-  /* frame: the box is the viewport less the page's margins; the content scrolls inside it and its bottom edge fades */
-  html[data-box="frame"].parked .panel {
+  html.parked .panel {
     position: sticky;
     top: 3.75rem;
     align-self: flex-start;
@@ -983,16 +980,16 @@ html.parked .frame .c { animation: frame-corner var(--dur) linear var(--at) forw
     display: flex;
     flex-direction: column;
   }
-  html[data-box="frame"] .panel .fold {
+  html .panel .fold {
     flex: 1 1 0;
     min-height: 0;
     overflow-y: auto;
     scrollbar-width: none;
   }
-  html[data-box="frame"] .panel .fold::-webkit-scrollbar {
+  html .panel .fold::-webkit-scrollbar {
     display: none;
   }
-  html[data-box="frame"] .panel .fold.more {
+  html .panel .fold.more {
     -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 4rem), transparent);
     mask-image: linear-gradient(to bottom, #000 calc(100% - 4rem), transparent);
   }

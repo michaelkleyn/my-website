@@ -1,12 +1,10 @@
-// The Headliner panel's two small behaviours.
-// 1. ?box=grow (default) or ?box=frame picks how the panel's drawn box sizes itself (css: html[data-box]). The frame
-//    treatment scrolls its content inside the box; the bottom edge fades while there is more below (.more).
+// The project panel's two small behaviours.
+// 1. The panel's box is the frame: its content scrolls inside it and the bottom edge fades while there is more below (.more).
 // 2. The recording rests as a halftone of its poster: the same dot screen as the panel tint (a fine grid at 15deg, ink dots),
 //    here sized by the picture's darkness. Hover, focus or a tap resolves it to the video and plays it; leaving
 //    puts the screen back. ?reveal=1 forces the revealed state. prefers-reduced-motion: the poster itself, no play.
 (function () {
-  var html = document.documentElement, q = new URLSearchParams(location.search);
-  html.dataset.box = q.get('box') === 'frame' ? 'frame' : 'grow';
+  var q = new URLSearchParams(location.search);
 
   var fold = document.querySelector('.panel .fold');
   function more() { fold.classList.toggle('more', fold.scrollHeight - fold.scrollTop - fold.clientHeight > 2); }
