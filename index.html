@@ -227,23 +227,80 @@
         <section class="proj prose" data-project="mori" hidden>
           <header>
             <h1>Mori 森</h1>
-            <p class="lede">Orchestrating many coding agents, like real-time strategy.</p>
+            <p class="lede">One window to run many Claude Code agents at once, like real-time strategy.</p>
           </header>
-          <p>
-            <!-- What Mori is, who it is for, and why it exists. -->
+          <!-- MICHAEL: why it exists. Drafted from the brief, inferred from the repo and not in your words; yours to edit. -->
+          <p data-draft="michael">
+            I kept running several Claude Code sessions at once and losing track of which were working, which were stuck on a permission prompt, and which were editing the same files. Mori gives each agent its own git worktree and shows them all in one window, so I can watch and steer them like units in a strategy game.
           </p>
-          <!-- Design components go here. -->
+          <!-- The recording. PLACEHOLDER poster and clip (assets/mori/): a schematic, not a capture; swap in the real one.
+               Rests as a halftone of the poster (js/panel.js); hover or tap resolves it to the video and plays it. -->
+          <figure class="rec" tabindex="0">
+            <div class="view">
+              <video muted loop playsinline preload="none" poster="assets/mori/poster.png">
+                <source src="assets/mori/placeholder.webm" type="video/webm" />
+              </video>
+              <canvas aria-hidden="true"></canvas>
+            </div>
+            <figcaption>Several agents work at once; one is blocked and waits for an answer. Placeholder, not a capture.</figcaption>
+          </figure>
+          <ol class="calls">
+            <li>
+              <h2>Show a prompt only when the screen agrees</h2>
+              <p>The parser is built to raise a permission question only when it finds a question, two or more numbered options and a selection cursor together. A late prompt beats a wrong keystroke.</p>
+            </li>
+            <li>
+              <h2>The main process keeps the state</h2>
+              <p>The record of what every agent is doing lives in one place, and the window only mirrors it. More plumbing, in exchange for a pending question that survives switching views.</p>
+            </li>
+            <li>
+              <h2>One worktree per agent</h2>
+              <p>Each agent works in its own copy of the project, with a generated note listing who touched which files in the last ten minutes. Branch clutter, in exchange for agents that cannot overwrite each other.</p>
+            </li>
+          </ol>
+          <p class="facts" data-draft="michael">
+            Electron, React, TypeScript, Zustand, node-pty. A personal tool, not released: built December 2025 to January 2026, last touched September 2026. Designed and built with agents: I designed the permission handling, the state model and the worktree setup. Repo not public.
+          </p>
         </section>
 
         <section class="proj prose" data-project="claude-timeline" hidden>
           <header>
             <h1>Claude Timeline</h1>
-            <p class="lede">A git-style tree of your Claude Code conversations, with forking.</p>
+            <p class="lede">See a Claude Code conversation as a git-style tree, and fork it at any message into a new tmux pane.</p>
           </header>
-          <p>
-            <!-- What Claude Timeline is, who it is for, and why it exists. -->
+          <!-- MICHAEL: why it exists. Drafted from the brief, inferred from the repo and not in your words; yours to edit. -->
+          <p data-draft="michael">
+            Claude Code conversations are linear, so trying a different approach at message 12 means losing or muddying the original thread. Claude Timeline shows the conversation as a tree and lets me branch from any message.
           </p>
-          <!-- Design components go here. -->
+          <!-- The recording. PLACEHOLDER poster and clip (assets/claude-timeline/): a schematic, not a capture; swap in the real one.
+               Rests as a halftone of the poster (js/panel.js); hover or tap resolves it to the video and plays it. -->
+          <figure class="rec" tabindex="0">
+            <div class="view">
+              <video muted loop playsinline preload="none" poster="assets/claude-timeline/poster.png">
+                <source src="assets/claude-timeline/placeholder.webm" type="video/webm" />
+              </video>
+              <canvas aria-hidden="true"></canvas>
+            </div>
+            <figcaption>A conversation drawn as a tree, forking at one message. Placeholder, not a capture.</figcaption>
+          </figure>
+          <ol class="calls">
+            <li>
+              <h2>A fork is a copy under new IDs</h2>
+              <p>To branch, it copies the transcript up to the chosen message into a new session file, re-keys every message, and tells Claude to resume the copy. It works with stock Claude Code and no upstream change, and it leans on an undocumented file format.</p>
+            </li>
+            <li>
+              <h2>The family tree lives beside the transcripts</h2>
+              <p>Claude does not know about branches, so a small parent and children map in a separate file records them. Claude&rsquo;s own files are never touched. The tree is invisible outside the tool, and can drift if a session file is deleted.</p>
+            </li>
+            <li>
+              <h2>Polling, because the quiet way missed changes</h2>
+              <p>The viewer is a React terminal UI that redraws as the conversation grows. It checks the files ten times a second, because the cheaper operating-system notifications kept missing changes on macOS. A little more CPU, a timeline that stays live.</p>
+            </li>
+          </ol>
+          <p class="facts" data-draft="michael">
+            Node, Ink (React for the terminal), chokidar, tmux. A personal tool, built September 2025, one commit. Not on npm: to try it, clone the repo. The repo is public.
+          </p>
+          <a class="hello" href="https://github.com/michaelkleyn/claude-timeline" target="_blank" rel="noopener">View on GitHub &nearr;</a>
         </section>
 
         <section class="proj prose" data-project="tmux-companion" hidden>
@@ -251,21 +308,77 @@
             <h1>tmux-companion</h1>
             <p class="lede">Answer blocked terminal agents from your phone.</p>
           </header>
-          <p>
-            <!-- What tmux-companion is, who it is for, and why it exists. -->
+          <!-- MICHAEL: why it exists. Drafted from the brief, inferred from the repo and not in your words; yours to edit. -->
+          <p data-draft="michael">
+            I run several Claude Code agents in tmux at once, and each one stalls on a permission prompt or an error until I walk back to the desk. This puts those stalls in a priority queue on my phone, so I can approve or dictate an answer from across the room.
           </p>
-          <!-- Design components go here. -->
+          <!-- The recording. PLACEHOLDER poster and clip (assets/tmux-companion/): a schematic, not a capture; swap in the real one.
+               Rests as a halftone of the poster (js/panel.js); hover or tap resolves it to the video and plays it. -->
+          <figure class="rec" tabindex="0">
+            <div class="view">
+              <video muted loop playsinline preload="none" poster="assets/tmux-companion/poster.png">
+                <source src="assets/tmux-companion/placeholder.webm" type="video/webm" />
+              </video>
+              <canvas aria-hidden="true"></canvas>
+            </div>
+            <figcaption>A blocked terminal on the left, the phone&rsquo;s queue on the right. Placeholder, not a capture.</figcaption>
+          </figure>
+          <ol class="calls">
+            <li>
+              <h2>A prompt has to look like one</h2>
+              <p>A numbered list could be a question or an agent listing findings. The detector accepts it only with a selection chevron, a question mark above it, or a hint like &ldquo;Esc to cancel&rdquo;. A few odd prompts may be missed; the phone is not spammed.</p>
+            </li>
+            <li>
+              <h2>Look at the last twenty lines for errors</h2>
+              <p>Matching the whole scrollback made errors sticky: one early error kept a pane red after the agent had recovered. Old problems stop haunting a recovered pane, at the cost of a real error that scrolled off.</p>
+            </li>
+            <li>
+              <h2>Dictation is pasted, not typed</h2>
+              <p>Sending characters one by one dropped and chunked long transcripts. The daemon pastes the text through a tmux buffer, waits 120 milliseconds, then presses Enter. A timing constant, and a spoken paragraph arrives intact.</p>
+            </li>
+          </ol>
+          <p class="facts" data-draft="michael">
+            Bun and TypeScript on the Mac, SwiftUI on the iPhone, tmux. A personal tool: files dated April 2026, no commits yet, built to my phone by hand. Repo not public.
+          </p>
         </section>
 
         <section class="proj prose" data-project="opus-os" hidden>
           <header>
             <h1>Opus-OS</h1>
-            <p class="lede">A local, self-organizing system for living with AI assistants.</p>
+            <p class="lede">A local system where Claude agents watch my iMessages and text me back.</p>
           </header>
-          <p>
-            <!-- What Opus-OS is, who it is for, and why it exists. -->
+          <!-- MICHAEL: why it exists. Drafted from the brief, inferred from the repo and not in your words; yours to edit. -->
+          <p data-draft="michael">
+            I wanted an assistant that lives on my own machine, with my messages as its working context, instead of a chat window that forgets me. So I built the plumbing: watchers that notice things, small agents that decide what matters, and a way to text me about it.
           </p>
-          <!-- Design components go here. -->
+          <!-- The recording. PLACEHOLDER poster and clip (assets/opus-os/): a schematic, not a capture; swap in the real one.
+               Rests as a halftone of the poster (js/panel.js); hover or tap resolves it to the video and plays it. -->
+          <figure class="rec" tabindex="0">
+            <div class="view">
+              <video muted loop playsinline preload="none" poster="assets/opus-os/poster.png">
+                <source src="assets/opus-os/placeholder.webm" type="video/webm" />
+              </video>
+              <canvas aria-hidden="true"></canvas>
+            </div>
+            <figcaption>A text comes in, is routed, and an answer goes back. Placeholder, not a capture.</figcaption>
+          </figure>
+          <ol class="calls">
+            <li>
+              <h2>Claude as the classifier, rules as the fallback</h2>
+              <p>Each incoming text gets a cheap keyword check, then Claude decides where it goes. If the call fails or times out, a fixed default route answers instead. Smarter routing, paid for in latency.</p>
+            </li>
+            <li>
+              <h2>The locks are files</h2>
+              <p>Parallel agents share state through lock files, each tied to a process and cleared automatically if its holder died. No database or queue to run, and a crashed program cannot jam the rest.</p>
+            </li>
+            <li>
+              <h2>Instant when it can, a timer when it cannot</h2>
+              <p>The message watcher reacts to filesystem events. After ten empty triggers it falls back to checking every thirty seconds. Instant when events are reliable, predictable when they are not.</p>
+            </li>
+          </ol>
+          <p class="facts" data-draft="michael">
+            Python, bash, Node and TypeScript, SQLite, the Claude CLI. A personal tool for macOS, built September 2025, one snapshot of history. Repo private.
+          </p>
         </section>
         <!-- art -->
 
