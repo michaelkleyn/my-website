@@ -32,11 +32,15 @@
     overlay.width = ow * dpr; overlay.height = oh * dpr;
     overlay.style.width = ow + 'px'; overlay.style.height = oh + 'px';
     gl.width = ow * S; gl.height = oh * S;
-    brush.load(gl);
+    reclaim();
     ctx = overlay.getContext('2d'); ctx.scale(dpr, dpr);
+  }
+  function reclaim() {   // point p5.brush at this canvas (bullets.js borrows it once, then hands it back here)
+    brush.load(gl);
     // warm-up: p5.brush's first real fill and first real stroke each render nothing; get them out of the way
     strokeAlong(wobble(0, oh)); blotAt(dotX, oh / 2); strokeAlong(wobble(oh, 0));
   }
+  window.reclaimBrush = reclaim;
   function linkY(i) { return links[i].offsetTop + links[i].offsetHeight / 2; }
   // p5.brush's origin sits at the canvas centre
   function bx(x) { return x * S - gl.width / 2; }
