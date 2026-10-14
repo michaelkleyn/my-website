@@ -15,10 +15,15 @@
     if (e.propertyName !== 'grid-template-rows' || html.classList.contains('parked')) return;
     if (next) { var p = next; next = null; open(p); } else place(null);
   });
+  function still() {   // no transition will run on the panel (reduced motion): transitionend would never come
+    void panel.offsetWidth;
+    return getComputedStyle(panel).transitionDuration.split(',').every(function (d) { return !parseFloat(d); });
+  }
   function show() {
     var slug = location.hash.slice(1), proj = projs.find(function (p) { return p.dataset.project === slug; });
     if (proj && phone.matches && html.classList.contains('parked') && panel.parentNode !== rowOf(proj).parentNode) {
       next = proj; html.classList.remove('parked', 'drawing'); panel.classList.remove('play');   // another row: fold shut here first
+      if (still()) { next = null; open(proj); }   // nothing to wait for
       return;
     }
     open(proj);
@@ -34,7 +39,7 @@
     });
     if (!proj) {   // not a project: unpark (on a phone the panel folds shut in its row first, then goes home: transitionend above)
       next = null; html.classList.remove('parked', 'drawing'); panel.classList.remove('play');
-      if (!phone.matches) place(null);
+      if (!phone.matches || still()) place(null);
       return;
     }
     html.classList.add('parked');
