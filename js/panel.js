@@ -11,6 +11,12 @@
   fold.addEventListener('scroll', more, { passive: true });
   addEventListener('resize', more); addEventListener('hashchange', function () { setTimeout(more, 50); });
   setTimeout(more, 300);
+  // measure whenever the box or the open project changes size or visibility, and once everything has loaded,
+  // so the fade shows only when the content really overflows
+  var ro = new ResizeObserver(more); ro.observe(fold);
+  fold.querySelectorAll('.proj').forEach(function (p) { ro.observe(p); new MutationObserver(more).observe(p, { attributes: true, attributeFilter: ['hidden'] }); });
+  addEventListener('load', more);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(more);
 
   var still = matchMedia('(prefers-reduced-motion: reduce)'), forced = q.get('reveal') === '1';
   document.querySelectorAll('.rec').forEach(recording);   // one recording per project
