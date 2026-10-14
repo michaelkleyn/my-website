@@ -11,7 +11,8 @@
     if (panel.parentNode !== home) home.appendChild(panel);
   }
   var still0 = matchMedia('(prefers-reduced-motion: reduce)'), FRAME_MS = 2500;   // the frame's whole drawing (css), the last corner settled
-  var drawStart = null, drawTimer = 0;   // while the frame's one drawing runs: when it began
+  var drawStart = null, drawTimer = 0, closed = false;   // closed: the panel was put away since the last open, so the next open is a new one and draws the frame again
+  var drawStart_ = 0;   // while the frame's one drawing runs: when it began
   function settleFrame() {   // the drawing is done (or cut short): the frame is simply there from now on (css: html.drawn)
     clearTimeout(drawTimer); drawStart = null; html.classList.add('drawn'); html.classList.remove('drawing');
   }
@@ -65,6 +66,10 @@
     }
     open(proj);
   }
+  function marked(proj) {   // the open project's row says so (css: its arrow takes the accent)
+    document.querySelectorAll('.rows a[aria-current]').forEach(function (a) { a.removeAttribute('aria-current'); });
+    if (proj) rowOf(proj).setAttribute('aria-current', 'true');
+  }
   function open(proj) {
     if (proj) { place(proj); void panel.offsetWidth; }   // in its row (phone) and laid out shut, so it can unfold from there
     projs.forEach(function (p) {
@@ -75,10 +80,12 @@
       if (leaving) p.querySelectorAll('iframe').forEach(function (f) { f.replaceWith(f.cloneNode()); });
     });
     if (!proj) {   // not a project: unpark (on a phone the panel folds shut in its row first, then goes home: transitionend above)
-      next = null; enter(null); clearTimeout(drawTimer); drawStart = null; html.classList.remove('parked', 'drawing'); panel.classList.remove('play');   // a drawing cut short is drawn again next time
+      next = null; enter(null); clearTimeout(drawTimer); drawStart = null; html.classList.remove('parked', 'drawing'); panel.classList.remove('play'); closed = true; marked(null);   // a drawing cut short is drawn again next time
       if (!phone.matches || still()) place(null);
       return;
     }
+    if (closed) { closed = false; html.classList.remove('drawn'); }   // a reopen after a close is a first open again: the frame draws, the content follows it
+    marked(proj);
     if (!phone.matches) panel.querySelector('.fold').scrollTop = 0;   // the box is one scroller shared by every project: a newly opened one starts at its top, before the reveal
     html.classList.add('parked');
     // the frame draws once per page load, on the first open (css: html.drawing, then html.drawn); a switch leaves it be.

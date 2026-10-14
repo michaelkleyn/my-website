@@ -281,6 +281,10 @@ h1 {
   transition: transform 0.15s;
 }
 
+.rows a[aria-current] .arrow {
+  color: var(--accent);   /* the open project's row */
+}
+
 .rows a:hover .arrow {
   transform: translateX(0.25rem);
 }
