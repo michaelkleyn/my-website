@@ -312,13 +312,13 @@ html.parked .panel {
   height: auto;
   margin: 0 0 1.25rem;
 }
-/* the project is not faded in: the fold's wipe (below) reveals it in step with the frame's drawing */
+/* the project is not faded in: js/enter.js lays it down after the frame */
 
 /* ---- the panel's frame: a rule drawn round the panel as the rows park ----
    The top edge draws left to right with the settle. At each corner the line meets a corner piece: it shows as a right
    angle, then spins, its other two arms coming out, into a plus that seesaws to rest as an x. Each edge in turn, each
    corner spinning fewer times than the last, the line running out of pace. Keyed off html.drawing, which stage.js
-   re-adds on every open and every switch (a restart from nothing), so the frame, the tint and the content wipe all replay together. */
+   adds on the first open only (then html.drawn holds it at rest), so the frame and the tint draw once per page load. */
 .frame {
   position: absolute;
   inset: 10.3rem 0 0;
@@ -920,7 +920,6 @@ html.drawing .frame .c { animation: frame-corner var(--dur) linear var(--at) for
 .rec.on canvas {
   opacity: 0;
 }
-/* the screen comes in with the rest of the content: the fold's wipe covers it until the frame has drawn to it */
 /* reduced motion: the poster itself, no screen, no play */
 .rec.still canvas {
   display: none;
@@ -979,53 +978,25 @@ html.drawing .frame .c { animation: frame-corner var(--dur) linear var(--at) for
   }
 }
 
-/* ---- the wipe: the content is revealed by the same drawing as the frame ----
-   A mask on the fold, in the frame's own box: five layers that grow on the frame's own clock (the same --at, --dur and
-   easing as the tint's bands, a beat behind each edge): a strip under the top edge drawing left to right, one down the
-   right edge going down, one along the bottom going right to left, one up the left edge, and then the fill rising
-   with the tint's raster. Nothing inside the box is visible before the line has been there. */
-@property --wp-t { syntax: "<number>"; inherits: false; initial-value: 0; }
-@property --wp-r { syntax: "<number>"; inherits: false; initial-value: 0; }
-@property --wp-b { syntax: "<number>"; inherits: false; initial-value: 0; }
-@property --wp-l { syntax: "<number>"; inherits: false; initial-value: 0; }
-@property --wp-f { syntax: "<number>"; inherits: false; initial-value: 0; }
-.panel .fold {
-  --band: 2.5rem;
-  --wipe-layers: linear-gradient(#000, #000), linear-gradient(#000, #000), linear-gradient(#000, #000), linear-gradient(#000, #000), linear-gradient(#000, #000);
-  --wipe-sizes: calc(var(--wp-t) * 100%) var(--band), var(--band) calc(var(--wp-r) * 100%), calc(var(--wp-b) * 100%) var(--band), var(--band) calc(var(--wp-l) * 100%), 100% calc(var(--wp-f) * 100%);
-  --wipe-at: 0 0, 100% 0, 100% 100%, 0 100%, 0 100%;
-  mask-image: var(--wipe-layers);
-  mask-size: var(--wipe-sizes);
-  mask-position: var(--wipe-at);
-  mask-repeat: no-repeat;
-}
-html.drawing .panel .fold {
-  animation:
-    wipe-t var(--settle) var(--land) 0.1s both,
-    wipe-r 0.35s var(--ease-soft) 0.8s both,
-    wipe-b 0.55s var(--ease-soft) 1.15s both,
-    wipe-l 0.3s var(--ease-soft) 1.7s both,
-    wipe-f 0.3s linear 1.6s both;
-}
-@keyframes wipe-t { to { --wp-t: 1; } }
-@keyframes wipe-r { to { --wp-r: 1; } }
-@keyframes wipe-b { to { --wp-b: 1; } }
-@keyframes wipe-l { to { --wp-l: 1; } }
-@keyframes wipe-f { to { --wp-f: 1; } }
-/* the fade at the bottom edge (while there is more to scroll) multiplies with the wipe */
+/* the fade at the bottom edge while there is more to scroll (js/panel.js sets .more) */
 @media (min-width: 961px) {
   html .panel .fold.more {
-    mask-image: linear-gradient(to bottom, #000 calc(100% - 4rem), transparent), var(--wipe-layers);
-    mask-size: 100% 100%, var(--wipe-sizes);
-    mask-position: 0 0, var(--wipe-at);
-    mask-repeat: no-repeat;
-    mask-composite: intersect, add, add, add, add, add;
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 4rem), transparent);
   }
 }
+/* the content's entrance is js/enter.js: a mask it sets on the open project, one rectangle per line */
 
-/* ---- reduced motion: no wipe and no drawing, everything at once ---- */
+/* ---- the frame once drawn (stage.js adds html.drawn when the one drawing ends, and drops html.drawing): it is simply
+   there, at the animation's own end state, on every later switch and reopen, wherever the panel sits ---- */
+html.drawn:not(.drawing) .frame .e { transform: none; }
+html.drawn:not(.drawing) .frame .c {
+  opacity: 1;
+  transform: rotate(calc(var(--base) + 45deg));
+  clip-path: polygon(0 0, 100% 0, 100% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+/* ---- reduced motion: no drawing, no entrance, everything at once ---- */
 @media (prefers-reduced-motion: reduce) {
-  html.drawing .panel .fold { animation: none; --wp-t: 1; --wp-r: 1; --wp-b: 1; --wp-l: 1; --wp-f: 1; }
   html.drawing .frame .e { animation: none; transform: none; }
   html.drawing .frame .c {
     animation: none; opacity: 1;

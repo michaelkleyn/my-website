@@ -67,10 +67,14 @@
     }, DELAY);
   }
   function stop() { clearTimeout(timer); cancelAnimationFrame(raf); raf = null; }
-  // on every drawing of the frame (stage.js: a fresh park, and every switch of project; it dispatches 'framedraw' with html.drawing
-  // freshly added) the screen starts again from nothing; unparking puts it away. Reduced motion: the screen is simply there.
+  // on the frame's one drawing (stage.js: the first open; it dispatches 'framedraw' with html.drawing freshly added)
+  // the screen starts from nothing; unparking puts it away, and it is at rest on every later open. Reduced motion: the screen is simply there.
   var still = matchMedia('(prefers-reduced-motion: reduce)');
   addEventListener('framedraw', function () { if (still.matches) { stop(); build(); rest(); } else start(); });
-  new MutationObserver(function () { if (!html.classList.contains('parked')) { stop(); clear(); } }).observe(html, { attributes: true, attributeFilter: ['class'] });
+  // once drawn (the frame draws once per page load) the screen is simply at rest whenever the panel is open, whatever its size
+  function resting() { return html.classList.contains('parked') && html.classList.contains('drawn') && !html.classList.contains('drawing') && !timer && !raf; }
+  function settle() { if (resting() && wave.clientWidth && wave.clientHeight) { build(); rest(); } }
+  new MutationObserver(function () { if (!html.classList.contains('parked')) { stop(); clear(); } else settle(); }).observe(html, { attributes: true, attributeFilter: ['class'] });
+  new ResizeObserver(settle).observe(wave);
   if (html.classList.contains('drawing')) { if (still.matches) { build(); rest(); } else start(); }
 })();
