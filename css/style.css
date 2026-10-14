@@ -1036,16 +1036,14 @@ html.drawing .panel .fold {
   .rows li .panel, html.parked .rows li .panel { transition: none; }
 }
 
-/* ---- bullets: three kinds, one meaning each (js/bullets.js draws them with p5.brush; until then, and without it, the glyphs) ----
-   ring: a decision (.calls li)   star: a caveat, a line that states a limit (.caveat)   stroke: a plain list item */
+/* ---- bullets: two kinds, one meaning each (js/bullets.js draws them with p5.brush; until then, and without it, the glyphs) ----
+   ring: a decision (.calls li)   stroke: a plain list item   (a caveat, .caveat, is a plain line with no marker) */
 .calls li,
-.caveat,
 .prose ul:not(.rows) > li,
 .plain > li {
   position: relative;
 }
 .calls li::before,
-.caveat::before,
 .prose ul:not(.rows) > li::before,
 .plain > li::before {
   content: "";
@@ -1058,11 +1056,9 @@ html.drawing .panel .fold {
   line-height: 16px;
 }
 .calls li::before { content: "\25CB"; content: "\25CB" / ""; top: calc(0.875rem + 3px); }
-.caveat::before { content: "\2726"; content: "\2726" / ""; top: 2px; }
 .prose ul:not(.rows) > li::before,
 .plain > li::before { content: "\2013"; content: "\2013" / ""; top: 2px; }
 html.bullets .calls li::before,
-html.bullets .caveat::before,
 html.bullets .prose ul:not(.rows) > li::before,
 html.bullets .plain > li::before {
   content: "";
@@ -1081,11 +1077,8 @@ html.bullets .plain > li::before {
 p.caveat {
   font-size: 1rem;
   margin: 0.25rem 0 0;
-  padding-left: 1.5rem;
 }
 .facts + .caveat { margin-top: 0.75rem; }
 figcaption .caveat {
   display: block;
-  padding-left: 1.5rem;
 }
-figcaption .caveat::before { top: -1px; }

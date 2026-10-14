@@ -1,17 +1,15 @@
-// The site's bullets, drawn with p5.brush in the ink, like the nav dot. Three kinds, one meaning each:
+// The site's bullets, drawn with p5.brush in the ink, like the nav dot. Two kinds, one meaning each:
 //   stroke  a short brush stroke: a plain list item (.prose ul > li, .plain > li)
 //   ring    one brush circle: a decision (.calls > li)
-//   star    a four-point star: a caveat, a line that states a limit (.caveat)
 // A few variants of each are painted once per page load (random seed, so no two pages match) onto small canvases and
-// shared; each bullet picks one. The CSS draws the glyphs (○ ✦ –) until this runs, and keeps them if canvas or WebGL is missing.
+// shared; each bullet picks one. The CSS draws the glyphs (○ –) until this runs, and keeps them if canvas or WebGL is missing.
 // The bullets are ::before boxes holding an image, so the list semantics are untouched and they are invisible to screen readers.
 // Loads after dot.js: it borrows p5.brush's canvas once the page has settled, then hands it back (window.reclaimBrush).
 (function () {
   var html = document.documentElement;
   var kinds = {
     stroke: '.prose ul:not(.rows) > li, .plain > li',
-    ring: '.calls > li',
-    star: '.caveat'
+    ring: '.calls > li'
   };
   var VARIANTS = 4, BOX = 16;   // css px square per bullet
   var dpr = Math.min(devicePixelRatio || 1, 2), S = dpr * 2;   // brush paints at 2x for texture, bullets are stored at dpr
@@ -53,20 +51,10 @@
           pts.push([bx(cx + Math.cos(a) * d), by(cy + Math.sin(a) * d)]);
         }
         brush.spline(pts, 0.8);
-      },
-      star: function () {   // four points, inked in, the long axes a touch off level
-        var cx = 8, cy = 8, R = 7 + jig(0.4), r = 1.9, t = jig(0.12), pts = [];
-        for (var k = 0; k < 8; k++) {
-          var a = k * Math.PI / 4 - Math.PI / 2 + t, d = k % 2 ? r : R * (1 + jig(0.06));
-          pts.push([bx(cx + Math.cos(a) * d), by(cy + Math.sin(a) * d)]);
-        }
-        brush.fill(ink, 255); brush.fillBleed(0.05, 'out'); brush.fillTexture(0.05, 0.1);
-        brush.set('pen', ink, 1.1 * S);
-        brush.polygon(pts);
       }
     };
     // warm-up: p5.brush's first real fill and first real stroke each render nothing; get them out of the way
-    paint(draw.star); paint(draw.stroke); paint(draw.ring);
+    paint(draw.stroke); paint(draw.ring);
 
     Object.keys(kinds).forEach(function (kind) {
       var els = document.querySelectorAll(kinds[kind]);
