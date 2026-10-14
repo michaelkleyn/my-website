@@ -13,10 +13,12 @@
   function more() {
     void fold.offsetHeight;   // flush style, so a transition just triggered by parking exists to be jumped
     var run = document.getAnimations().filter(function (a) { return a.transitionProperty && a.transitionProperty !== 'opacity' && a.playState === 'running'; });
-    var at = run.map(function (a) { return a.currentTime; });
+    var at = run.map(function (a) { return a.currentTime; }), y = scrollY;
     run.forEach(function (a) { a.currentTime = a.effect.getComputedTiming().endTime; });
     var over = fold.scrollHeight - fold.scrollTop - fold.clientHeight > 2;
     run.forEach(function (a, i) { a.currentTime = at[i]; });
+    // the jump laid the page out at its end (a phone's sheet shut), which clamped the page's scroll: put it back, or the page lurches when a sheet folds
+    if (run.length && scrollY !== y) scrollTo({ top: y, behavior: 'instant' });
     fold.classList.toggle('more', over);
   }
   function soon() { more(); requestAnimationFrame(more); }   // at once (forced layout, settled geometry), and again after layout, before the next paint
