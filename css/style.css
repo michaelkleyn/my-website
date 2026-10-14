@@ -971,6 +971,9 @@ html.drawing .frame .c { animation: frame-corner var(--dur) linear var(--at) for
 /* ---- the panel's box: the frame. The sidebar rides with the viewport once a project is open and the list holds its place;
    the panel is the viewport less the page's margins, its content scrolls inside it and the bottom edge fades while there is more ---- */
 @media (min-width: 961px) {
+  main {
+    transition: flex-basis var(--settle) var(--land);   /* with the panel's glide, when the list's width differs open from shut */
+  }
   html.parked .side {
     position: fixed;
   }
@@ -978,6 +981,11 @@ html.drawing .frame .c { animation: frame-corner var(--dur) linear var(--at) for
     position: sticky;
     top: 3.75rem;
     align-self: flex-start;
+    /* the list gives before the box does. The box holds the width it has at 1728 (67.5rem: the viewport less the page's
+       8rem of margins, the sidebar's 20rem and the 3rem gap, less this width); the list takes what is left, down to a floor
+       (22rem, about 60% of its 36.5rem) where the sublines still wrap to a few lines. Below the floor the box gives.
+       At 1728 and wider the clamp is its old 36.5rem, so nothing there moves */
+    flex-basis: clamp(22rem, calc(100vw - 98.5rem), 36.5rem);
   }
   html.parked .panel {
     position: sticky;
