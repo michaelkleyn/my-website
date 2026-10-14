@@ -7,10 +7,22 @@
   var q = new URLSearchParams(location.search);
 
   var fold = document.querySelector('.panel .fold');
-  function more() { fold.classList.toggle('more', fold.scrollHeight - fold.scrollTop - fold.clientHeight > 2); }
+  // The panel's width glides open while the page parks, so the content re-wraps and its height changes along the way.
+  // The fade must follow where it will settle, not where it passes: measure with any running layout transition
+  // jumped to its end, then put each one back where it was (nothing paints in between).
+  function more() {
+    void fold.offsetHeight;   // flush style, so a transition just triggered by parking exists to be jumped
+    var run = document.getAnimations().filter(function (a) { return a.transitionProperty && a.transitionProperty !== 'opacity' && a.playState === 'running'; });
+    var at = run.map(function (a) { return a.currentTime; });
+    run.forEach(function (a) { a.currentTime = a.effect.getComputedTiming().endTime; });
+    var over = fold.scrollHeight - fold.scrollTop - fold.clientHeight > 2;
+    run.forEach(function (a, i) { a.currentTime = at[i]; });
+    fold.classList.toggle('more', over);
+  }
+  function soon() { more(); requestAnimationFrame(more); }   // at once (forced layout, settled geometry), and again after layout, before the next paint
   fold.addEventListener('scroll', more, { passive: true });
-  addEventListener('resize', more); addEventListener('hashchange', function () { setTimeout(more, 50); });
-  setTimeout(more, 300);
+  addEventListener('resize', more); addEventListener('hashchange', soon);
+  more(); requestAnimationFrame(more);
   // measure whenever the box or the open project changes size or visibility, and once everything has loaded,
   // so the fade shows only when the content really overflows
   var ro = new ResizeObserver(more); ro.observe(fold);
