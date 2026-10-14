@@ -77,5 +77,47 @@
     }
     requestAnimationFrame(frame);
   })(0);
+  // A push from inside, now and then: one point of the edge bulges out ~1.75px (radius / phi^4) and settles, as if pressed.
+  // The k-th push lands at the golden angle 2*pi*frac(k*phi), which never clusters, so the points wander the whole rim.
+  // The wait before it is BASE*(1 + frac(k*k*phi)): the same golden step, but on k^2, so wait and angle are not locked
+  // together (frac(k*phi) for both would make every long wait a push at the same side). Both are low-discrepancy, so the
+  // spacing feels random without a random number. Dot-sized only: not over text (bar), not in the hello box or a row halo.
+  // Cost: a setTimeout between pushes (no loop while idle), a requestAnimationFrame only during the ~0.55s push, and one
+  // clip-path on a child of the dot; the dot's own frame loop above is unchanged.
+  var PHI = (1 + Math.sqrt(5)) / 2, R = 12, AMP = R / Math.pow(PHI, 4), BASE = 3400;   // ms; waits run BASE..2*BASE
+  var ATT = 550 / (1 + PHI), DEC = ATT * PHI;                                          // attack : decay = 1 : phi, 550ms in all
+  var W = 0.4, SPAN = 1.0, N = 13, ptr = document.createElement('span'), k = 0, timer = 0, t0 = 0, ang = 0, raf = 0;
+  var still = matchMedia('(prefers-reduced-motion: reduce)');
+  function frac(x) { return x - Math.floor(x); }
+  ptr.className = 'push'; el.appendChild(ptr);
+  window.cursorPushLog = [];   // [k, ms since load, angle in degrees]; read by the evidence script, ~40 bytes a push
+  function idle() { return !still.matches && !document.hidden && !el.classList.contains('hidden') && !el.classList.contains('bar') &&
+    !el.classList.contains('gone') && !el.classList.contains('soft') && !el.classList.contains('big'); }
+  function stop() { cancelAnimationFrame(raf); raf = 0; ptr.classList.remove('on'); ptr.style.clipPath = ''; }
+  function pose(now) {
+    var u = now - t0, p;
+    if (u >= ATT + DEC || !idle()) { stop(); schedule(); return; }
+    p = u < ATT ? 1 - Math.pow(1 - u / ATT, PHI * PHI) : Math.pow(1 - (u - ATT) / DEC, PHI * PHI);   // fast rise, slow settle
+    var a = AMP * p, out = [], inn = [], i, d, r, c = 18;   // c: the child's centre (36px box over the 24px dot)
+    for (i = 0; i < N; i++) {
+      d = (i / (N - 1) * 2 - 1) * SPAN;                                  // angular distance from the push point
+      r = R + a * Math.pow(PHI, -(d / W) * (d / W));                      // the profile: powers of 1/phi, bell-shaped in angle
+      out.push((c + r * Math.cos(ang + d)).toFixed(2) + 'px ' + (c + r * Math.sin(ang + d)).toFixed(2) + 'px');
+      inn.push((c + (R - 0.4) * Math.cos(ang + d)).toFixed(2) + 'px ' + (c + (R - 0.4) * Math.sin(ang + d)).toFixed(2) + 'px');
+    }
+    ptr.style.clipPath = 'polygon(' + out.concat(inn.reverse()).join(',') + ')';
+    raf = requestAnimationFrame(pose);
+  }
+  function fire() {
+    timer = 0;
+    if (!idle()) { schedule(); return; }   // not now: keep this k and wait again
+    ang = 2 * Math.PI * frac(k * PHI); k++;
+    window.cursorPushLog.push([k, Math.round(performance.now()), +(ang * 180 / Math.PI).toFixed(1)]);
+    ptr.classList.add('on'); t0 = performance.now(); raf = requestAnimationFrame(function (n) { t0 = n; pose(n); });
+  }
+  function schedule() { clearTimeout(timer); if (!still.matches && !document.hidden) timer = setTimeout(fire, BASE * (1 + frac((k + 1) * (k + 1) * PHI))); }
+  document.addEventListener('visibilitychange', function () { stop(); clearTimeout(timer); timer = 0; schedule(); });
+  still.addEventListener('change', function () { stop(); clearTimeout(timer); timer = 0; schedule(); });
+  schedule();
   document.documentElement.addEventListener('pointerleave', function () { el.classList.add('hidden'); });
 })();

@@ -630,6 +630,22 @@ html.drawing .frame .c { animation: frame-corner var(--dur) linear var(--at) for
     /* border-radius is driven per frame by cursor.js, so it must not ease */
   }
 
+  /* the push (cursor.js): a sliver of the same coral, clipped per frame to a bump on the rim; hidden between pushes */
+  .cursor .push {
+    display: none;
+    position: absolute;
+    left: -6px;
+    top: -6px;
+    width: 36px;
+    height: 36px;
+    background: rgb(254 82 82 / 0.85);
+    clip-path: polygon(0 0, 0 0, 0 0);   /* nothing until the first frame of a push sets the bump */
+  }
+
+  .cursor .push.on {
+    display: block;
+  }
+
   .cursor.bar {
     width: 6px;
     height: var(--bar-h, 24px);
