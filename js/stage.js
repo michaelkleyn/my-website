@@ -79,6 +79,7 @@
       if (!phone.matches || still()) place(null);
       return;
     }
+    if (!phone.matches) panel.querySelector('.fold').scrollTop = 0;   // the box is one scroller shared by every project: a newly opened one starts at its top, before the reveal
     html.classList.add('parked');
     // the frame draws once per page load, on the first open (css: html.drawing, then html.drawn); a switch leaves it be.
     // The content comes in after it (js/enter.js): when the stroke is done on the first open, at once on a switch.
