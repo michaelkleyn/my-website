@@ -18,7 +18,7 @@
   function show() {
     var slug = location.hash.slice(1), proj = projs.find(function (p) { return p.dataset.project === slug; });
     if (proj && phone.matches && html.classList.contains('parked') && panel.parentNode !== rowOf(proj).parentNode) {
-      next = proj; html.classList.remove('parked'); panel.classList.remove('play');   // another row: fold shut here first
+      next = proj; html.classList.remove('parked', 'drawing'); panel.classList.remove('play');   // another row: fold shut here first
       return;
     }
     open(proj);
@@ -33,14 +33,15 @@
       if (leaving) p.querySelectorAll('iframe').forEach(function (f) { f.replaceWith(f.cloneNode()); });
     });
     if (!proj) {   // not a project: unpark (on a phone the panel folds shut in its row first, then goes home: transitionend above)
-      next = null; html.classList.remove('parked'); panel.classList.remove('play');
+      next = null; html.classList.remove('parked', 'drawing'); panel.classList.remove('play');
       if (!phone.matches) place(null);
       return;
     }
-    var first = !html.classList.contains('parked');
     html.classList.add('parked');
-    panel.style.setProperty('--lead', first ? '0.7s' : '0s');   // a fresh park: the content waits for the rows to land
-    panel.classList.remove('play'); void panel.offsetWidth; panel.classList.add('play');   // from the top, every time
+    // the frame draws, and the content is wiped in with it, from nothing: on a fresh park and on every switch (css: html.drawing)
+    html.classList.remove('drawing'); void html.offsetWidth; html.classList.add('drawing');
+    panel.classList.remove('play'); void panel.offsetWidth; panel.classList.add('play');
+    dispatchEvent(new Event('framedraw'));
     if (phone.matches) rowOf(proj).scrollIntoView({ behavior: 'smooth', block: 'start' });   // the row's title at the top, the panel under it
   }
   show(); addEventListener('hashchange', show); phone.addEventListener('change', show);

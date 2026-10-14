@@ -67,14 +67,10 @@
     }, DELAY);
   }
   function stop() { clearTimeout(timer); cancelAnimationFrame(raf); raf = null; }
-  // on the park, and only the park: switching projects while parked re-adds the class (a mutation with no change),
-  // and the screen must stay as it is, not replay
-  var parked = html.classList.contains('parked');
-  new MutationObserver(function () {
-    var now = html.classList.contains('parked');
-    if (now === parked) return;
-    parked = now;
-    parked ? start() : (stop(), clear());
-  }).observe(html, { attributes: true, attributeFilter: ['class'] });
-  if (parked) start();
+  // on every drawing of the frame (stage.js: a fresh park, and every switch of project; it dispatches 'framedraw' with html.drawing
+  // freshly added) the screen starts again from nothing; unparking puts it away. Reduced motion: the screen is simply there.
+  var still = matchMedia('(prefers-reduced-motion: reduce)');
+  addEventListener('framedraw', function () { if (still.matches) { stop(); build(); rest(); } else start(); });
+  new MutationObserver(function () { if (!html.classList.contains('parked')) { stop(); clear(); } }).observe(html, { attributes: true, attributeFilter: ['class'] });
+  if (html.classList.contains('drawing')) { if (still.matches) { build(); rest(); } else start(); }
 })();

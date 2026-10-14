@@ -312,18 +312,13 @@ html.parked .panel {
   height: auto;
   margin: 0 0 1.25rem;
 }
-/* the project fades in once the rows have settled (--lead, set by stage.js); at once when switching projects */
-.panel.play .proj.on { animation: panel-proj var(--slow) var(--ease-soft) var(--lead, 0s) both; }
-@keyframes panel-proj {
-  0% { opacity: 0; }
-  100% { opacity: 1; }
-}
+/* the project is not faded in: the fold's wipe (below) reveals it in step with the frame's drawing */
 
 /* ---- the panel's frame: a rule drawn round the panel as the rows park ----
    The top edge draws left to right with the settle. At each corner the line meets a corner piece: it shows as a right
    angle, then spins, its other two arms coming out, into a plus that seesaws to rest as an x. Each edge in turn, each
-   corner spinning fewer times than the last, the line running out of pace. Keyed off html.parked, so it draws once
-   per park and not when switching projects. */
+   corner spinning fewer times than the last, the line running out of pace. Keyed off html.drawing, which stage.js
+   re-adds on every open and every switch (a restart from nothing), so the frame, the tint and the content wipe all replay together. */
 .frame {
   position: absolute;
   inset: 10.3rem 0 0;
@@ -355,10 +350,10 @@ html.parked .panel {
 .frame .tone.right  { clip-path: inset(100% 0 0 calc(100% - var(--band))); --to: inset(0 0 0 calc(100% - var(--band))); mask-image: linear-gradient(to left, #000, transparent var(--band));   --dur: 0.35s; --at: 0.8s;  --ef: var(--ease-soft); }
 .frame .tone.bottom { clip-path: inset(calc(100% - var(--band)) 0 0 100%); --to: inset(calc(100% - var(--band)) 0 0 0); mask-image: linear-gradient(to top, #000, transparent var(--band));    --dur: 0.55s; --at: 1.15s; --ef: var(--ease-soft); }
 .frame .tone.left   { clip-path: inset(0 calc(100% - var(--band)) 100% 0); --to: inset(0 calc(100% - var(--band)) 0 0); mask-image: linear-gradient(to right, #000, transparent var(--band));  --dur: 0.3s;  --at: 1.7s;  --ef: var(--ease-soft); }
-html.parked .frame .tone.top,
-html.parked .frame .tone.right,
-html.parked .frame .tone.bottom,
-html.parked .frame .tone.left {
+html.drawing .frame .tone.top,
+html.drawing .frame .tone.right,
+html.drawing .frame .tone.bottom,
+html.drawing .frame .tone.left {
   animation: tone-edge var(--dur) var(--ef) var(--at) forwards, tone-out 0.5s var(--ease) 1.6s forwards;
 }
 @keyframes tone-edge {
@@ -390,7 +385,7 @@ html.parked .frame .tone.left {
 .frame .r { top: var(--arm); bottom: var(--arm); right: 0; width: 1px; transform: scaleY(0); --dur: 0.35s; --at: 0.7s; --ef: var(--ease-soft); }
 .frame .b { bottom: 0; left: var(--arm); right: var(--arm); height: 1px; transform-origin: 100% 0; transform: scaleX(0); --dur: 0.55s; --at: 1.05s; --ef: var(--ease-soft); }
 .frame .l { top: var(--arm); bottom: var(--arm); left: 0; width: 1px; transform-origin: 0 100%; transform: scaleY(0); --dur: 0.3s; --at: 1.6s; --ef: var(--ease-soft); }
-html.parked .frame .e { animation: frame-edge var(--dur) var(--ef) var(--at) forwards; }
+html.drawing .frame .e { animation: frame-edge var(--dur) var(--ef) var(--at) forwards; }
 @keyframes frame-edge {
   to { transform: none; }
 }
@@ -416,7 +411,7 @@ html.parked .frame .e { animation: frame-edge var(--dur) var(--ef) var(--at) for
 .frame .br { bottom: 0; right: 0; --base: 90deg; --turns: 2; --dur: 1s; --at: 1.05s; }
 .frame .bl { bottom: 0; left: 0; --base: 180deg; --turns: 1; --dur: 0.8s; --at: 1.6s; }
 .frame .tl { top: 0; left: 0; --base: 270deg; --turns: 0.5; --dur: 0.6s; --at: 1.9s; }
-html.parked .frame .c { animation: frame-corner var(--dur) linear var(--at) forwards; }
+html.drawing .frame .c { animation: frame-corner var(--dur) linear var(--at) forwards; }
 @keyframes frame-corner {
   /* --turns full spins plus the 45deg to an x, overshot and seesawed back */
   0% { opacity: 1; transform: rotate(var(--base)); animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1); }
@@ -925,14 +920,7 @@ html.parked .frame .c { animation: frame-corner var(--dur) linear var(--at) forw
 .rec.on canvas {
   opacity: 0;
 }
-/* the screen rasters in with the panel: a wipe down from the top, after the frame has drawn */
-.panel.play .rec canvas {
-  animation: rec-screen var(--slow) var(--ease-soft) calc(var(--lead, 0s) + 0.9s) backwards;
-}
-@keyframes rec-screen {
-  from { clip-path: inset(0 0 100% 0); }
-  to { clip-path: inset(0); }
-}
+/* the screen comes in with the rest of the content: the fold's wipe covers it until the frame has drawn to it */
 /* reduced motion: the poster itself, no screen, no play */
 .rec.still canvas {
   display: none;
@@ -989,10 +977,63 @@ html.parked .frame .c { animation: frame-corner var(--dur) linear var(--at) forw
   html .panel .fold::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* ---- the wipe: the content is revealed by the same drawing as the frame ----
+   A mask on the fold, in the frame's own box: five layers that grow on the frame's own clock (the same --at, --dur and
+   easing as the tint's bands, a beat behind each edge): a strip under the top edge drawing left to right, one down the
+   right edge going down, one along the bottom going right to left, one up the left edge, and then the fill rising
+   with the tint's raster. Nothing inside the box is visible before the line has been there. */
+@property --wp-t { syntax: "<number>"; inherits: false; initial-value: 0; }
+@property --wp-r { syntax: "<number>"; inherits: false; initial-value: 0; }
+@property --wp-b { syntax: "<number>"; inherits: false; initial-value: 0; }
+@property --wp-l { syntax: "<number>"; inherits: false; initial-value: 0; }
+@property --wp-f { syntax: "<number>"; inherits: false; initial-value: 0; }
+.panel .fold {
+  --band: 2.5rem;
+  --wipe-layers: linear-gradient(#000, #000), linear-gradient(#000, #000), linear-gradient(#000, #000), linear-gradient(#000, #000), linear-gradient(#000, #000);
+  --wipe-sizes: calc(var(--wp-t) * 100%) var(--band), var(--band) calc(var(--wp-r) * 100%), calc(var(--wp-b) * 100%) var(--band), var(--band) calc(var(--wp-l) * 100%), 100% calc(var(--wp-f) * 100%);
+  --wipe-at: 0 0, 100% 0, 100% 100%, 0 100%, 0 100%;
+  mask-image: var(--wipe-layers);
+  mask-size: var(--wipe-sizes);
+  mask-position: var(--wipe-at);
+  mask-repeat: no-repeat;
+}
+html.drawing .panel .fold {
+  animation:
+    wipe-t var(--settle) var(--land) 0.1s both,
+    wipe-r 0.35s var(--ease-soft) 0.8s both,
+    wipe-b 0.55s var(--ease-soft) 1.15s both,
+    wipe-l 0.3s var(--ease-soft) 1.7s both,
+    wipe-f 0.3s linear 1.6s both;
+}
+@keyframes wipe-t { to { --wp-t: 1; } }
+@keyframes wipe-r { to { --wp-r: 1; } }
+@keyframes wipe-b { to { --wp-b: 1; } }
+@keyframes wipe-l { to { --wp-l: 1; } }
+@keyframes wipe-f { to { --wp-f: 1; } }
+/* the fade at the bottom edge (while there is more to scroll) multiplies with the wipe */
+@media (min-width: 961px) {
   html .panel .fold.more {
-    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 4rem), transparent);
-    mask-image: linear-gradient(to bottom, #000 calc(100% - 4rem), transparent);
+    mask-image: linear-gradient(to bottom, #000 calc(100% - 4rem), transparent), var(--wipe-layers);
+    mask-size: 100% 100%, var(--wipe-sizes);
+    mask-position: 0 0, var(--wipe-at);
+    mask-repeat: no-repeat;
+    mask-composite: intersect, add, add, add, add, add;
   }
+}
+
+/* ---- reduced motion: no wipe and no drawing, everything at once ---- */
+@media (prefers-reduced-motion: reduce) {
+  html.drawing .panel .fold { animation: none; --wp-t: 1; --wp-r: 1; --wp-b: 1; --wp-l: 1; --wp-f: 1; }
+  html.drawing .frame .e { animation: none; transform: none; }
+  html.drawing .frame .c {
+    animation: none; opacity: 1;
+    transform: rotate(calc(var(--base) + 45deg));
+    clip-path: polygon(0 0, 100% 0, 100% 0, 100% 0, 100% 100%, 0 100%);
+  }
+  html.drawing .frame .tone:not(.wave) { display: none; }
+  .rows li .panel, html.parked .rows li .panel { transition: none; }
 }
 
 /* ---- bullets: three kinds, one meaning each (js/bullets.js draws them with p5.brush; until then, and without it, the glyphs) ----
