@@ -17,6 +17,33 @@
   }
   function enter(proj, elapsed) { if (window.panelEnter) { if (proj) panelEnter.start(proj, elapsed); else panelEnter.cancel(); } }
   var next = null;   // on a phone, the project waiting for the open row to fold shut
+  // On a phone a switch or a close must not move the page under the finger: the tapped row is pinned to where it was in the viewport
+  // from before the old sheet folds until the new one has settled, and only the sheet moves. The pin lets go at once on any input of the reader's.
+  var pinRow = null, pinTop = 0, pinFrom = 0, pinRaf = 0;
+  function pinStep(now) {
+    cancelAnimationFrame(pinRaf);
+    var dy = pinRow.getBoundingClientRect().top - pinTop;
+    if (Math.abs(dy) > 0.25) scrollTo({ top: scrollY + dy, behavior: 'instant' });
+    var busy = next || panel.getAnimations({ subtree: true }).some(function (a) { return a.transitionProperty && a.transitionProperty !== 'opacity'; });
+    if (now - pinFrom < 3000 && (busy || now - pinFrom < 350)) pinRaf = requestAnimationFrame(pinStep); else unpin();
+  }
+  function pin(row) {
+    unpin(); if (!row) return;
+    pinRow = row; pinTop = row.getBoundingClientRect().top; pinFrom = performance.now();
+    ['wheel', 'touchstart', 'keydown'].forEach(function (t) { addEventListener(t, unpin, { passive: true }); });
+    pinRaf = requestAnimationFrame(pinStep);
+  }
+  function unpin() {
+    cancelAnimationFrame(pinRaf); pinRow = null;
+    ['wheel', 'touchstart', 'keydown'].forEach(function (t) { removeEventListener(t, unpin); });
+  }
+  // On a phone, the arrow of the project that is already open closes it again (to its section's list).
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('.rows a[href^="#"]');
+    if (!a || !phone.matches || !html.classList.contains('parked') || a.getAttribute('href') !== location.hash) return;
+    e.preventDefault();   // pushState, not location.hash: setting the hash would first jump the page to the section, then the sheet folds
+    history.pushState(null, '', '#' + a.closest('section').id); dispatchEvent(new HashChangeEvent('hashchange'));
+  });
   panel.addEventListener('transitionend', function (e) {   // folded shut on a phone: on to the next row, or back to the stage
     if (e.propertyName !== 'grid-template-rows' || html.classList.contains('parked')) return;
     if (next) { var p = next; next = null; open(p); } else place(null);
@@ -27,9 +54,13 @@
   }
   function show() {
     var slug = location.hash.slice(1), proj = projs.find(function (p) { return p.dataset.project === slug; });
+    if (phone.matches && html.classList.contains('parked') && panel.parentNode !== stage) {
+      var held = proj ? rowOf(proj) : panel.parentNode.querySelector('a'); pin(held);   // the tapped row, or the row being closed
+      if (!proj) { open(proj); pinStep(performance.now()); return; }
+    }
     if (proj && phone.matches && html.classList.contains('parked') && panel.parentNode !== rowOf(proj).parentNode) {
       next = proj; enter(null); if (drawStart !== null) settleFrame(); html.classList.remove('parked'); panel.classList.remove('play');   // another row: fold shut here first
-      if (still()) { next = null; open(proj); }   // nothing to wait for
+      if (still()) { next = null; open(proj); pinStep(performance.now()); }   // nothing to wait for
       return;
     }
     open(proj);
@@ -58,7 +89,7 @@
     }
     panel.classList.remove('play'); void panel.offsetWidth; panel.classList.add('play');
     enter(proj, drawStart === null ? null : performance.now() - drawStart);
-    if (phone.matches) rowOf(proj).scrollIntoView({ behavior: 'smooth', block: 'start' });   // the row's title at the top, the panel under it
+    if (phone.matches && !pinRow) rowOf(proj).scrollIntoView({ behavior: 'smooth', block: 'start' });   // the row's title at the top, the panel under it
   }
   show(); addEventListener('hashchange', show); phone.addEventListener('change', show);
 })();
