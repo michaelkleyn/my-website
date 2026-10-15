@@ -974,6 +974,9 @@ html.drawing .frame .c { animation: frame-corner var(--dur) linear var(--at) for
 /* ---- the panel's box: the frame. The sidebar rides with the viewport once a project is open and the list holds its place;
    the panel is the viewport less the page's margins, its content scrolls inside it and the bottom edge fades while there is more ---- */
 @media (min-width: 961px) {
+  main {
+    transition: flex-basis var(--settle) var(--land);   /* with the panel's glide, when the list's width differs open from shut */
+  }
   html.parked .side {
     position: fixed;
   }
@@ -981,6 +984,11 @@ html.drawing .frame .c { animation: frame-corner var(--dur) linear var(--at) for
     position: sticky;
     top: 3.75rem;
     align-self: flex-start;
+    /* stage three of the narrowing. The nav's air closes first (the stage track), then the box gives down to 520px (40.625rem),
+       then the list gives to keep it there: the stage is 100vw - 20rem of page and sidebar margin, less the 3rem gap and the
+       box's 40.625rem, which leaves 100vw - 63.625rem for the list, floored at 22rem (sublines still wrap to two lines).
+       Below the floor the box gives again. At 1281 and wider the clamp is its old 36.5rem, so nothing there moves */
+    flex-basis: clamp(22rem, calc(100vw - 63.625rem), 36.5rem);
   }
   html.parked .panel {
     position: sticky;
