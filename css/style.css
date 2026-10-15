@@ -93,8 +93,11 @@ html.parked .panel {
 html.parked .page {
   /* parked: the panel takes the room, the sidebar keeps only its 20rem. The stage's cap is exactly the room there is, so
      the whole curve is spent on real travel: with a cap wider than the page the track hit its ceiling a quarter of the way
-     in and the rest of the ease ran on nothing, which read as a snap */
-  grid-template-columns: 0fr minmax(0, calc(100% - 20rem)) minmax(20rem, 0.5fr);
+     in and the rest of the ease ran on nothing, which read as a snap 
+     Below 1728 the nav's reserved track gives first: the stage holds 107rem (list 36.5, gap 3, box 67.5, the box's width
+     at 1728) and the track takes what is left, down to a 12rem floor (the nav is 9.85rem wide, so about 2rem of air);
+     below that the box gives. At 1728 and wider the clamp is the old 100% - 20rem, so nothing there moves */
+  grid-template-columns: 0fr minmax(0, clamp(calc(100% - 20rem), 107rem, calc(100% - 12rem))) minmax(12rem, 0.5fr);
 }
 
 .name {
