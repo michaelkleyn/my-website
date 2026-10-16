@@ -98,7 +98,14 @@
       })(t0);
     };
     rec.settle = function () { cancelAnimationFrame(grow); if (g !== 1) { g = 1; paint(); } };
-    new ResizeObserver(draw).observe(cv.parentNode);   // a hidden panel measures 0 and draws when it shows
+    // a hidden panel measures 0 and draws when it shows. While the panel glides the box changes size every frame: the screen is
+    // computed once at the first size (nothing shows yet: the window is held empty) and once more when the size has stopped changing
+    var lastRO = 0, redraw = 0;
+    new ResizeObserver(function () {
+      var now = performance.now(), run = now - lastRO < 100; lastRO = now;
+      clearTimeout(redraw);
+      if (run) redraw = setTimeout(draw, 60); else draw();
+    }).observe(cv.parentNode);
 
     function set(on) {
       if (still.matches) return;   // the poster only
