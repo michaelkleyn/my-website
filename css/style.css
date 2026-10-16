@@ -383,6 +383,10 @@ html.drawing .frame .tone.left {
   display: grid;
   grid-auto-rows: 10px;
 }
+.frame .tone.wave.rest {   /* the screen at rest (js/tone.js): what every row draws once the water is still */
+  background-image: radial-gradient(circle, rgb(29 74 158 / 0.13) 0.9px, transparent calc(0.9px + 0.4px));
+  background-size: 5px 5px;
+}
 .frame .tone.wave i {
   background-image: radial-gradient(circle, rgb(29 74 158 / var(--a, 0.13)) var(--r, 0px), transparent calc(var(--r, 0px) + 0.4px));
   background-size: 5px 5px;

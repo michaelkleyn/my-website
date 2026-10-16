@@ -56,8 +56,13 @@
     if (ms < RUN) raf = requestAnimationFrame(frame);
     else { raf = null; rest(); }
   }
-  function rest() { rows.forEach(function (row) { row.el.style.setProperty('--p', '106%'); row.el.style.setProperty('--r', R0 + 'px'); row.el.style.setProperty('--a', A0); }); }
-  function clear() { rows.forEach(function (row) { row.el.style.setProperty('--p', '0%'); }); }
+  // At rest every row is the same: the whole screen is one background on the wave itself (css: .tone.wave.rest), pixel for pixel what
+  // the rows draw at their rest values (rows are two dot periods tall, so the grids register). The rows exist only while the water moves.
+  function rest() {
+    if (grid) { grid.remove(); grid = null; rows = []; W = H = 0; }
+    wave.classList.add('rest');
+  }
+  function clear() { wave.classList.remove('rest'); rows.forEach(function (row) { row.el.style.setProperty('--p', '0%'); }); }
 
   var timer = null;
   function start() {
@@ -70,11 +75,11 @@
   // on the frame's one drawing (stage.js: the first open; it dispatches 'framedraw' with html.drawing freshly added)
   // the screen starts from nothing; unparking puts it away, and it is at rest on every later open. Reduced motion: the screen is simply there.
   var still = matchMedia('(prefers-reduced-motion: reduce)');
-  addEventListener('framedraw', function () { if (still.matches) { stop(); build(); rest(); } else start(); });
+  addEventListener('framedraw', function () { if (still.matches) { stop(); rest(); } else start(); });
   // once drawn (the frame draws once per page load) the screen is simply at rest whenever the panel is open, whatever its size
   function resting() { return html.classList.contains('parked') && html.classList.contains('drawn') && !html.classList.contains('drawing') && !timer && !raf; }
-  function settle() { if (resting() && wave.clientWidth && wave.clientHeight) { build(); rest(); } }
+  function settle() { if (resting() && wave.clientWidth && wave.clientHeight) rest(); }
   new MutationObserver(function () { if (!html.classList.contains('parked')) { stop(); clear(); } else settle(); }).observe(html, { attributes: true, attributeFilter: ['class'] });
   new ResizeObserver(settle).observe(wave);
-  if (html.classList.contains('drawing')) { if (still.matches) { build(); rest(); } else start(); }
+  if (html.classList.contains('drawing')) { if (still.matches) rest(); else start(); }
 })();
