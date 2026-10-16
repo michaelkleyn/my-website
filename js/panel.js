@@ -81,11 +81,21 @@
       var w = cv.parentNode.clientWidth, h = cv.parentNode.clientHeight;
       ctx.fillStyle = '#f6f3ec'; ctx.fillRect(0, 0, w, h);
       ctx.fillStyle = 'rgb(' + INK + ')';
-      for (var k = 0; k < dots.length; k += 3) {
-        var r = dots[k + 2] * g;
-        if (r < 0.15) continue;
-        ctx.beginPath(); ctx.arc(dots[k], dots[k + 1], r, 0, 6.2832); ctx.fill();
+      if (g >= 1) {   // at rest: a fill per dot, as always (the pixels at rest are the reference)
+        for (var k = 0; k < dots.length; k += 3) {
+          var r = dots[k + 2];
+          if (r < 0.15) continue;
+          ctx.beginPath(); ctx.arc(dots[k], dots[k + 1], r, 0, 6.2832); ctx.fill();
+        }
+        return;
       }
+      ctx.beginPath();   // while the dots grow: one path, one fill (a frame at a time, thousands of fills otherwise)
+      for (var j = 0; j < dots.length; j += 3) {
+        var q = dots[j + 2] * g;
+        if (q < 0.15) continue;
+        ctx.moveTo(dots[j] + q, dots[j + 1]); ctx.arc(dots[j], dots[j + 1], q, 0, 6.2832);
+      }
+      ctx.fill();
     }
     // the content's entrance (js/enter.js): the window is held empty until its turn, then the dots grow from nothing
     var grow = null;
