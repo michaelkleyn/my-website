@@ -50,8 +50,10 @@
     for (var k = 0; k < n; k++) {
       var row = rows[k], q = Math.max(0, Math.min(1, (p - row.s) * n / 3)), h = q ? height(row.y, td) : 0;
       var r = Math.max(0, R0 + 0.35 * h), a = Math.max(0.05, Math.min(0.19, A0 + 0.04 * h));   // the crest a smidge bigger and darker than rest, the trough a smidge less
-      row.el.style.setProperty('--p', (q * 106).toFixed(1) + '%');
-      row.el.style.setProperty('--r', r.toFixed(2) + 'px'); row.el.style.setProperty('--a', a.toFixed(3));
+      var sp = (q * 106).toFixed(1) + '%', sr = r.toFixed(2) + 'px', sa = a.toFixed(3);   // only a row whose look changed is touched: most rows sit still on any frame
+      if (row.p !== sp) { row.p = sp; row.el.style.setProperty('--p', sp); }
+      if (row.r !== sr) { row.r = sr; row.el.style.setProperty('--r', sr); }
+      if (row.a !== sa) { row.a = sa; row.el.style.setProperty('--a', sa); }
     }
     if (ms < RUN) raf = requestAnimationFrame(frame);
     else { raf = null; rest(); }
@@ -62,7 +64,7 @@
     if (grid) { grid.remove(); grid = null; rows = []; W = H = 0; }
     wave.classList.add('rest');
   }
-  function clear() { wave.classList.remove('rest'); rows.forEach(function (row) { row.el.style.setProperty('--p', '0%'); }); }
+  function clear() { wave.classList.remove('rest'); rows.forEach(function (row) { row.p = null; row.el.style.setProperty('--p', '0%'); }); }
 
   var timer = null;
   function start() {
