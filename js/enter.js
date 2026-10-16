@@ -102,18 +102,18 @@
   }
   function cancel() { if (run) { clear(run); run = null; } }
 
-  function start(proj, elapsed) {
+  function start(proj, elapsed, opts) {   // opts.after: ms to wait on a short opener (the glide); opts.done: called when the reveal ran to its end
     cancel();
     if (still.matches) return;
     var r = run = { proj: proj, raf: 0, timer: 0 }, s = proj.style;
     s.maskImage = HIDE; s.maskSize = '0 0'; s.maskPosition = '0 0'; s.maskRepeat = 'no-repeat';   // nothing before its moment
     proj.querySelectorAll('.rec').forEach(function (rec) { if (rec.hold) rec.hold(); });
-    var first = elapsed != null, delay, span;
-    if (mode === 'ink') delay = first ? Math.max(0, STROKE_END - elapsed) : 0;
-    else { delay = first ? Math.max(0, RIGHT_AT - elapsed) : 0; span = first ? Math.max(120, Math.min(RIGHT_MS, RIGHT_AT + RIGHT_MS - elapsed)) : 400; }
+    var first = elapsed != null, delay, span, after = (opts && opts.after) || 0, done = (opts && opts.done) || null;
+    if (mode === 'ink') delay = first ? Math.max(0, STROKE_END - elapsed) : after;
+    else { delay = first ? Math.max(0, RIGHT_AT - elapsed) : after; span = first ? Math.max(120, Math.min(RIGHT_MS, RIGHT_AT + RIGHT_MS - elapsed)) : 400; }
     function go() {
       var m = collect(proj), units = m.units, N = units.length, t0 = performance.now(), last = '', fold = proj.closest('.fold');
-      if (!N) { clear(r); run = null; return; }
+      if (!N) { clear(r); run = null; if (done) done(); return; }
       if (mode === 'ink') plan(units);
       else {
         var H = Math.min(m.height, matchMedia('(max-width: 960px)').matches ? m.height : fold.clientHeight);
@@ -140,7 +140,7 @@
         }
         var sizes = units.map(function (u) { var z = size(u, t); return z[0].toFixed(2) + 'px ' + z[1].toFixed(2) + 'px'; }).join(',');
         if (sizes !== last) { s.maskSize = sizes; last = sizes; }
-        if (end) { if (run === r) { r.timer = setTimeout(finish, mode === "ink" ? 40 : MEDIA + 40); } return; }   // let the last halftone finish developing, then drop the mask
+        if (end) { if (run === r) { r.timer = setTimeout(function () { finish(); if (done) done(); }, mode === "ink" ? 40 : MEDIA + 40); } return; }   // let the last halftone finish developing, then drop the mask
         r.raf = requestAnimationFrame(frame);
       }
       r.dog = setTimeout(finish, (mode === 'ink' ? TOTAL : span) + MEDIA + 500);   // whatever happens, the mask comes off

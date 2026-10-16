@@ -87,6 +87,11 @@ main {
 html.parked .panel {
   margin-left: 3rem;
 }
+/* the short opener (stage.js, html.short): the window is there whole from the glide's first frame, no fade in */
+html.short.parked .panel {
+  transition: margin-left var(--settle) var(--land);
+  opacity: 1;
+}
 .page {
   transition: grid-template-columns var(--settle) var(--land);
 }

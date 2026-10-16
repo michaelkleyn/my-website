@@ -3,6 +3,7 @@
 // Choosing another project while parked swaps the panel alone; #work (or any other section) unparks. The nav dot
 // resolves these hashes to the section their row lives in (dot.js idx), so Art rows park under Art.
 (function () {
+  var OPENER_MEMORY_DAYS = 30;   // how long a finished long opener is remembered; until then every open is the short one
   var html = document.documentElement, panel = document.querySelector('.panel'), stage = document.querySelector('.stage');
   var projs = Array.from(panel.querySelectorAll('.proj')), phone = matchMedia('(max-width: 960px)');
   function rowOf(proj) { return document.querySelector('.rows a[href="#' + proj.dataset.project + '"]'); }
@@ -16,7 +17,20 @@
   function settleFrame() {   // the drawing is done (or cut short): the frame is simply there from now on (css: html.drawn)
     clearTimeout(drawTimer); drawStart = null; html.classList.add('drawn'); html.classList.remove('drawing');
   }
-  function enter(proj, elapsed) { if (window.panelEnter) { if (proj) panelEnter.start(proj, elapsed); else panelEnter.cancel(); } }
+  function enter(proj, elapsed, opts) { if (window.panelEnter) { if (proj) panelEnter.start(proj, elapsed, opts); else panelEnter.cancel(); } }
+  // ---- the two openers: the long one (frame drawn, then the ink) until it has run to its end once, the short one after ----
+  // The memory is one localStorage key holding the time the long opener last finished. Every read and write is guarded: a blocked store
+  // means the long opener, always. Testing: ?opener=long or ?opener=short forces one for this load (and writes nothing); ?opener=reset clears the memory.
+  var MEMORY_KEY = 'opener-seen', GLIDE_MS = 700;   // GLIDE_MS: the park glide (css --settle); the short opener's content waits for it
+  var forced = new URLSearchParams(location.search).get('opener');
+  function store(f) { try { return f(window.localStorage); } catch (e) { return null; } }
+  if (forced === 'reset') store(function (l) { l.removeItem(MEMORY_KEY); });
+  function seen() {
+    var t = Number(store(function (l) { return l.getItem(MEMORY_KEY); }));
+    return t > 0 && Date.now() - t < OPENER_MEMORY_DAYS * 864e5 && t <= Date.now() + 6e4;
+  }
+  function useShort() { return forced === 'short' || (forced !== 'long' && seen()); }
+  function remember() { if (!forced || forced === 'reset') store(function (l) { l.setItem(MEMORY_KEY, String(Date.now())); }); }
   var next = null;   // on a phone, the project waiting for the open row to fold shut
   // On a phone a switch or a close must not move the page under the finger: the tapped row is pinned to where it was in the viewport
   // from before the old sheet folds until the new one has settled, and only the sheet moves. The pin lets go at once on any input of the reader's.
@@ -84,7 +98,14 @@
       if (!phone.matches || still()) place(null);
       return;
     }
-    if (closed) { closed = false; html.classList.remove('drawn'); }   // a reopen after a close is a first open again: the frame draws, the content follows it
+    // a new open (the first, or a reopen after a close) is a long one until the long one has finished once, then a short one: the frame is
+    // there from the first frame of the glide (html.drawn, never html.drawing) and the content waits for the glide to settle
+    var fresh = closed || (!html.classList.contains('drawn') && drawStart === null), quick = false;
+    closed = false;
+    if (fresh) {
+      quick = useShort(); html.classList.toggle('short', quick);
+      if (quick) html.classList.add('drawn'); else html.classList.remove('drawn');
+    }
     marked(proj);
     if (!phone.matches) panel.querySelector('.fold').scrollTop = 0;   // the box is one scroller shared by every project: a newly opened one starts at its top, before the reveal
     html.classList.add('parked');
@@ -96,7 +117,8 @@
       dispatchEvent(new Event('framedraw'));
     }
     panel.classList.remove('play'); void panel.offsetWidth; panel.classList.add('play');
-    enter(proj, drawStart === null ? null : performance.now() - drawStart);
+    var long = drawStart !== null && !still0.matches;   // this open drew the frame: the long opener, and its end is worth remembering
+    enter(proj, drawStart === null ? null : performance.now() - drawStart, { after: quick ? GLIDE_MS : 0, done: long ? remember : null });
     if (phone.matches && !pinRow) rowOf(proj).scrollIntoView({ behavior: 'smooth', block: 'start' });   // the row's title at the top, the panel under it
   }
   show(); addEventListener('hashchange', show); phone.addEventListener('change', show);
