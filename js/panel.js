@@ -10,9 +10,10 @@
   // The panel's width glides open while the page parks, so the content re-wraps and its height changes along the way.
   // The fade must follow where it will settle, not where it passes: measure with any running layout transition
   // jumped to its end, then put each one back where it was (nothing paints in between).
-  function more() {
+  function layoutRuns() { return document.getAnimations().filter(function (a) { return a.transitionProperty && a.transitionProperty !== 'opacity' && a.playState === 'running'; }); }
+  function measure() {
     void fold.offsetHeight;   // flush style, so a transition just triggered by parking exists to be jumped
-    var run = document.getAnimations().filter(function (a) { return a.transitionProperty && a.transitionProperty !== 'opacity' && a.playState === 'running'; });
+    var run = layoutRuns();
     var at = run.map(function (a) { return a.currentTime; }), y = scrollY;
     run.forEach(function (a) { a.currentTime = a.effect.getComputedTiming().endTime; });
     var over = fold.scrollHeight - fold.scrollTop - fold.clientHeight > 2;
@@ -20,10 +21,23 @@
     // the jump laid the page out at its end (a phone's sheet shut), which clamped the page's scroll: put it back, or the page lurches when a sheet folds
     if (run.length && scrollY !== y) scrollTo({ top: y, behavior: 'instant' });
     fold.classList.toggle('more', over);
+    return run.length;
   }
-  function soon() { more(); requestAnimationFrame(more); }   // at once (forced layout, settled geometry), and again after layout, before the next paint
+  // The glide re-wraps the content on every frame, and the ResizeObserver below fires on every frame of it. Measuring is a pair of
+  // synchronous layouts (jump to the end, read, put back), so during a glide it is done once, at its start, for where it will settle,
+  // and held off until the last layout transition ends (or a safety timer runs out), then once more.
+  var holding = false, holdTimer = 0;
+  function release() { clearTimeout(holdTimer); if (!holding) return; holding = false; measure(); }
+  function arm() { holding = true; clearTimeout(holdTimer); holdTimer = setTimeout(release, 1500); }
+  function more() { if (!holding && measure()) arm(); }   // a measure that found a glide running is the one measure for it
+  function settled() { if (holding && !layoutRuns().length) release(); }
+  document.addEventListener('transitionend', settled, true); document.addEventListener('transitioncancel', settled, true);
+  function soon() {   // at once (forced layout, settled geometry), and again after layout, before the next paint; then hold off while the glide runs
+    release(); if (measure()) arm();
+    requestAnimationFrame(more);
+  }
   fold.addEventListener('scroll', more, { passive: true });
-  addEventListener('resize', more); addEventListener('hashchange', soon);
+  addEventListener('resize', function () { release(); measure(); }); addEventListener('hashchange', soon);
   more(); requestAnimationFrame(more);
   // measure whenever the box or the open project changes size or visibility, and once everything has loaded,
   // so the fade shows only when the content really overflows
