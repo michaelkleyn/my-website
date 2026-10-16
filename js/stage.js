@@ -3,7 +3,6 @@
 // Choosing another project while parked swaps the panel alone; #work (or any other section) unparks. The nav dot
 // resolves these hashes to the section their row lives in (dot.js idx), so Art rows park under Art.
 (function () {
-  var OPENER_MEMORY_DAYS = 30;   // how long a finished long opener is remembered; until then every open is the short one
   var html = document.documentElement, panel = document.querySelector('.panel'), stage = document.querySelector('.stage');
   var projs = Array.from(panel.querySelectorAll('.proj')), phone = matchMedia('(max-width: 960px)');
   function rowOf(proj) { return document.querySelector('.rows a[href="#' + proj.dataset.project + '"]'); }
@@ -19,18 +18,12 @@
   }
   function enter(proj, elapsed, opts) { if (window.panelEnter) { if (proj) panelEnter.start(proj, elapsed, opts); else panelEnter.cancel(); } }
   // ---- the two openers: the long one (frame drawn, then the ink) until it has run to its end once, the short one after ----
-  // The memory is one localStorage key holding the time the long opener last finished. Every read and write is guarded: a blocked store
-  // means the long opener, always. Testing: ?opener=long or ?opener=short forces one for this load (and writes nothing); ?opener=reset clears the memory.
-  var MEMORY_KEY = 'opener-seen', GLIDE_MS = 700;   // GLIDE_MS: the park glide (css --settle); the short opener's content waits for it
+  // The memory lives in the page only: a plain variable set when the long opener's reveal ends. Nothing is stored in the browser, so any load or reload
+  // starts over with the long one. Testing: ?opener=long or ?opener=short forces one for this load (and remembers nothing).
+  var GLIDE_MS = 700, seen = false;   // GLIDE_MS: the park glide (css --settle); the short opener's content waits for it
   var forced = new URLSearchParams(location.search).get('opener');
-  function store(f) { try { return f(window.localStorage); } catch (e) { return null; } }
-  if (forced === 'reset') store(function (l) { l.removeItem(MEMORY_KEY); });
-  function seen() {
-    var t = Number(store(function (l) { return l.getItem(MEMORY_KEY); }));
-    return t > 0 && Date.now() - t < OPENER_MEMORY_DAYS * 864e5 && t <= Date.now() + 6e4;
-  }
-  function useShort() { return forced === 'short' || (forced !== 'long' && seen()); }
-  function remember() { if (!forced || forced === 'reset') store(function (l) { l.setItem(MEMORY_KEY, String(Date.now())); }); }
+  function useShort() { return forced === 'short' || (forced !== 'long' && seen); }
+  function remember() { if (!forced) seen = true; }
   var ready = false;   // the first show() (a load straight onto a project) still scrolls its row to the top; every later open pins it
   var next = null;   // on a phone, the project waiting for the open row to fold shut
   // On a phone a switch or a close must not move the page under the finger: the tapped row is pinned to where it was in the viewport
