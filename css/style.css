@@ -823,6 +823,7 @@ html.drawing .frame .c { animation: frame-corner var(--dur) linear var(--at) for
     grid-template-columns: 1fr;   /* one column, parked or not: the parked desktop tracks must not apply here */
     padding: 1.5rem 1.25rem 3rem;
     gap: 2.5rem;
+    align-content: start;   /* a short page (Art) must not stretch the header's row to fill the screen: that slack vanished when a sheet made the page taller, and moved every row 83px */
   }
 
   /* the header: name on the left, the nav on the right, on one line */
@@ -911,6 +912,10 @@ html.drawing .frame .c { animation: frame-corner var(--dur) linear var(--at) for
   }
   .rows li .frame {
     inset: 1rem 0 1.5rem;
+  }
+  html.short.parked .rows li .panel {   /* the short opener: the window is present from the first parked frame, as on the desktop (no opacity fade) */
+    transition: grid-template-rows var(--settle) var(--land), padding var(--settle) var(--land);
+    opacity: 1;
   }
 }
 

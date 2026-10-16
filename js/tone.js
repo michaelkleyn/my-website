@@ -63,10 +63,10 @@
   function start() {
     stop(); clear();
     timer = setTimeout(function () {   // built at the cue, not the park: the panel is still opening until then and would measure narrow
-      build(); clear(); t0 = performance.now(); raf = requestAnimationFrame(frame);
+      timer = null; build(); clear(); t0 = performance.now(); raf = requestAnimationFrame(frame);
     }, DELAY);
   }
-  function stop() { clearTimeout(timer); cancelAnimationFrame(raf); raf = null; }
+  function stop() { clearTimeout(timer); timer = null; cancelAnimationFrame(raf); raf = null; }   // a spent timer must read as none, or the screen can never rest on a later (short) open
   // on the frame's one drawing (stage.js: the first open; it dispatches 'framedraw' with html.drawing freshly added)
   // the screen starts from nothing; unparking puts it away, and it is at rest on every later open. Reduced motion: the screen is simply there.
   var still = matchMedia('(prefers-reduced-motion: reduce)');

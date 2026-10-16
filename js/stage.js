@@ -31,6 +31,7 @@
   }
   function useShort() { return forced === 'short' || (forced !== 'long' && seen()); }
   function remember() { if (!forced || forced === 'reset') store(function (l) { l.setItem(MEMORY_KEY, String(Date.now())); }); }
+  var ready = false;   // the first show() (a load straight onto a project) still scrolls its row to the top; every later open pins it
   var next = null;   // on a phone, the project waiting for the open row to fold shut
   // On a phone a switch or a close must not move the page under the finger: the tapped row is pinned to where it was in the viewport
   // from before the old sheet folds until the new one has settled, and only the sheet moves. The pin lets go at once on any input of the reader's.
@@ -73,6 +74,7 @@
       var held = proj ? rowOf(proj) : panel.parentNode.querySelector('a'); pin(held);   // the tapped row, or the row being closed
       if (!proj) { open(proj); pinStep(performance.now()); return; }
     }
+    if (proj && phone.matches && ready && !html.classList.contains('parked')) pin(rowOf(proj));   // opening from the list: the tapped row holds too, in every section (Work, Art), and only the sheet moves
     if (proj && phone.matches && html.classList.contains('parked') && panel.parentNode !== rowOf(proj).parentNode) {
       next = proj; enter(null); if (drawStart !== null) settleFrame(); html.classList.remove('parked'); panel.classList.remove('play');   // another row: fold shut here first
       if (still()) { next = null; open(proj); pinStep(performance.now()); }   // nothing to wait for
@@ -121,5 +123,5 @@
     enter(proj, drawStart === null ? null : performance.now() - drawStart, { after: quick ? GLIDE_MS : 0, done: long ? remember : null });
     if (phone.matches && !pinRow) rowOf(proj).scrollIntoView({ behavior: 'smooth', block: 'start' });   // the row's title at the top, the panel under it
   }
-  show(); addEventListener('hashchange', show); phone.addEventListener('change', show);
+  show(); ready = true; addEventListener('hashchange', show); phone.addEventListener('change', show);
 })();
