@@ -494,6 +494,7 @@ html.drawing .frame .c { animation: frame-corner var(--dur) linear var(--at) for
 }
 
 .glow {
+  visibility: hidden;   /* until the first real pointer move (glow.js adds html.pointed) */
   /* the row's own bounds: rule to rule, with half a rem of side overhang that reads as padding */
   position: absolute;
   inset: 0 -0.5rem;
@@ -505,6 +506,10 @@ html.drawing .frame .c { animation: frame-corner var(--dur) linear var(--at) for
   /* parked fully off; --far (glow.js) is the distance from the entry point to the box's far corner */
   transition: --wipe calc(var(--slow) / 2) var(--ease);
   /* leaving: drains toward the exit point in half the time */
+}
+
+html.pointed .glow {
+  visibility: visible;
 }
 
 .glow::before {

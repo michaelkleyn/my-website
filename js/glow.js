@@ -4,7 +4,7 @@
 // on the nearest edge), anchors the ink to the point of entry (and of exit, for the drain), and tells the cursor which
 // link is pulling on it (window.linkPull, read by cursor.js).
 (function () {
-  if (!matchMedia('(hover: hover)').matches) return;
+  if (!matchMedia('(hover: hover)').matches || matchMedia('(hover: none), (pointer: coarse)').matches) return;   // no fine pointer: no glow at all
   var REACH = 128, LEAN = 64, EDGE = 35;   // px outside the box at which the edge starts to answer / the cursor starts to lean; px inside an edge at which the ring rises
   var rows = Array.prototype.map.call(document.querySelectorAll('.rows a, .hello'), function (a) {
     var glow = document.createElement('span'), goo = document.createElement('span'), hello = a.matches('.hello');
@@ -32,7 +32,10 @@
     });
   }
   window.linkPull = { x: 0, y: 0, n: 0 };
+  var live = false;   // the glow stays hidden (css: html.pointed) until the first real pointer move; a finger's pointermove never counts
   addEventListener('pointermove', function (e) {
+    if (e.pointerType === 'touch') return;
+    if (!live) { live = true; document.documentElement.classList.add('pointed'); }
     var best = null;
     var m = rows.map(function (row) {
       var r = row.goo.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;

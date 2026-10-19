@@ -1,7 +1,7 @@
 // The cursor: a soft coral dot that tightens into a bar over readable text. Drawn in the page so it can morph,
 // and moved with a bare transform on its own layer so it trails the pointer by a frame at most.
 (function () {
-  if (!matchMedia('(hover: hover)').matches) return;
+  if (!matchMedia('(hover: hover)').matches || matchMedia('(hover: none), (pointer: coarse)').matches) return;   // no fine pointer: no dot at all
   var TEXT = 'h1, .lede, .prose p', el = document.createElement('div');
   var text = null, range = document.createRange(), knock = null;   // the text element under the pointer, and a range over its contents
   el.className = 'cursor hidden'; document.body.appendChild(el); document.documentElement.classList.add('has-cursor');
@@ -20,6 +20,7 @@
     return false;
   }
   addEventListener('pointerover', function (e) {
+    if (e.pointerType === 'touch') return;
     if (e.target.tagName === 'IFRAME') { el.classList.add('gone'); away = true; return; }   // an embedded player owns the pointer inside it: the dot swells away into the player, as into the hello box, and the player's own cursor takes over
     var t = e.target.closest(TEXT), link = e.target.closest('a');
     if (t && !link) { text = t; range.selectNodeContents(text); el.style.setProperty('--bar-h', parseFloat(getComputedStyle(text).fontSize) * 1.15 + 'px'); }
@@ -32,6 +33,7 @@
   });
   var px = 0, py = 0, fx = 0, fy = 0, fvx = 0, fvy = 0, lastGap = 0, s = 0, sq = 0, plx = 0, ply = 0, last = 0, away = false;
   addEventListener('pointermove', function (e) {
+    if (e.pointerType === 'touch') return;   // the dot stays hidden until the first mouse or pen move
     px = e.clientX; py = e.clientY;
     if (el.classList.contains('hidden') || away) { fx = px; fy = py; fvx = fvy = 0; away = false; }   // (re)entering the window, or back from a player: no lunge from wherever the follower was
     el.style.translate = px + 'px ' + py + 'px';
