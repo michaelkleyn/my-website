@@ -512,6 +512,10 @@ html.pointed .glow {
   visibility: visible;
 }
 
+html.pointed .goo {
+  display: block;
+}
+
 .glow::before {
   /* the fill: ink flowing out from the entry point (--ex/--ey), soft-edged like every other coral edge */
   content: "";
@@ -541,6 +545,7 @@ html.pointed .glow {
   /* field strength: a weaker field survives the goo threshold as a thinner ring */
   opacity: var(--ring-o, 0);
   filter: url(#goo);
+  display: none;   /* until the first real pointer move: Safari must not paint the filtered layer at rest */
   will-change: filter;
   /* own GPU layer: the blur runs on the GPU, not in paint */
   transition:
@@ -613,8 +618,8 @@ html.pointed .glow {
         transparent calc(var(--wipe) + 60px));
   }
 
-  .rows a:hover .goo::before,
-  .rows a:focus-visible .goo::before {
+  html.pointed .rows a:hover .goo::before,
+  html.pointed .rows a:focus-visible .goo::before {
     opacity: 1;
   }
 }

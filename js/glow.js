@@ -10,7 +10,7 @@
     var glow = document.createElement('span'), goo = document.createElement('span'), hello = a.matches('.hello');
     var drifts = hello && a.matches('[href^="mailto:"]');   // only the say-hello link drifts
     if (drifts) a.innerHTML = a.textContent.replace(/hello/, function (w) { return w.replace(/./g, '<span class="l">$&</span>'); });   // "hello", each letter its own box, so it can drift under the pointer; "Say" and the arrow hold still
-    glow.className = 'glow'; goo.className = 'goo'; glow.appendChild(goo); a.appendChild(glow);
+    glow.className = 'glow'; goo.className = 'goo'; goo.style.setProperty('--ring-o', '0'); goo.style.setProperty('--near', '0'); glow.appendChild(goo); a.appendChild(glow);
     function anchor(e) {   // the ink flows out from the point of entry, and drains toward the point of exit
       var r = glow.getBoundingClientRect(), x = Math.max(0, Math.min(r.width, e.clientX - r.left)), y = Math.max(0, Math.min(r.height, e.clientY - r.top));
       glow.style.setProperty('--ex', x + 'px'); glow.style.setProperty('--ey', y + 'px');
