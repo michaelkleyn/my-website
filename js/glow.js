@@ -33,8 +33,13 @@
   }
   window.linkPull = { x: 0, y: 0, n: 0 };
   var live = false;   // the glow stays hidden (css: html.pointed) until the first real pointer move; a finger's pointermove never counts
+  var touched = -1e9;   // hybrid devices (desktop-mode Safari, iPad): a touch turns the glow off again, and the mouse events a tap emulates never turn it on
+  function touch(e) { if (e.pointerType && e.pointerType !== 'touch') return; touched = Date.now(); live = false; document.documentElement.classList.remove('pointed'); }
+  addEventListener('pointerdown', touch, true); addEventListener('touchstart', touch, { capture: true, passive: true });
   addEventListener('pointermove', function (e) {
-    if (e.pointerType === 'touch') return;
+    if (e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;   // only a real mouse or pen
+    if (Date.now() - touched < 1000) return;
+    if (!live && !e.movementX && !e.movementY) return;   // a pointermove that moved nothing (Safari fires one on layout or scroll) never reveals the glow
     if (!live) { live = true; document.documentElement.classList.add('pointed'); }
     var best = null;
     var m = rows.map(function (row) {
