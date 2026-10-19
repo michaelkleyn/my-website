@@ -959,7 +959,7 @@ html.pointed .glow {
 .rec canvas {
   transition: opacity var(--slow) var(--ease-soft);
 }
-.rec.on canvas {
+.rec.on.ready canvas {
   opacity: 0;
 }
 /* reduced motion: the poster itself, no screen, no play */

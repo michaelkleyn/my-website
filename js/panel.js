@@ -120,9 +120,13 @@
     function set(on) {
       if (still.matches) return;   // the poster only
       rec.classList.toggle('on', on || forced);
-      if (on || forced) { video.preload = 'auto'; var p = video.play(); if (p && p.catch) p.catch(function () {}); }
+      if (on || forced) { video.preload = 'auto'; if (video.readyState >= 3) rec.classList.add('ready'); var p = video.play(); if (p && p.catch) p.catch(function () {}); }
       else video.pause();
     }
+    // the screen lifts only once the browser says the clip can play (css: .rec.on.ready); a load error, or a browser that can't decode
+    // either source (Safari without WebM), never reaches canplay, so the halftone poster stays and a blank box is never shown
+    video.addEventListener('canplay', function () { rec.classList.add('ready'); });
+    video.addEventListener('error', function () { rec.classList.remove('ready'); }, true);   // capture: a <source>'s error does not bubble
     rec.classList.toggle('still', still.matches);
     if (forced) set(true);
     rec.addEventListener('pointerenter', function (e) { if (e.pointerType === 'mouse') set(true); });
