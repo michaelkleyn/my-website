@@ -4,7 +4,7 @@
   var ev = ['pointermove', 'pointerover', 'pointerenter', 'mousemove', 'mouseover', 'touchstart'], count = {}, types = {};
   ev.forEach(function (n) { count[n] = 0; types[n] = {}; document.addEventListener(n, function (e) { count[n]++; types[n][e.pointerType || '-'] = 1; }, true); });
   var el = document.createElement('pre');
-  el.style.cssText = 'position:fixed;left:0;bottom:0;z-index:99999;margin:0;padding:4px;font:10px/1.2 monospace;color:#0f0;background:rgba(0,0,0,.85);pointer-events:none;white-space:pre';
+  el.style.cssText = 'position:fixed;left:0;top:60px;max-width:100vw;box-sizing:border-box;z-index:99999;margin:0;padding:4px;font:10px/1.2 monospace;color:#0f0;background:rgba(0,0,0,.85);pointer-events:none;white-space:pre-wrap;word-break:break-all';
   document.addEventListener('DOMContentLoaded', function () { document.body.appendChild(el); });
   function mm(q) { return matchMedia(q).matches ? 1 : 0; }
   function draw() {
