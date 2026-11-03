@@ -933,10 +933,7 @@ html.pointed .goo {
   }
 }
 
-/* ---- the Headliner panel: its recording and its decisions ---- */
-.proj[data-project="headliner"] .lede {
-  margin-bottom: 1.5rem;
-}
+/* ---- the project panels: a recording and its decisions ---- */
 .proj .facts {
   font-size: 1rem;
   margin-top: 1.5rem;

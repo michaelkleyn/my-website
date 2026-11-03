@@ -1,4 +1,4 @@
-// The project panel. A row's hash (#headliner, ...) parks the rows to the left and fades the project in beside them
+// The project panel. A row's hash (#mori, ...) parks the rows to the left and fades the project in beside them
 // (on a phone: opens it inside the row, between its link and its rule).
 // Choosing another project while parked swaps the panel alone; #work (or any other section) unparks. The nav dot
 // resolves these hashes to the section their row lives in (dot.js idx), so Art rows park under Art.
